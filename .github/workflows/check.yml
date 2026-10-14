@@ -45,7 +45,8 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -q
-          sudo apt-get install -y -q shellcheck
+          # bsdtar (libarchive-tools): tests/push-windows.sh stages the pinned archives with it
+          sudo apt-get install -y -q shellcheck libarchive-tools
           # shfmt: pinned static binary (apt's is old and lags the -bn/-ci behaviour);
           # -f so a 404 page cannot become the binary, sha256 from the release's
           # sha256sums.txt (docs/security/software-supply/README.md: pinned URL + checksum)

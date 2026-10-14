@@ -121,7 +121,7 @@ short_sha() { g rev-parse --short "${1:-HEAD}" 2>/dev/null; }
 latest_tag() { g tag -l 'v*' --sort=-v:refname 2>/dev/null | head -1; }
 nearest_tag() { g describe --tags --match 'v*' --abbrev=0 "${1:-HEAD}" 2>/dev/null; }
 head_name() { g describe --tags --exact-match --match 'v*' HEAD 2>/dev/null || short_sha; }
-build_id() { echo "$(g log -1 --date=format:%Y%m%d --format=%cd "${1:-HEAD}" 2>/dev/null).$(short_sha "${1:-HEAD}")"; }
+build_id() { echo "$(g log -1 --date=format:%Y%m%d --format=%cd HEAD 2>/dev/null).$(short_sha)"; }
 hm_gen_line() { home-manager generations 2>/dev/null | head -1; } # "<date> <time> : id N -> /nix/store/... (current)"
 hm_gen_id() { hm_gen_line | awk '{ for (i = 1; i <= NF; i++) if ($i == "id") print $(i + 1) }'; }
 badge_refresh() { # the bar's updates badge caches its answer; drop it and ask for a redraw
