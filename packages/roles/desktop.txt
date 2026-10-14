@@ -1,0 +1,173 @@
+# role: desktop — the Hyprland desktop, the Letterpress look, browser, mail, files,
+# audio, the daily-use binds. Every machine with a screen.
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "desktop" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+
+# mesa + lib32-mesa: every GPU path needs them, including NVIDIA proprietary
+awww
+blueman
+bluez
+bluez-utils
+brightnessctl
+cava
+chromium
+cliphist
+grim
+gsimplecal
+gst-plugin-pipewire
+gvfs
+gvfs-mtp
+hypridle
+hyprland
+hyprlock
+hyprpicker
+hyprsunset
+imv
+kitty
+lib32-mesa
+# libnotify: notify-send, the popup every helper script in dotfiles/.local/bin uses
+libnotify
+libpulse
+ly
+mesa
+mission-center
+mpv
+noto-fonts
+noto-fonts-emoji
+ntfs-3g
+ntfsprogs
+nwg-drawer
+otf-font-awesome
+# icons + cursors: GNOME's Adwaita set (2026-10-10, decisions/0013: Papirus failed Origin,
+# Bibata Community); folders no longer take the theme accent
+adwaita-icon-theme
+adwaita-cursors
+# alsa-utils: alsamixer, amixer, aplay (the old build had it)
+alsa-utils
+pavucontrol
+pipewire
+pipewire-alsa
+pipewire-jack
+pipewire-pulse
+# playerctl: the XF86Audio* media keys in hyprland.lua
+playerctl
+plymouth
+qt5-wayland
+qt6-wayland
+qutebrowser
+# refind: the themed boot menu in front of the UKIs (system/apply-refind.sh, decisions/0011)
+refind
+rofi
+# rtkit: realtime scheduling for pipewire/wireplumber (rtkit-daemon, D-Bus activated)
+rtkit
+satty
+slurp
+# swaybg: fallback for quote-wallpaper.sh when awww is absent (both hosts have awww)
+swaybg
+swaync
+swayosd
+# tesseract (+ tesseract-data-eng): ocr-copy.sh — grim | tesseract -l eng | wl-copy
+tesseract
+tesseract-data-eng
+thunar
+thunar-archive-plugin
+ttf-jetbrains-mono-nerd
+tumbler
+udiskie
+waybar
+wireplumber
+wl-clipboard
+woff2-font-awesome
+# file-roller: the archive GUI over libarchive (replaced xarchiver 2026-10-10 with the
+# 7-Zip/unrar/unzip swap; thunar-archive-plugin drives it)
+file-roller
+xdg-desktop-portal-hyprland
+xdg-utils
+zathura
+zathura-pdf-mupdf
+# browser / mail / passwords (Proton Pass itself comes from [dram]: proton-pass-bin, at the end)
+# protonmail-bridge: Proton -> IMAP/SMTP on 127.0.0.1 for Thunderbird (paid plan);
+# run as a HM user service (modules/desktop.nix), first login once in its GUI
+librewolf
+gnome-keyring
+thunderbird
+protonmail-bridge
+# music: spotify-launcher ([extra]) downloads Spotify's own .deb and verifies
+# the apt Release signature itself; replaces the AUR spotify wrapper 2026-10-06.
+# Wayland flags: dotfiles/.config/spotify-launcher.conf
+spotify-launcher
+# files: Thunar removable-media handling, SMB shares, video/PDF thumbnails
+thunar-volman
+gvfs-smb
+ffmpegthumbnailer
+poppler-glib
+# desktop: fonts, ad-hoc output control, polkit agent
+# ttf-nerd-fonts-symbols-mono is "Symbols Nerd Font Mono": every glyph one
+# cell wide, the ONLY icon face waybar/kitty name (docs/design/typography/README.md). Without it
+# fontconfig falls through to JetBrainsMono Nerd Font, whose icons are
+# proportional (double-width gamepad, zero bearing) and the bar's gaps wobble.
+ttf-nerd-fonts-symbols
+ttf-nerd-fonts-symbols-mono
+wlr-randr
+hyprpolkitagent
+# --- daily-use binds (docs/design/shell-and-bars/keybinds.md), added 2026-10-05 -------------------
+# screen recording: one tool for NVENC (cabin) and VA-API (lantern); the UI
+# adds the ShadowPlay-style replay buffer (gsr-ui, SUPER+ALT+R via gsr-ui-cli)
+gpu-screen-recorder
+gpu-screen-recorder-ui
+# emoji picker (SUPER+period); wtype is its Wayland typer
+rofimoji
+wtype
+# qalc for the SUPER+equal calculator popup
+libqalculate
+# keeps clipboard contents after the source window closes
+wl-clip-persist
+# --- Letterpress design pass (docs/design/README.md) -----------------------
+# otf-monaspace: Monaspace Xenon/Radon, the terminal + readout mono (Fraunces
+# and EB Garamond come from nixpkgs in modules/desktop.nix)
+otf-monaspace
+# adw-gtk-theme: adw-gtk3, the ONE GTK3 theme for every dram theme (adw-gtk3-dark on
+# dark, adw-gtk3 on light); recoloured per theme by themes/<t>/gtk3.css + gtk.css
+# (bin/gen-gtk-css.py). Replaced the seven AUR GTK theme packages 2026-10-06.
+adw-gtk-theme
+# --- Flatpak, for exactly three vendor binaries (docs/toolchain/packaging/flatpak.md) ---
+# Vesktop, LocalSend and Flatseal come from Flathub via system/flatpak-setup.sh;
+# flatpak itself is the only package. xdg-desktop-portal-gtk: FileChooser and
+# the GTK settings portal — xdg-desktop-portal-hyprland implements neither, and
+# a sandboxed app without a file chooser cannot upload or save anything.
+flatpak
+xdg-desktop-portal-gtk
+# socat: the primary Hyprland IPC socket reader in wallpaper-hotplug.sh and
+# waybar-fullscreen.sh (nc -U, then python3, are the fallbacks)
+socat
+# NetworkManager runs Wi-Fi and wired networks on desktops and laptops (system/network-setup.sh
+# hands over from the installer's systemd-networkd + iwd; docs/security/network/README.md). nmtui (part of it)
+# is the bar's network click; nm-connection-editor the right-click (VPNs, 802.1X/eduroam).
+# Replaced wifi-menu.sh + impala 2026-10-11 (packages instead of home-made pop-ups)
+networkmanager
+nm-connection-editor
+# the calculator (SUPER+equal): rofi's calc mode on libqalculate; replaced calc-menu.sh
+rofi-calc
+# --- YubiKeys (decisions/0019, docs/security/identity/README.md) ----------------
+# pam-u2f: the touch after the password in sudo, polkit-1 and login (ly, hyprlock, the
+# console), written by system/yubikey-setup.sh. libfido2 is in base.txt
+pam-u2f
+# ykman: FIDO2 PIN, OTP off, PIV PIN/PUK/management key (`dram yubikey enroll`)
+yubikey-manager
+# the age identity on each key (sops recipient); its Origin ruled 2026-10-11
+age-plugin-yubikey
+# PC/SC for PIV (pcscd.socket in system/units.tsv); ccid's udev rule gives the
+# non-root pcscd (pcsclite >= 2.4) the USB device
+pcsclite
+ccid
+# a notification while a key waits for a touch: ly, hyprlock, git and an agent-held ssh
+# key print nothing, the key only blinks (user service in modules/desktop.nix)
+yubikey-touch-detector
+# --- [dram] names only a desktop needs (pkgs/README.md "Every host, or one role") ----
+# They install through dram apply once [dram] is synced; headless hosts never get them.
+# Hyprland plugins are ABI-bound to hyprland's version (docs/toolchain/packaging/README.md §9)
+hyprland-plugin-hyprfocus
+hyprland-plugin-hyprtasking
+# Proton Pass desktop app (proton-pass-cli stays on every host)
+proton-pass-bin

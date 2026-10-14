@@ -1,0 +1,79 @@
+#!/usr/bin/bash
+# usage: ly-prepare
+#
+# /usr/lib/dram/ly-prepare (dram-gaming-mode, decisions/0012): runs as root before
+# every ly start (ExecStartPre in /usr/lib/systemd/system/ly@.service.d/dram-session.conf).
+# When /usr/lib/dram/session-switch left a request in /run/dram/ly-next-session less than
+# five minutes ago, it sets ly's auto_login_session/auto_login_user to it; otherwise it
+# clears both. ly autologins once per start and never again after a logout, so the keys
+# cannot re-trigger; the next start clears them. The request is consumed either way.
+# The session must be a .desktop file in /usr/share/wayland-sessions and the user a
+# normal user (uid >= 1000). Write-on-change; it never fails the greeter (exit 0 always).
+# system/apply-ly.sh carries these two keys over when it rewrites the file.
+#
+# env (tests): DRAM_LY_CONF (config file), DRAM_RUN (dir of the request),
+#              DRAM_SESSIONS (dir of .desktop files), DRAM_MIN_UID
+
+set -uo pipefail
+# ly's unit sends stdout to its tty (StandardInput=tty), not the journal: log through
+# logger, so `journalctl -t ly-prepare` shows these lines; stdout only as the fallback
+log() { logger -t ly-prepare -- "$*" 2>/dev/null || echo "ly-prepare: $*"; }
+RUN="${DRAM_RUN:-/run/dram}"
+SESSIONS="${DRAM_SESSIONS:-/usr/share/wayland-sessions}"
+MIN_UID="${DRAM_MIN_UID:-1000}"
+MAXAGE=300
+conf="${DRAM_LY_CONF:-}"
+if [ -z "$conf" ]; then
+  if [ -f /etc/ly/config.lua ] && [ ! -f /etc/ly/config.ini ]; then conf=/etc/ly/config.lua; else conf=/etc/ly/config.ini; fi
+fi
+[ -f "$conf" ] || exit 0
+
+next="$RUN/ly-next-session" session="" user=""
+if [ -f "$next" ]; then
+  mtime="$(stat -c %Y "$next" 2>/dev/null || stat -f %m "$next" 2>/dev/null || echo 0)" # GNU, or BSD (tests)
+  age=$(($(date +%s) - mtime))
+  {
+    read -r session
+    read -r user
+  } <"$next" || true
+  rm -f "$next"
+  if [ "$age" -gt "$MAXAGE" ] || [ "$age" -lt 0 ]; then
+    log "ignored a session request $age s old"
+    session=""
+  fi
+  if ! [[ "$session" =~ ^[A-Za-z0-9._-]+$ ]] || [ ! -f "$SESSIONS/$session.desktop" ]; then
+    [ -n "$session" ] && log "no session '$session' in $SESSIONS"
+    session=""
+  fi
+  uid="$(id -u "$user" 2>/dev/null || echo -1)"
+  if ! [[ "$user" =~ ^[a-z_][a-z0-9_-]*$ ]] || [ "$uid" -lt "$MIN_UID" ]; then
+    [ -n "$session" ] && log "refused user '$user'"
+    session=""
+  fi
+fi
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+keys='^[[:space:]]*auto_login_(session|user)[[:space:]]*='
+case "$conf" in
+  *.lua)
+    # inside the `ly = { … }` table: before its closing brace (the last line that is one)
+    grep -vE "$keys" "$conf" | awk -v s="$session" -v u="$user" '
+      { line[NR] = $0 }
+      END {
+        last = 0
+        for (i = NR; i > 0; i--) if (line[i] ~ /^}[[:space:]]*$/) { last = i; break }
+        for (i = 1; i <= NR; i++) {
+          if (i == last && s != "") printf "    auto_login_session = \"%s\",\n    auto_login_user = \"%s\",\n", s, u
+          print line[i]
+        }
+      }' >"$tmp"
+    ;;
+  *)
+    grep -vE "$keys" "$conf" >"$tmp"
+    if [ -n "$session" ]; then printf 'auto_login_session = %s\nauto_login_user = %s\n' "$session" "$user" >>"$tmp"; fi
+    ;;
+esac
+cmp -s "$tmp" "$conf" || cat "$tmp" >"$conf" # cat keeps the file's owner and mode
+if [ -n "$session" ]; then log "one-shot autologin $user -> $session"; fi
+exit 0

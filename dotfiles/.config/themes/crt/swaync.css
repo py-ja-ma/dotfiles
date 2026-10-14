@@ -1,0 +1,11 @@
+/* CRT — swaync palette (imported by swaync/style.css) */
+@define-color base     #050a0a;
+@define-color mantle   #040808;
+@define-color crust    #030606;
+@define-color text     #aaffff;
+@define-color subtext  #74bcbc;
+@define-color surface0 #0b3333;
+@define-color surface1 #134747;
+@define-color blue     #22dddd;
+@define-color red      #ff5566;
+@define-color accent   #22dddd;   /* the ONE accent ink (Letterpress) */

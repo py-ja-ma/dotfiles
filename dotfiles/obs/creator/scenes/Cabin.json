@@ -1,0 +1,119 @@
+{
+    "name": "Cabin",
+    "current_scene": "Screen",
+    "current_program_scene": "Screen",
+    "scene_order": [
+        {
+            "name": "Screen"
+        }
+    ],
+    "current_transition": "Fade",
+    "transition_duration": 300,
+    "transitions": [],
+    "groups": [],
+    "quick_transitions": [],
+    "preview_locked": false,
+    "scaling_enabled": false,
+    "sources": [
+        {
+            "name": "Screen (PipeWire)",
+            "id": "pipewire-screen-capture-source",
+            "versioned_id": "pipewire-screen-capture-source",
+            "settings": {
+                "ShowCursor": true
+            },
+            "mixers": 0,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        },
+        {
+            "name": "Desktop audio",
+            "id": "pulse_output_capture",
+            "versioned_id": "pulse_output_capture",
+            "settings": {
+                "device_id": "default"
+            },
+            "mixers": 5,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        },
+        {
+            "name": "Screen",
+            "id": "scene",
+            "versioned_id": "scene",
+            "settings": {
+                "custom_size": false,
+                "id_counter": 2,
+                "items": [
+                    {
+                        "name": "Screen (PipeWire)",
+                        "id": 1,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 2560,
+                            "y": 1440
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Desktop audio",
+                        "id": 2,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    }
+                ]
+            },
+            "mixers": 0,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        }
+    ]
+}

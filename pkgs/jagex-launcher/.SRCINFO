@@ -1,0 +1,20 @@
+pkgbase = jagex-launcher
+	pkgdesc = Jagex Launcher for Linux
+	pkgver = 0.1.8
+	pkgrel = 1
+	url = https://osrs.runescape.com/download
+	arch = x86_64
+	license = LicenseRef-Jagex-EULA
+	makedepends = squashfs-tools
+	makedepends = binutils
+	depends = zlib
+	depends = hicolor-icon-theme
+	depends = fuse2
+	provides = jagex-launcher
+	options = !strip
+	source = jagex-launcher-0.1.8.AppImage::https://rs-launcher-updates.runescape.com/production/linux/x64/releases/0.1.8/jagex-launcher-beta-linux-x86_64.AppImage
+	source = JAGEX-EULA
+	sha256sums = f3a6527c823022f0c7ac1448ad90a5a5f5122816ac4b78cc0e3a3ff67391984b
+	sha256sums = 9feba555717fe2e04335146cace192f48760e46670f4fa8248732fc4ea07e6fd
+
+pkgname = jagex-launcher

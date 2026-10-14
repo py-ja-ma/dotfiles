@@ -1,0 +1,586 @@
+/* swaync 0.12 (GTK4) — Letterpress: notifications as margin notes.
+   dotfiles/.config/swaync/README.md. A toast is a slip of paper with a 2px accent
+   rule down its left edge; the control centre is a 340px margin column on the
+   right of the page, cut off by one hairline. Faces: Fraunces for the one
+   heading, the text serif (Literata, EB Garamond until it lands) in italic
+   for every caption, Monaspace for every readout. No blur, no shadow, no fill
+   in the accent — it is a rule, a ring, a cursor.
+   Palette: the active theme via the @import below (dram-theme repoints it).
+   Node names: /etc/xdg/swaync/style.css (loaded UNDER this file) + the .ui
+   files in the binary (`gresource list /usr/bin/swaync`). */
+@import url("../themes/current/swaync.css");  /* resolved against ~/.config/swaync/ (the symlink): works only when loaded through ~/.config */
+
+/* The default stylesheet hardcodes white text and dark greys through its own
+   variables; re-point them at the theme so anything we miss is still paper. */
+:root {
+  --text-color: @text;
+  --text-color-disabled: @subtext;
+  --cc-bg: @base;
+  --noti-bg: 0, 0, 0;
+  --noti-bg-alpha: 0;
+  --noti-bg-darker: @mantle;
+  --noti-bg-hover: transparent;
+  --noti-bg-focus: transparent;
+  --noti-close-bg: transparent;
+  --noti-close-bg-hover: transparent;
+  --noti-border-color: alpha(@text, 0.18);
+  --bg-selected: @accent;
+  --border-radius: 3px;
+  --notification-shadow: none;
+  --notification-icon-size: 32px;
+  --notification-app-icon-size: 12px;
+  --notification-group-icon-size: 16px;
+  --font-size-summary: 14px;
+  --font-size-body: 12px;
+  --mpris-album-art-overlay: transparent;
+  --mpris-album-art-shadow: none;
+  --mpris-button-hover: transparent;
+  --mpris-album-art-icon-size: 48px;
+}
+@define-color text-color @text;
+@define-color text-color-disabled @subtext;
+@define-color cc-bg @base;
+@define-color bg-selected @accent;
+@define-color noti-bg-focus transparent;
+
+/* ---- type ------------------------------------------------------------------
+   GTK CSS matches `label` nodes directly, so a bare `* { font-family }` would
+   win over every widget label. Scope the mono to the two windows and name the
+   face on each label node below. */
+.control-center,
+.floating-notifications {
+  font-family: "Monaspace Xenon", "Symbols Nerd Font Mono", monospace;
+  font-size: 12px;
+  color: @text;
+}
+
+/* ---- the slip (one notification, toast or in the column) ------------------- */
+.notification-row {
+  background: transparent;
+  outline: none;
+}
+.notification-row:focus,
+.notification-row:hover {
+  background: transparent;
+}
+.notification-row .notification-background {
+  padding: 3px 0;
+}
+.floating-notifications .notification-row .notification-background {
+  padding: 4px 10px;
+}
+
+.notification-row .notification-background .notification {
+  background: alpha(@base, 0.96);
+  border: 1px solid alpha(@text, 0.18);
+  border-left: 2px solid @accent;
+  border-radius: 3px;
+  padding: 0;
+  box-shadow: none;
+}
+.notification-row .notification-background .notification .notification-default-action {
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  padding: 8px 10px 8px 10px;
+  margin: 0;
+  box-shadow: none;
+  color: @text;
+}
+.notification-row .notification-background .notification .notification-default-action:hover {
+  background: transparent;
+}
+.notification-row .notification-background .notification .notification-default-action .notification-content {
+  padding: 0;
+  background: transparent;
+}
+
+/* lemma: the text serif, semibold; the note: mono; the time: small mono grey */
+.notification-row .notification-background .notification .summary {
+  font-family: "Literata", "EB Garamond", serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: @text;
+  text-shadow: none;
+}
+.notification-row .notification-background .notification .body {
+  font-family: "Monaspace Xenon", "Symbols Nerd Font Mono", monospace;
+  font-size: 12px;
+  font-weight: normal;
+  color: @text;
+  text-shadow: none;
+  margin-top: 2px;
+}
+.notification-row .notification-background .notification .time {
+  font-family: "Monaspace Xenon", monospace;
+  font-size: 11px;
+  font-weight: normal;
+  color: @subtext;
+  text-shadow: none;
+  margin-right: 22px; /* room for the close ghost in the corner */
+}
+
+/* images: a small square, not the default 64px medallion */
+.notification-row .notification-background .notification .image {
+  -gtk-icon-size: 32px;
+  border-radius: 3px;
+  margin: 0 10px 0 0;
+}
+.notification-row .notification-background .notification .app-icon {
+  -gtk-icon-size: 12px;
+  -gtk-icon-shadow: none;
+  margin: 2px;
+}
+
+/* the close ghost: a hairline box in the corner, accent on hover */
+.close-button {
+  background: transparent;
+  color: @subtext;
+  border: 1px solid alpha(@text, 0.18);
+  border-radius: 3px;
+  box-shadow: none;
+  padding: 0;
+  margin-top: 6px;
+  margin-right: 6px;
+  min-width: 16px;
+  min-height: 16px;
+  -gtk-icon-size: 10px;
+}
+.close-button:hover {
+  background: transparent;
+  color: @accent;
+  border-color: @accent;
+  box-shadow: none;
+}
+
+/* alternative actions: hairline ghosts in a row under the note */
+.notification-row .notification-background .notification .notification-alt-actions {
+  background: transparent;
+  padding: 0 10px 8px 10px;
+}
+.notification-row .notification-background .notification .notification-action {
+  margin: 0 6px 0 0;
+  padding: 0;
+}
+.notification-row .notification-background .notification .notification-action > button {
+  background: transparent;
+  color: @text;
+  border: 1px solid alpha(@text, 0.18);
+  border-radius: 3px;
+  padding: 1px 8px;
+  box-shadow: none;
+  font-family: "Monaspace Xenon", monospace;
+  font-size: 11px;
+  font-weight: normal;
+}
+.notification-row .notification-background .notification .notification-action > button:hover {
+  background: transparent;
+  color: @accent;
+  border-color: @accent;
+}
+
+/* inline reply: an entry with a hairline, the send button a ghost */
+.notification-row .notification-background .notification .inline-reply-entry {
+  background: transparent;
+  color: @text;
+  caret-color: @accent;
+  border: 1px solid alpha(@text, 0.18);
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+.notification-row .notification-background .notification .inline-reply-button {
+  background: transparent;
+  color: @subtext;
+  border: 1px solid alpha(@text, 0.18);
+  border-radius: 3px;
+  font-weight: normal;
+}
+.notification-row .notification-background .notification .inline-reply-button:hover {
+  color: @accent;
+  border-color: @accent;
+}
+
+/* progress (a download, a timer): a 2px rule in the accent, no trough chrome */
+.notification-row .notification-background .notification progressbar trough {
+  background: alpha(@text, 0.12);
+  border: none;
+  border-radius: 0;
+  min-height: 2px;
+}
+.notification-row .notification-background .notification progressbar progress {
+  background: @accent;
+  border: none;
+  border-radius: 0;
+  min-height: 2px;
+}
+
+/* critical: the rule and the lemma turn red; timeout-critical=0 so it persists */
+.notification-row .notification-background .notification.critical {
+  border-left-color: @red;
+}
+.notification-row .notification-background .notification.critical .summary {
+  color: @red;
+}
+
+/* low: a greyer rule, the note stays legible */
+.notification-row .notification-background .notification.low {
+  border-left-color: alpha(@text, 0.35);
+}
+
+/* ---- grouped stacks ----------------------------------------------------------
+   The default paints a grey slab behind a focused group and an opaque dark card
+   under every collapsed row, which shows as ghost frames under the top slip.
+   A group is a run of notes under one small italic header, nothing more. */
+.notification-group,
+.notification-group:focus,
+.notification-group:hover {
+  background: transparent;
+}
+.notification-group.collapsed .notification-row .notification,
+.notification-group.collapsed:hover .notification-row:not(:only-child) .notification {
+  background-color: alpha(@base, 0.96);
+}
+.notification-group.collapsed .notification-row:not(:last-child) .notification {
+  opacity: 0;
+}
+/* the hidden rows still took their margin: a collapsed pair left a 27 px gap
+   to the next card instead of the usual 14 */
+.notification-group.collapsed .notification-row:not(:last-child) {
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+}
+.notification-group.collapsed.not-expanded {
+  opacity: 0.5;
+}
+.notification-group .notification-group-headers,
+.notification-group .notification-group-buttons {
+  margin: 0;
+  color: @subtext;
+}
+.notification-group .notification-group-headers {
+  padding: 4px 2px 3px 2px;
+  border-bottom: 1px solid alpha(@text, 0.18);
+}
+.notification-group .notification-group-headers .notification-group-icon {
+  color: @subtext;
+  -gtk-icon-size: 16px;
+  margin-right: 6px;
+}
+.notification-group .notification-group-headers .notification-group-header {
+  font-family: "Literata", "EB Garamond", serif;
+  font-size: 14px;
+  font-style: italic;
+  color: @subtext;
+}
+.notification-group .notification-group-buttons button,
+.notification-group .notification-group-close-button .close-button {
+  background: transparent;
+  color: @subtext;
+  border: 1px solid alpha(@text, 0.18);
+  border-radius: 3px;
+  box-shadow: none;
+  padding: 0;
+  margin: 0 0 0 6px;
+  min-width: 16px;
+  min-height: 16px;
+  -gtk-icon-size: 10px;
+}
+.notification-group .notification-group-buttons button:hover,
+.notification-group .notification-group-close-button .close-button:hover {
+  color: @accent;
+  border-color: @accent;
+}
+
+/* ---- the margin column ------------------------------------------------------- */
+.blank-window,
+.floating-notifications {
+  background: transparent;
+}
+.floating-notifications {
+  padding-top: 4px; /* a breath under the bar */
+}
+.control-center {
+  background: alpha(@base, 0.96);
+  color: @text;
+  border: none;
+  border-left: 1px solid alpha(@text, 0.18);
+  border-radius: 0;
+  margin: 0;
+  padding: 8px 12px 10px 12px;
+  box-shadow: none;
+}
+.control-center .control-center-list {
+  background: transparent;
+}
+.control-center .control-center-list .notification {
+  box-shadow: none;
+}
+/* in the column the rule is grey until the note is pointed at */
+.control-center .notification-row .notification-background .notification {
+  border-left-color: alpha(@text, 0.35);
+}
+.control-center .notification-row .notification-background .notification:hover {
+  border-left-color: @accent;
+}
+.control-center .notification-row .notification-background .notification.critical,
+.control-center .notification-row .notification-background .notification.critical:hover {
+  border-left-color: @red;
+}
+.control-center .control-center-list .notification .notification-default-action:hover,
+.control-center .control-center-list .notification .notification-action:hover {
+  background: transparent;
+}
+
+/* widgets: no card, no radius; the rhythm is vertical margins */
+.widget {
+  background: transparent;
+  margin: 0;
+  padding: 4px 2px;
+  border-radius: 0;
+}
+
+/* the one heading in the display face; "clear" an italic caption, underlined */
+.widget-title {
+  padding: 2px 2px 6px 2px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid alpha(@text, 0.18);
+}
+.widget-title > label {
+  font-family: "Fraunces", serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: @text;
+  margin: 0;
+}
+.widget-title > button {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0 2px;
+  margin: 0;
+}
+.widget-title > button label {
+  font-family: "Literata", "EB Garamond", serif;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: normal; /* libadwaita bolds every button */
+  color: @subtext;
+}
+.widget-title > button:hover label {
+  color: @accent;
+}
+
+/* do not disturb: an italic caption and a hairline switch; the accent is the cursor */
+.widget-dnd {
+  padding: 4px 2px;
+}
+.widget-dnd > label {
+  font-family: "Literata", "EB Garamond", serif;
+  font-size: 14px;
+  font-style: italic;
+  color: @subtext;
+  margin: 0;
+}
+.widget-dnd > switch {
+  background: transparent;
+  border: 1px solid alpha(@text, 0.18);
+  border-radius: 3px;
+  box-shadow: none;
+  margin: 0;
+  min-width: 34px;
+  min-height: 16px;
+}
+.widget-dnd > switch image {
+  opacity: 0;
+}
+.widget-dnd > switch slider {
+  background: alpha(@text, 0.35);
+  border: none;
+  border-radius: 2px;
+  box-shadow: none;
+  min-width: 14px;
+  min-height: 14px;
+  margin: 1px;
+}
+.widget-dnd > switch:hover {
+  border-color: @accent;
+}
+.widget-dnd > switch:checked {
+  background: transparent;
+  border-color: @accent;
+}
+.widget-dnd > switch:checked slider {
+  background: @accent;
+}
+
+/* empty: the words alone, italic, no icon. The GtkImage keeps its 96px
+   pixel-size whatever CSS says, so it is faded out and the box is given the
+   same height again as a bottom margin, which centres the words. */
+.control-center .control-center-list-placeholder {
+  opacity: 1;
+  margin-bottom: 108px;
+}
+.control-center .control-center-list-placeholder image {
+  opacity: 0;
+  margin: 0;
+}
+.control-center .control-center-list-placeholder label {
+  font-family: "Literata", "EB Garamond", serif;
+  font-size: 14px;
+  font-style: italic;
+  color: @subtext;
+}
+
+/* inhibitors: an italic count and a ghost to lift them */
+.widget-inhibitors > label {
+  font-family: "Literata", "EB Garamond", serif;
+  font-size: 14px;
+  font-style: italic;
+  color: @subtext;
+  margin: 0;
+}
+.widget-inhibitors > button {
+  background: transparent;
+  color: @subtext;
+  border: 1px solid alpha(@text, 0.18);
+  border-radius: 3px;
+  box-shadow: none;
+  padding: 0 6px;
+  margin: 0;
+  font-weight: normal;
+}
+.widget-inhibitors > button:hover {
+  color: @accent;
+  border-color: @accent;
+}
+
+/* ---- calendar (swaync main; 0.12.6 has no calendar widget and skips it) ----
+   Nodes: .widget-calendar > .calendar-container > .day-label, .date-label,
+   calendar > header > button/label, calendar > grid > label.day-name /
+   .day-number(.other-month)(.today). Today is a ring, never a fill. */
+.widget-calendar {
+  background: transparent;
+  border: none;
+  border-top: 1px solid alpha(@text, 0.18);
+  border-radius: 0;
+  margin-top: 6px;
+  padding: 8px 2px 2px 2px;
+}
+.widget-calendar .day-label,
+.widget-calendar .date-label {
+  font-family: "Literata", "EB Garamond", serif;
+  font-size: 14px;
+  font-style: italic;
+  color: @subtext;
+}
+.widget-calendar calendar {
+  background: transparent;
+  color: @text;
+  border: none;
+  padding: 0;
+  font-family: "Monaspace Xenon", monospace;
+  font-size: 11px;
+}
+.widget-calendar calendar > header {
+  background: transparent;
+  border: none;
+  padding: 0 0 4px 0;
+}
+.widget-calendar calendar > header > label {
+  font-family: "Fraunces", serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: @text;
+}
+.widget-calendar calendar > header > button {
+  background: transparent;
+  color: @subtext;
+  border: none;
+  box-shadow: none;
+  padding: 0 4px;
+  min-width: 0;
+  min-height: 0;
+}
+.widget-calendar calendar > header > button:hover {
+  color: @accent;
+}
+.widget-calendar calendar > grid > label {
+  padding: 2px 0;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+.widget-calendar calendar > grid > label.day-name,
+.widget-calendar calendar > grid > label.week-number {
+  color: @subtext;
+  font-size: 10px;
+}
+.widget-calendar calendar > grid > label.day-number.other-month {
+  color: alpha(@text, 0.35);
+}
+.widget-calendar calendar > grid > label.day-number.today {
+  color: @accent;
+  border-color: @accent;
+  font-weight: bold;
+}
+.widget-calendar calendar > grid > label:selected {
+  background: transparent;
+  color: @text;
+  border-color: alpha(@text, 0.35);
+}
+
+/* ---- mpris: paper, not a blurred album-art card ------------------------------ */
+.widget-mpris {
+  padding: 0;
+}
+.widget-mpris .widget-mpris-player {
+  background: alpha(@base, 0.96);
+  border: 1px solid alpha(@text, 0.18);
+  border-radius: 3px;
+  box-shadow: none;
+  margin: 6px 2px;
+}
+.widget-mpris .widget-mpris-player .mpris-background {
+  opacity: 0;
+  filter: none;
+}
+.widget-mpris .widget-mpris-player .mpris-overlay {
+  background: transparent;
+  padding: 8px 10px;
+}
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-album-art {
+  -gtk-icon-size: 48px;
+  border-radius: 3px;
+  box-shadow: none;
+}
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-title {
+  font-family: "Literata", "EB Garamond", serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: @text;
+}
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-subtitle {
+  font-family: "Monaspace Xenon", monospace;
+  font-size: 11px;
+  color: @subtext;
+}
+.widget-mpris button,
+.widget-mpris button.circular,
+.widget-mpris button.flat {
+  background: transparent;
+  color: @subtext;
+  border: none;
+  border-radius: 3px;
+  box-shadow: none;
+}
+.widget-mpris button:hover,
+.widget-mpris .widget-mpris-player .mpris-overlay button:hover,
+.widget-mpris .widget-mpris-player .mpris-overlay > box > button:hover {
+  background: transparent;
+  color: @accent;
+}
+.widget-mpris button:disabled {
+  color: alpha(@text, 0.25);
+}

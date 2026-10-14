@@ -1,0 +1,34 @@
+{
+  // Editor color theme — kept in sync with the desktop dram by dram-theme,
+  // which rewrites this one line on a theme switch (JSONC-safe). The themes are
+  // the generated "Letterpress — <name>" set from the local extension
+  // pj.letterpress-themes (bin/gen-vscode-themes.py). Baseline: washi.
+  "workbench.colorTheme": "Letterpress — Boulevardier",
+
+  // House mono (docs/design/typography/README.md): Monaspace Xenon like kitty, Symbols Nerd Font
+  // Mono for icon glyphs, Noto Color Emoji so emoji render. The workbench UI
+  // font is not set here: it follows gsettings font-name (Literata) like every
+  // other Chromium/Electron window.
+  "editor.fontFamily": "'Monaspace Xenon', 'Symbols Nerd Font Mono', 'Noto Color Emoji', monospace",
+  "editor.fontSize": 13,
+  // the same texture-healing + ligature sets kitty enables for Monaspace
+  "editor.fontLigatures": "'calt', 'liga', 'ss01', 'ss02', 'ss03'",
+
+  // Integrated terminal: same stack.
+  "terminal.integrated.fontFamily": "'Monaspace Xenon', 'Symbols Nerd Font Mono', 'Noto Color Emoji', monospace",
+  "terminal.integrated.fontSize": 12,
+
+  // KEY FIX: the default WebGL terminal renderer draws emoji as broken/monochrome
+  // boxes. The DOM renderer ("off") renders color emoji correctly. If your terminal
+  // feels slow with lots of output, try "canvas" instead — but "off" is the safe one.
+  "terminal.integrated.gpuAcceleration": "off",
+  "files.autoSave": "afterDelay",
+
+  // The dram themes come from the local, generated pj.letterpress-themes
+  // extension (no marketplace); anything else installed is pinned by
+  // codium-themes-install --marketplace (publisher.ext@version), and the
+  // editor never updates or checks extensions on its own (docs/security/README.md).
+  "extensions.autoUpdate": false,
+  "extensions.autoCheckUpdates": false,
+  "extensions.verifySignature": true
+}

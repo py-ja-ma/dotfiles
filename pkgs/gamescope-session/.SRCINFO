@@ -1,0 +1,18 @@
+pkgbase = gamescope-session
+	pkgdesc = Common gamescope session files (OpenGamingCollective fork, pinned)
+	pkgver = r390.08e65a6
+	pkgrel = 1
+	url = https://github.com/OpenGamingCollective/gamescope-session
+	arch = any
+	license = MIT
+	makedepends = git
+	depends = gamescope
+	depends = bash
+	depends = systemd
+	optdepends = mangohud: performance overlay through mangoapp
+	provides = gamescope-session-git
+	conflicts = gamescope-session-git
+	source = gamescope-session::git+https://github.com/OpenGamingCollective/gamescope-session.git#commit=08e65a62ed3d7acc6ae17db637091d402a55ae2a
+	b2sums = 79614ff9c675516cf1be7afe162a56560b687e8167800604492ad768113a055ba506bcab19dbb552a8cdeed0eeb98014b8733816f6fc8ac3c4f77a67fdee0bb1
+
+pkgname = gamescope-session

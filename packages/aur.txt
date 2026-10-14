@@ -1,0 +1,6 @@
+# AUR residual: packages deliberately NOT vendored yet. Empty by policy since
+# 2026-10-06 — every AUR-origin package is built, signed and installed from [dram]
+# (pkgs/<name>/ + pkgs/manifest.txt; decisions/0005-own-package-repo.md). What left
+# this file and why: docs/toolchain/packaging/README.md §5. The file stays because install/bootstrap.sh
+# phase 2, bin/check.sh §3 and `dram doctor` still read it; one name per line, own-line
+# comments only.

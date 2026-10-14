@@ -1,0 +1,53 @@
+{
+  "profiles": [
+    {
+      "colorScheme": "Washi",
+      "font": {
+        "face": "Monaspace Xenon, Symbols Nerd Font Mono",
+        "size": 12,
+        "features": {
+          "calt": 1,
+          "liga": 1,
+          "ss01": 1,
+          "ss02": 1,
+          "ss03": 1
+        }
+      },
+      "cursorShape": "bar",
+      "padding": "10",
+      "opacity": 100,
+      "useAcrylic": false,
+      "bellStyle": [
+        "window",
+        "taskbar"
+      ],
+      "historySize": 20000,
+      "adjustIndistinguishableColors": "never"
+    }
+  ],
+  "schemes": [
+    {
+      "name": "Washi",
+      "background": "#1c140f",
+      "foreground": "#e6d6cb",
+      "cursorColor": "#e6d6cb",
+      "selectionBackground": "#2e211a",
+      "black": "#1c140f",
+      "red": "#c0442b",
+      "green": "#7d8a5a",
+      "yellow": "#d99a5b",
+      "blue": "#6e8a8f",
+      "purple": "#b06a5a",
+      "cyan": "#8fae9e",
+      "white": "#e6d6cb",
+      "brightBlack": "#3a2a22",
+      "brightRed": "#e0563b",
+      "brightGreen": "#97a86c",
+      "brightYellow": "#f0b97a",
+      "brightBlue": "#8aa6ab",
+      "brightPurple": "#c98a76",
+      "brightCyan": "#a9c4b4",
+      "brightWhite": "#fff6f0"
+    }
+  ]
+}

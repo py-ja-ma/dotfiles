@@ -1,0 +1,9 @@
+# role: ml-cuda — opt-in: the CUDA toolkit, only to compile CUDA code (course GPU labs,
+# llama.cpp from source). Waived (decisions/0013: cuda, cudnn); ~2.6 GB. Not on any host by default.
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists the role
+# in `roles` (decisions/0009). One name per line, own-line comments only; a name may appear
+# in ONE packages list (bin/check.sh §3).
+
+cuda
+cudnn
+nccl

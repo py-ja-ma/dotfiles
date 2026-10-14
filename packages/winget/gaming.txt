@@ -1,0 +1,32 @@
+# role: gaming (Windows) - the launchers and what games need beside them, on cabin-win
+# (docs/toolchain/profiles/gaming.md; the rulings are decisions/log.md#d92 to #d103). Nothing
+# starts at sign-in (autostart.ps1); emulation stays on Arch (decisions/log.md#d62).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in ONE
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A
+# Windows host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh).
+
+# launchers (Epic and Ubisoft accepted with an Origin flag; the rest waived)
+winget:Valve.Steam
+winget:EpicGames.EpicGamesLauncher
+winget:ElectronicArts.EADesktop
+winget:HypixelStudios.Hytale
+# Battle.net: winget's Blizzard.BattleNet needs an install location, which WinGetPackage
+# cannot pass, so the gaming role's battle-net unit installs it
+manual:battle.net
+# Ubisoft replaces its installer in place (winget's hash goes stale): its own signed one
+manual:ubisoft-connect
+# not in winget: the signed installer from jagex.com opens on the desktop for its clicks
+manual:jagex-launcher
+# League: the Riot Client, installed by hand; Vanguard comes with it (waived,
+# decisions/log.md#d92)
+manual:riot-client
+# Marvel Rivals, through Steam: NetEase Games (China) and its own anti-cheat, waived as League
+# is (2026-10-12, decisions/log.md#d138)
+manual:marvel-rivals
+# OSRS, mods
+winget:RuneLite.RuneLite
+winget:NexusMods.Vortex
+# Minecraft: Prism Launcher fetches the Java each version needs
+winget:PrismLauncher.PrismLauncher

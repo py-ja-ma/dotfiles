@@ -1,0 +1,11 @@
+# hledger CSV rules for a bank checking export — adjust the fields to your bank's header.
+# hledger import --rules-file rules/checking.csv.rules ~/downloads/checking.csv -f 2026.journal
+skip 1
+fields date, description, amount
+date-format %m/%d/%Y
+currency $
+account1 assets:bank:checking
+if (GROCERY|MARKET)
+  account2 expenses:food
+if NETFLIX|SPOTIFY|PROTON
+  account2 expenses:subscriptions

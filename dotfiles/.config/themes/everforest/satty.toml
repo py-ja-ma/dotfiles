@@ -1,0 +1,4 @@
+# Everforest — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#a7c080", "#e67e80", "#dbbc7f", "#7fbbb3", "#d699b6"]

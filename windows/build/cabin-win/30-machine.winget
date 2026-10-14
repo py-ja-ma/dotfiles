@@ -1,0 +1,485 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+#
+# windows/build/cabin-win/30-machine.winget - rendered by bin/render-windows.sh from
+# windows/hosts/cabin-win.nix and what it names; edit those, never this (decisions/0020).
+# Phase 30, apps; scope machine: every unit elevated, none writing HKCU.
+# dram.ps1 (or converge.ps1) applies the documents in manifest.json's order, from build\:
+#   winget configure -f C:\ProgramData\dram\build\30-machine.winget --accept-configuration-agreements --disable-interactivity
+properties:
+  configurationVersion: "0.2.0"
+  resources:
+    # --- base (windows/roles/base.nix, packages/winget/base.txt) ---
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "powershell-7"
+      directives:
+        description: "PowerShell 7"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Microsoft.PowerShell"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "proton-pass"
+      directives:
+        description: "Proton Pass"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Proton.ProtonPass"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "starship"
+      directives:
+        description: "starship, the prompt Arch uses (ISC)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Starship.Starship"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "wireguard"
+      directives:
+        description: "WireGuard"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "WireGuard.WireGuard"
+        source: "winget"
+    # --- desktop (windows/roles/desktop.nix, packages/winget/desktop.txt) ---
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "librewolf"
+      directives:
+        description: "LibreWolf"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "LibreWolf.LibreWolf"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "localsend"
+      directives:
+        description: "LocalSend"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "LocalSend.LocalSend"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "nomacs"
+      directives:
+        description: "nomacs (image viewer)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "nomacs.nomacs"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "notepad-plus-plus"
+      directives:
+        description: "Notepad++"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Notepad++.Notepad++"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "powertoys"
+      directives:
+        description: "PowerToys"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Microsoft.PowerToys"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "proton-mail-bridge"
+      directives:
+        description: "Proton Mail Bridge"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Proton.ProtonMailBridge"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "thunderbird"
+      directives:
+        description: "Thunderbird"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Mozilla.Thunderbird"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "transmission"
+      directives:
+        description: "Transmission (torrents; qBittorrent swapped out 2026-10-12)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Transmission.Transmission"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "vlc"
+      directives:
+        description: "VLC"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "VideoLAN.VLC"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "windirstat"
+      directives:
+        description: "WinDirStat (disk usage)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "WinDirStat.WinDirStat"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "zebar"
+      directives:
+        description: "Zebar 3.3.1, the masthead's bar (a machine-wide MSI)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "glzr-io.zebar"
+        source: "winget"
+        version: "3.3.1"
+    # --- chat (packages/winget/chat.txt) ---
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "halloy"
+      directives:
+        description: "Halloy (IRC)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "squidowl.halloy"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "mumble"
+      directives:
+        description: "Mumble (voice)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Mumble.Mumble.Client"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "teamspeak"
+      directives:
+        description: "TeamSpeak 3 (proprietary, waived)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "TeamSpeakSystems.TeamSpeakClient"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "vesktop"
+      directives:
+        description: "Vesktop (Discord)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Vencord.Vesktop"
+        source: "winget"
+    # --- gaming (windows/roles/gaming.nix, packages/winget/gaming.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "battle-net"
+      directives:
+        description: "Battle.net (its package needs an install location, which WinGetPackage cannot pass)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\battle-net.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\battle-net.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\battle-net.ps1'))) -Mode Set"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "ea-app"
+      directives:
+        description: "EA app"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "ElectronicArts.EADesktop"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "epic-games"
+      directives:
+        description: "Epic Games Launcher"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "EpicGames.EpicGamesLauncher"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "hytale"
+      directives:
+        description: "Hytale Launcher"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "HypixelStudios.Hytale"
+        source: "winget"
+    - resource: "PSDscResources/Script"
+      id: "jagex-launcher"
+      directives:
+        description: "Jagex Launcher (waived; not in winget; its signed installer needs clicks, so it opens on the signed-in desktop)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\jagex-launcher.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\jagex-launcher.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\jagex-launcher.ps1'))) -Mode Set"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "prismlauncher"
+      directives:
+        description: "Prism Launcher (Minecraft; a per-user installer, as Anki's is)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "PrismLauncher.PrismLauncher"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "runelite"
+      directives:
+        description: "RuneLite"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "RuneLite.RuneLite"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "steam"
+      directives:
+        description: "Steam"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Valve.Steam"
+        source: "winget"
+    - resource: "PSDscResources/Script"
+      id: "ubisoft-connect"
+      directives:
+        description: "Ubisoft Connect (accepted with a flag, 2026-10-12): Ubisoft replaces its installer in place, so winget's pinned hash goes stale; its own installer, Ubisoft-signed, silent"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\ubisoft-connect.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\ubisoft-connect.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\ubisoft-connect.ps1'))) -Mode Set"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "vortex"
+      directives:
+        description: "Vortex (mod manager)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "NexusMods.Vortex"
+        source: "winget"
+    # --- creator (windows/roles/creator.nix, packages/winget/creator.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "obs-background-removal"
+      directives:
+        description: "OBS background removal 1.4.1 (GPL-3.0, pinned by SHA-256): with OBS's own virtual camera it replaces XSplit VCam (2026-10-12)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\obs-background-removal.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\obs-background-removal.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\obs-background-removal.ps1'))) -Mode Set"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "obs-studio"
+      directives:
+        description: "OBS Studio"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "OBSProject.OBSStudio"
+        source: "winget"
+    # --- office (packages/winget/office.txt) ---
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "calibre"
+      directives:
+        description: "calibre"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "calibre.calibre"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "hledger"
+      directives:
+        description: "hledger, hledger-ui and hledger-web (the finance journal; a portable zip, on PATH)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "simonmichael.hledger"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "libreoffice"
+      directives:
+        description: "LibreOffice (documents)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "TheDocumentFoundation.LibreOffice"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "pdf-arranger"
+      directives:
+        description: "PDF Arranger (merge, split, rotate and reorder pages)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "PDFArranger.PDFArranger"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "qpdf"
+      directives:
+        description: "QPDF (a PDF's structure, encryption and repair, on the command line)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "QPDF.QPDF"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "zettlr"
+      directives:
+        description: "Zettlr (the Markdown vault; pandoc, for its exports, comes with it)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Zettlr.Zettlr"
+        source: "winget"
+    # --- college (packages/winget/college.txt) ---
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "anki"
+      directives:
+        description: "Anki (flash cards)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Anki.Anki"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "arduino-cli"
+      directives:
+        description: "Arduino CLI (microcontrollers; each board's toolchain comes with its core)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "ArduinoSA.CLI"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "drawio"
+      directives:
+        description: "draw.io (diagrams)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "JGraph.Draw"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "kicad"
+      directives:
+        description: "KiCad (schematics and boards, with its libraries; pass-flag: decisions/log.md#d139)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "KiCad.KiCad"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "octave"
+      directives:
+        description: "GNU Octave (MATLAB-compatible maths)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "GNU.Octave"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "typst"
+      directives:
+        description: "Typst (reports; a portable binary, on PATH)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Typst.Typst"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "xournalpp"
+      directives:
+        description: "Xournal++ (handwritten notes, PDF annotation)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Xournal++.Xournal++"
+        source: "winget"
+    # --- dev (windows/roles/dev.nix, packages/winget/dev.txt) ---
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "vscodium"
+      directives:
+        description: "VSCodium"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "VSCodium.VSCodium"
+        source: "winget"
+    # --- sysadmin (packages/winget/sysadmin.txt) ---
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "openvpn"
+      directives:
+        description: "OpenVPN (the community client and GUI)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "OpenVPNTechnologies.OpenVPN"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "putty"
+      directives:
+        description: "PuTTY (serial consoles; ssh itself is Windows' own OpenSSH)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "PuTTY.PuTTY"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "rufus"
+      directives:
+        description: "Rufus (boot sticks; Ventoy fails Origin)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Rufus.Rufus"
+        source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "wireshark"
+      directives:
+        description: "Wireshark"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "WiresharkFoundation.Wireshark"
+        source: "winget"
+    # --- host-cabin-win (windows/hosts/cabin-win.nix, packages/winget/host-cabin-win.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "case-display-lhm"
+      directives:
+        description: "LibreHardwareMonitor 0.9.6's library for the panel (MPL-2.0; the release zip, pinned by SHA-256)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\case-display-lhm.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\case-display-lhm.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\case-display-lhm.ps1'))) -Mode Set"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "pawnio"
+      directives:
+        description: "PawnIO (the driver that lets LibreHardwareMonitor read the CPU temperature; pass-flag, 2026-10-12)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "namazso.PawnIO"
+        source: "winget"

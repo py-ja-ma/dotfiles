@@ -1,0 +1,22 @@
+/* Oxocarbon — waybar palette (imported by waybar/style.css) */
+@define-color base     #161616;
+@define-color mantle   #131313;
+@define-color crust    #0d0d0d;
+@define-color text     #f2f4f8;
+@define-color subtext  #dde1e6;
+@define-color overlay  #6f6f6f;
+@define-color surface0 #262626;
+@define-color surface1 #393939;
+@define-color blue     #33b1ff;
+@define-color lavender #8a3ffc;
+@define-color sapphire #78a9ff;
+@define-color sky      #82cfff;
+@define-color teal     #08bdba;
+@define-color green    #42be65;
+@define-color yellow   #fdd13a;
+@define-color peach    #ff832b;
+@define-color maroon   #fa4d56;
+@define-color red      #ee5396;
+@define-color mauve    #be95ff;
+@define-color pink     #ff7eb6;
+@define-color accent   #33b1ff;   /* the ONE accent ink (Letterpress) */

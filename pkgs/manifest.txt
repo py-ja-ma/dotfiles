@@ -1,0 +1,23 @@
+# Every package in the [dram] repo, name=pkgver-pkgrel, exactly as pkgs/<name>/.SRCINFO
+# says. `dram pkgs check` fails when a directory and this file disagree; `dram pkgs
+# update` rewrites the line it bumps. Build-only names (never installed on a host)
+# are listed in pkgs/BUILD-ONLY; `dram pkgs list --install` is the install set.
+dram-case-display=2026.10.12-1
+dram-gaming-mode=2026.10.11-3
+game-devices-udev=1.1-1
+gamescope-session-steam=r23.82c45fc-1
+gamescope-session=r390.08e65a6-1
+hyprland-plugin-hyprfocus=0.56.2-3.1
+hyprland-plugin-hyprtasking=0.56.2-1
+imhex-bin=1.38.1-2
+jagex-launcher=0.1.8-1
+proton-pass-bin=1.41.1-1
+proton-pass-cli=2.4.2-1
+redumper=760-1
+rpcs3-bin=0.0.43.20284-1
+uefitool-ng=A75-1
+vita3k-bin=r4168.46602447c-2
+vscodium-bin=1.135.06055-1
+xdvdfs=0.8.3-1
+xenia-canary-bin=r103257c-1
+xpadneo-dkms=0.10.4-1

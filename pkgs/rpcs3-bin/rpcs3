@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+# [dram] rpcs3-bin launcher: the pinned upstream AppImage, mounted through FUSE at start
+exec /opt/rpcs3/rpcs3.AppImage "$@"

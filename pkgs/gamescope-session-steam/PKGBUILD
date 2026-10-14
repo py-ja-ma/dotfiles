@@ -1,0 +1,51 @@
+# shellcheck disable=SC2034,SC2154,SC2164
+# [dram] vendored from aur:gamescope-session-steam-git (see UPSTREAM); review in REVIEW.md.
+# Pinned to one OpenGamingCollective commit instead of the AUR's floating -git HEAD.
+# Maintainer (AUR): Alesh Slovak <aleshslovak at gmail dot com>
+
+pkgname=gamescope-session-steam
+_commit=82c45fc112775e3fa927d5c326c39b21f1761cc1 # OGC main, 2026-09-19 (23 commits, no tags upstream)
+pkgver=r23.82c45fc
+pkgrel=1
+pkgdesc="Steam Big Picture session based on gamescope (OpenGamingCollective fork, pinned)"
+arch=('any')
+url="https://github.com/OpenGamingCollective/gamescope-session-steam"
+license=('MIT')
+depends=('gamescope' 'gamescope-session' 'bash')
+makedepends=('git')
+optdepends=('steam: the client this session runs'
+  'ttf-dejavu: the font Big Picture expects on its first start'
+  'dram-gaming-mode: os-session-select for ly (switching to and from the desktop)')
+provides=('gamescope-session-steam-git')
+conflicts=('gamescope-session-steam-git')
+source=("$pkgname::git+$url.git#commit=$_commit")
+b2sums=('914b7a5dc2995fdfb29920512e916aa473c54102756adc50a4bdbe2929da733a71a7c1e799f986eddc787a8b957a22cc6ef2ba447d5a56e40e3a0a1613be04ce')
+
+prepare() {
+  cd "$srcdir/$pkgname"
+  # [dram] the session falls back to the desktop through steamosctl (steamos-manager,
+  # not installed here); use the steamos-session-select hook when steamosctl is absent
+  sed -i 's|^    steamosctl switch-to-desktop-mode$|    if command -v steamosctl >/dev/null; then steamosctl switch-to-desktop-mode; else steamos-session-select desktop; fi|' \
+    usr/share/gamescope-session-plus/sessions.d/steam
+  grep -q 'steamos-session-select desktop' usr/share/gamescope-session-plus/sessions.d/steam
+  # [dram] the ly menu shows Name=; ours says what it is (decisions/0012)
+  sed -i 's|^Name=Steam Big Picture$|Name=Gaming Mode (gamescope, experimental)|' \
+    usr/share/wayland-sessions/gamescope-session-steam.desktop
+  grep -q '^Name=Gaming Mode (gamescope, experimental)$' usr/share/wayland-sessions/gamescope-session-steam.desktop
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+  cp -r --no-preserve=ownership usr "$pkgdir/usr"
+  # [dram] not shipped: three pkexec helpers and the polkit policy that lets ANY user
+  # (allow_any=yes) run them as root without a password; nothing here needs root for
+  # Steam's update/branch/BIOS pages (see REVIEW.md)
+  rm -r "$pkgdir/usr/bin/steamos-polkit-helpers" \
+    "$pkgdir/usr/share/polkit-1/actions/org.chimeraos.update.policy"
+  rmdir -p --ignore-fail-on-non-empty "$pkgdir/usr/share/polkit-1/actions"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+  # font workaround for the first Big Picture start (as the AUR has it)
+  install -d "$pkgdir/usr/share/fonts/truetype/ttf-dejavu"
+  ln -s /usr/share/fonts/TTF/DejaVuSans.ttf "$pkgdir/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"
+}

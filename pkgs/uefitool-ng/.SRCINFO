@@ -1,0 +1,18 @@
+pkgbase = uefitool-ng
+	pkgdesc = UEFI firmware image viewer and editor
+	pkgver = A75
+	pkgrel = 1
+	url = https://github.com/LongSoft/UEFITool
+	arch = x86_64
+	license = BSD-2-Clause
+	makedepends = cmake
+	makedepends = vulkan-headers
+	depends = qt6-base
+	provides = uefiextract=A75
+	provides = uefifind=A75
+	provides = uefitool=A75
+	conflicts = uefitool
+	source = uefitool-ng-A75-1.tar.gz::https://github.com/LongSoft/UEFITool/archive/A75.tar.gz
+	sha256sums = f624ac80cdd716ed5e071d46f1516c84ce99b44fd5ce72663903c0a569c40770
+
+pkgname = uefitool-ng

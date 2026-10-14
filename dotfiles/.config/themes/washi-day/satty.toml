@@ -1,0 +1,4 @@
+# Washi Day — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#c0442b", "#5c6a3a", "#9a6a2a", "#4a6b70", "#8f4f42"]

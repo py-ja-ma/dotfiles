@@ -1,0 +1,25 @@
+/* Solarized Paper — waybar palette (imported by waybar/style.css)
+ * Solarized Light surfaces (base3 #fdf6e3 "old paper" cream) with the
+ * eight solarized accent hues darkened to >=4.5:1 WCAG contrast on the
+ * bar background (crust), Flexoki-style ink accents. */
+@define-color base     #fdf6e3;
+@define-color mantle   #f6efdc;
+@define-color crust    #eee8d5;
+@define-color text     #073642;
+@define-color subtext  #586e75;
+@define-color overlay  #75705d;
+@define-color surface0 #e4ddc8;
+@define-color surface1 #948d76;
+@define-color blue     #1e6da5;
+@define-color lavender #585ebc;
+@define-color sapphire #20638f;
+@define-color sky      #0f7291;
+@define-color teal     #1e756e;
+@define-color green    #5f6e00;
+@define-color yellow   #826200;
+@define-color peach    #b44214;
+@define-color maroon   #a83236;
+@define-color red      #ca2522;
+@define-color mauve    #7a3fbc;
+@define-color pink     #be2a72;
+@define-color accent   #b58900;   /* the ONE accent ink (Letterpress) */

@@ -1,0 +1,308 @@
+// Shared Waybar module definitions, included by every bar in config.jsonc.
+// "#compact" / "#laptop" variants are used by the narrow laptop bar (eDP-1).
+//
+// CAPTIONS AND SPACING (dotfiles/.config/waybar/README.md; bin/check-waybar.py
+// enforces every rule below, `dram check` runs it):
+//   * There are NO icons in this bar. No Nerd Font glyph, no private-use
+//     codepoint anywhere (the checker fails on one). Every readout is a Russian
+//     caption and a figure: "цп 8 %", "звук 35 %", "бат 85 %". The few marks
+//     (№ ¶ — · ° ↑) are ordinary characters of the text fonts.
+//   * Every caption sits in the ONE house span, spelled exactly
+//       <span font_features='smcp, lnum, tnum'>…</span>
+//     smcp sets the caption word in Literata's small caps (Cyrillic too — the
+//     reason the upright face is Literata, not EB Garamond 08, which has none),
+//     lnum/tnum make the figures lining and tabular so a column never jitters.
+//     The caption WORD is faded with a nested <span alpha='55%'> so it reads as
+//     a label to the figure, which keeps the full ink.
+//   * Between a figure and its unit sits U+202F (narrow no-break space): "8 %",
+//     "41 °" — French spacing, never a bare space (it would break the pair).
+//   * Fonts, sizes, weights and every gap live in style.css; the bars' own
+//     `spacing` is 0 (config.jsonc). Nothing here names a font except the
+//     calendar tooltip (Monaspace for the grid, Fraunces for the month).
+//   * Text from outside (window titles, media titles, the theme name) is
+//     escaped by the module (hyprland/window, mpris) or by `escape: true`.
+{
+  // ---------------------------------------------------------------- LEFT ---
+  // The nameplate: the theme's MENU_NAME ("Boulevardier", "Old Fashioned" …)
+  // from meta.sh, set in Fraunces (style.css). One shot: dram-theme restarts
+  // waybar on every theme change. Click = the app grid.
+  "custom/nameplate": {
+    "exec": ". \"$HOME/.config/themes/current/meta.sh\" 2>/dev/null; echo \"${MENU_NAME:-Letterpress}\"",
+    "interval": "once",
+    "escape": true,
+    "tooltip-format": "App grid (Super+G)",
+    "on-click": "nwg-drawer -c 6 -is 64 -fm thunar -term kitty"
+  },
+  // "№ 4": the numero sign (U+2116) is a character of Fraunces, not an icon.
+  // active-only: one numeral per bar, its own monitor's workspace. Scroll walks
+  // workspaces; there is nothing to click (the only button IS the active one).
+  // Under the Lua config `hyprctl dispatch` takes only hl.dsp.* calls (the
+  // classic "workspace e-1" string is a syntax error there); the inner quotes
+  // are JSON-escaped, waybar runs the command through sh -c.
+  "hyprland/workspaces": {
+    "active-only": true,
+    "all-outputs": false,
+    "format": "№ {id}",
+    "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'",
+    "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'"
+  },
+  // The active window's title (EB Garamond italic, style.css). The module
+  // escapes markup itself (a title with & or < is safe) and ellipsizes at
+  // max-length so the left run has a hard width and the clock never shifts.
+  // rewrite strips the browser / editor suffixes a title carries.
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 48,
+    "separate-outputs": true,
+    "tooltip": false,
+    "rewrite": {
+      "(.*) — Mozilla Firefox$": "$1",
+      "(.*) - Mozilla Firefox$": "$1",
+      "(.*) - Chromium$": "$1",
+      "(.*) - Visual Studio Code$": "$1",
+      "(.*) - VSCodium$": "$1",
+      "^Discord \\| (.*)$": "$1"
+    }
+  },
+  "hyprland/window#compact": {
+    "format": "{title}",
+    "max-length": 32,
+    "separate-outputs": true,
+    "tooltip": false,
+    "rewrite": {
+      "(.*) — Mozilla Firefox$": "$1",
+      "(.*) - Mozilla Firefox$": "$1",
+      "(.*) - Chromium$": "$1",
+      "(.*) - Visual Studio Code$": "$1",
+      "(.*) - VSCodium$": "$1"
+    }
+  },
+
+  // -------------------------------------------------------------- CENTRE ---
+  // The clock is the headline (Fraunces, style.css); the Russian locale gives
+  // the calendar tooltip Russian month and day names. Right-click flips the
+  // calendar between month and year, scrolling shifts it, click opens gsimplecal.
+  // The grid is set in Monaspace (it needs a mono); the month heading in
+  // Fraunces — with EB Garamond behind it for the Cyrillic month name, since
+  // Fraunces has no Cyrillic (docs/design/typography/README.md: never Fraunces for Russian).
+  "clock": {
+    "format": "{:%H:%M}",
+    "locale": "ru_RU.UTF-8",
+    "tooltip-format": "<span font_family='Monaspace Xenon'>{calendar}</span>",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "weeks-pos": "",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span font_family='Fraunces, EB Garamond' size='large' weight='500'>{}</span>",
+        "weekdays": "<span alpha='55%'>{}</span>",
+        "today": "<span weight='bold' underline='single'>{}</span>"
+      }
+    },
+    "actions": {
+      "on-click-right": "mode",
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    },
+    "on-click": "$HOME/.local/bin/gsimplecal-dram.sh"
+  },
+  // The dateline: "вторник, 6 октября" from waybar-date.sh (LC_TIME=ru_RU when
+  // the locale exists, English otherwise); Pango lowercases either language.
+  "custom/date": {
+    "exec": "$HOME/.local/bin/waybar-date.sh",
+    "interval": 60,
+    "escape": true,
+    "format": "<span text_transform='lowercase'>{}</span>",
+    "tooltip": false,
+    "on-click": "$HOME/.local/bin/gsimplecal-dram.sh"
+  },
+  "custom/date#compact": {
+    "exec": "$HOME/.local/bin/waybar-date.sh --short",
+    "interval": 60,
+    "escape": true,
+    "format": "<span text_transform='lowercase'>{}</span>",
+    "tooltip": false,
+    "on-click": "$HOME/.local/bin/gsimplecal-dram.sh"
+  },
+  // Notifications (swaync): one pilcrow, always the same cell. The state is
+  // colour alone (style.css): @yellow while something is pending, faded for
+  // do-not-disturb. Click = the control centre, right-click = DND.
+  "custom/notification": {
+    "tooltip": false,
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "¶",
+      "none": "¶",
+      "dnd-notification": "¶",
+      "dnd-none": "¶",
+      "inhibited-notification": "¶",
+      "inhibited-none": "¶",
+      "dnd-inhibited-notification": "¶",
+      "dnd-inhibited-none": "¶"
+    },
+    "return-type": "json",
+    "exec-if": "command -v swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true
+  },
+
+  // --------------------------------------------------------------- RIGHT ---
+  // Now playing: "title — artist" in the quiet italic (style.css), 36 chars,
+  // faded while paused (#mpris.paused), gone when nothing plays.
+  "mpris": {
+    "format": "{dynamic}",
+    "format-stopped": "",
+    "dynamic-order": ["title", "artist"],
+    "dynamic-separator": " — ",
+    "dynamic-len": 36,
+    "tooltip-format": "{player}: {title} — {artist}\n{album}",
+    "on-click": "play-pause",
+    "on-click-middle": "previous",
+    "on-click-right": "next"
+  },
+  // Recording indicators: waybar's own marks, only while a microphone or the
+  // screen is being captured, in @red (style.css #privacy-item).
+  "privacy": {
+    "icon-spacing": 4,
+    "icon-size": 14,
+    "transition-duration": 250,
+    "modules": [
+      { "type": "screenshare", "tooltip": true },
+      { "type": "audio-in", "tooltip": true }
+    ]
+  },
+  // Keyboard layout: "en" / "ru" as small caps; click cycles. hyprland.lua
+  // sets kb_layout us,ru with kb_options empty, because the xkb toggle
+  // flips one keyboard and desyncs the rest; Alt+Shift and SUPER+ALT+SPACE
+  // run kb-layout.sh, the same as this click.
+  "hyprland/language": {
+    "format": "<span font_features='smcp, lnum, tnum'>{shortDescription}</span>",
+    "on-click": "$HOME/.local/bin/kb-layout.sh toggle"
+  },
+  // Silent readouts: caption + figure. цп = cpu, озу = memory, 41 ° = the cpu
+  // temperature (no caption: the degree sign is the caption).
+  "group/readouts": {
+    "orientation": "horizontal",
+    "modules": ["cpu", "memory", "custom/cputemp"]
+  },
+  "cpu": {
+    "format": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>цп</span> {usage} %</span>",
+    "interval": 3,
+    "tooltip": false
+  },
+  "memory": {
+    "format": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>озу</span> {percentage} %</span>",
+    "interval": 5,
+    "tooltip-format": "{used:0.1f}G / {total:0.1f}G"
+  },
+  // CPU package temperature by sensor NAME (k10temp/coretemp), not hwmon index:
+  // waybar's temperature module read cabin's acpitz board sensor (17 °) instead.
+  "custom/cputemp": {
+    "exec": "$HOME/.local/bin/waybar-cputemp.sh",
+    "return-type": "json",
+    "format": "{}",
+    "interval": 5,
+    "tooltip": false
+  },
+  // Tools: a run of state words. The quiet state is a faded caption; an alert
+  // state is a full word in colour (style.css): нет сети, не спать.
+  "group/tools": {
+    "orientation": "horizontal",
+    "modules": ["network", "bluetooth", "idle_inhibitor", "power-profiles-daemon", "custom/usb"]
+  },
+  "group/tools#laptop": {
+    "orientation": "horizontal",
+    "modules": ["network", "idle_inhibitor", "power-profiles-daemon", "custom/usb"]
+  },
+  "network": {
+    "format-wifi": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>сеть</span> {signalStrength} %</span>",
+    "format-ethernet": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>сеть</span></span>",
+    "format-linked": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>сеть</span></span>",
+    "format-disconnected": "<span font_features='smcp, lnum, tnum'>нет сети</span>",
+    "tooltip-format": "{ifname} · {ipaddr}",
+    "tooltip-format-wifi": "{essid} · {ifname} · {ipaddr} · {signalStrength}%",
+    "tooltip-format-disconnected": "no network",
+    "on-click": "kitty --class nmtui -e nmtui connect",
+    "on-click-right": "nm-connection-editor"
+  },
+  // Shown only with a device connected: "бт 1".
+  "bluetooth": {
+    "format": "",
+    "format-disabled": "",
+    "format-off": "",
+    "format-connected": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>бт</span> {num_connections}</span>",
+    "tooltip-format-connected": "{device_enumerate}",
+    "on-click": "blueman-manager"
+  },
+  // сон = the screen may sleep (quiet); не спать = inhibited (@yellow).
+  "idle_inhibitor": {
+    "format": "<span font_features='smcp, lnum, tnum'>{icon}</span>",
+    "format-icons": {
+      "activated": "не спать",
+      "deactivated": "<span alpha='55%'>сон</span>"
+    },
+    "tooltip-format-activated": "Idle inhibitor: on (screen stays awake)",
+    "tooltip-format-deactivated": "Idle inhibitor: off"
+  },
+  // макс / эко; balanced is the resting state and shows nothing (style.css
+  // zeroes its box via the .balanced class so no gap is left).
+  "power-profiles-daemon": {
+    "format": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>{icon}</span></span>",
+    "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+    "tooltip": true,
+    "format-icons": {
+      "default": "",
+      "performance": "макс",
+      "balanced": "",
+      "power-saver": "эко"
+    }
+  },
+  // exec prints a marker when removable media is mounted (empty = hidden).
+  "custom/usb": {
+    "exec": "lsblk -rno RM,MOUNTPOINT 2>/dev/null | awk '$1==1 && $2!=\"\"{print \"1\"; exit}'",
+    "format": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>usb</span></span>",
+    "interval": 3,
+    "tooltip-format": "Removable media mounted — click to open",
+    "on-click": "thunar",
+    "tooltip": true
+  },
+  // Laptop only: ярк = brightness. Scroll adjusts (brightnessctl).
+  "backlight": {
+    "format": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>ярк</span> {percent} %</span>",
+    "tooltip-format": "Brightness — scroll to adjust",
+    "on-scroll-up": "brightnessctl -q set 5%+",
+    "on-scroll-down": "brightnessctl -q set 5%-"
+  },
+  "pulseaudio": {
+    "format": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>звук</span> {volume} %</span>",
+    "format-muted": "<span font_features='smcp, lnum, tnum'>тихо</span>",
+    "scroll-step": 5,
+    "tooltip-format": "{desc}",
+    "on-click": "pavucontrol --tab=3",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+  },
+  // бат 85 %; charging adds ↑ and turns @green; warning @yellow; critical
+  // @red and blinking (style.css).
+  "battery": {
+    "states": { "warning": 30, "critical": 15 },
+    "format": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>бат</span> {capacity} %</span>",
+    "format-charging": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>бат</span> {capacity} % ↑</span>",
+    "format-plugged": "<span font_features='smcp, lnum, tnum'><span alpha='55%'>бат</span> {capacity} %</span>",
+    "tooltip-format": "{timeTo} ({power}W)"
+  },
+  // "12 пакетов" (waybar-updates.sh does the Russian plural); hidden when
+  // nothing is pending. SIGRTMIN+8 from `dram update` refreshes it.
+  "custom/updates": {
+    "exec": "$HOME/.local/bin/waybar-updates.sh",
+    "return-type": "json",
+    "interval": 1800,
+    "signal": 8,
+    "format": "<span font_features='smcp, lnum, tnum'>{}</span>",
+    "hide-empty-text": true,
+    "tooltip": true,
+    "on-click": "kitty -e dram update"
+  }
+}

@@ -1,0 +1,9 @@
+# SSH public keys that live on my YubiKeys (decisions/0019, docs/security/identity/yubikeys.md).
+# One line per key in authorized_keys format; the comment is `yubikey:<label>`.
+# Resident FIDO2 keys: the private half never leaves the key; a host holds only the
+# handle `ssh-keygen -K` downloads (`dram yubikey ssh`).
+# Read by system/harden.sh (/etc/ssh/authorized_keys.d/<login> on every host),
+# modules/dev.nix (git's allowed_signers and signing key) and bin/yubikey.sh.
+# Added: `dram yubikey enroll <label>` prints the line. Revoked: delete the line
+# (docs/security/identity/yubikeys.md, "A key is lost").
+sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIMmXo2xtvuK3WsfhdIphi526Fdd3kyXLHOY5UjluyMTwAAAAEHNzaDpkcmFtLXByaW1hcnk= yubikey:primary

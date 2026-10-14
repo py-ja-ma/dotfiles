@@ -1,0 +1,385 @@
+# docs/map.tsv: the place in the org chart of every tracked path.
+#
+# Read it like CODEOWNERS: gitignore-style patterns, and the last row that matches a path
+# wins. A pattern with a slash in it is anchored at the repo root, `*` stays inside one
+# directory, `**` crosses directories, and a pattern that names a directory covers
+# everything under it. `python3 bin/check-docs.py map` (bin/check.sh §22) reports a tracked
+# path that only the catch-all row matches, a page that does not exist, and a directorate
+# or division the chart does not have. `python3 bin/check-docs.py map --list` prints every
+# path with its place.
+#
+# Two kinds of row, tab-separated, "-" for an empty column:
+#   =<directorate>[/<division>]  title  page                 the chart, in reading order
+#   pattern  directorate  division  branch  page             a rule
+# The page is the one that documents the path: a division page, or a module's README.
+# bin/gen-org-doc.py draws the chart in README.md and docs/README.md from the chart rows.
+
+# --- the chart -----------------------------------------------------------------------
+=platforms	Platforms	docs/platforms/README.md
+=platforms/arch	Arch Linux	docs/platforms/arch/README.md
+=platforms/windows	Windows	docs/platforms/windows/README.md
+=platforms/wsl	WSL clone	docs/platforms/wsl/README.md
+=platforms/macos	macOS	docs/platforms/macos/README.md
+=platforms/bench	Bench OSes	docs/platforms/bench/README.md
+=design	Design	docs/design/README.md
+=design/themes	Themes	docs/design/themes/README.md
+=design/typography	Typography	docs/design/typography/README.md
+=design/iconography	Iconography	docs/design/iconography/README.md
+=design/shell-and-bars	Shell & bars	docs/design/shell-and-bars/README.md
+=toolchain	Toolchain	docs/toolchain/README.md
+=toolchain/development	Development	docs/toolchain/development/README.md
+=toolchain/packaging	Packaging	docs/toolchain/packaging/README.md
+=toolchain/profiles	Profiles	docs/toolchain/profiles/README.md
+=security	Security	docs/security/README.md
+=security/identity	Identity	docs/security/identity/README.md
+=security/boot-trust	Boot trust	docs/security/boot-trust/README.md
+=security/network	Network	docs/security/network/README.md
+=security/software-supply	Software supply	docs/security/software-supply/README.md
+=operations	Operations	docs/operations/README.md
+=operations/dram	dram CLI	docs/operations/dram/README.md
+=operations/releases	Releases & pushes	docs/operations/releases/README.md
+=operations/backups	Backups	docs/operations/backups/README.md
+=operations/quality	Quality	docs/operations/quality/README.md
+=records	Office of Records	docs/records/README.md
+=records/decisions	Decisions	decisions/README.md
+=records/changelog	Changelog	docs/records/changelog.md
+=records/handbook	Handbook	docs/records/handbook/README.md
+
+# --- the catch-all: a path that only this row matches is unmapped ----------------------
+*	records	-	-	docs/records/README.md
+
+# --- Office of Records ------------------------------------------------------------------
+/README.md	records	-	front-door	README.md
+/LICENSE	records	-	license	docs/records/README.md
+LICENSES/	records	-	license	docs/records/README.md
+/REUSE.toml	records	-	license	docs/records/README.md
+/CHANGELOG.md	records	changelog	-	docs/records/changelog.md
+decisions/	records	decisions	-	decisions/README.md
+docs/README.md	records	-	chart	docs/README.md
+docs/map.tsv	records	-	chart	docs/README.md
+docs/catalogue.md	records	-	catalogue	docs/README.md
+docs/records/	records	-	-	docs/records/README.md
+docs/records/changelog.md	records	changelog	-	docs/records/changelog.md
+docs/records/handbook/	records	handbook	-	docs/records/handbook/README.md
+docs/history/	records	-	history	docs/history/README.md
+bin/check-docs.py	records	-	checks	docs/records/README.md
+bin/gen-catalogue.py	records	-	catalogue	docs/README.md
+bin/gen-org-doc.py	records	-	chart	docs/README.md
+
+# --- Platforms --------------------------------------------------------------------------
+docs/platforms/	platforms	-	-	docs/platforms/README.md
+docs/platforms/arch/	platforms	arch	-	docs/platforms/arch/README.md
+docs/platforms/windows/	platforms	windows	-	docs/platforms/windows/README.md
+docs/platforms/wsl/	platforms	wsl	-	docs/platforms/wsl/README.md
+docs/platforms/macos/	platforms	macos	-	docs/platforms/macos/README.md
+docs/platforms/bench/	platforms	bench	-	docs/platforms/bench/README.md
+# Arch Linux: the user layer, the installer, roles and lists, the system layer, snapshots, hosts
+/flake.nix	platforms	arch	user-layer	docs/platforms/arch/README.md
+modules/	platforms	arch	user-layer	docs/platforms/arch/README.md
+modules/hosts/	platforms	arch	hosts	docs/platforms/arch/README.md
+hosts/	platforms	arch	hosts	docs/platforms/arch/README.md
+bin/harvest.sh	platforms	arch	hosts	docs/platforms/arch/README.md
+bin/diff-hosts.sh	platforms	arch	hosts	docs/platforms/arch/README.md
+bin/forget-host.sh	platforms	arch	hosts	docs/platforms/arch/README.md
+install/	platforms	arch	install	docs/platforms/arch/README.md
+bin/serve-repo.sh	platforms	arch	install	docs/platforms/arch/README.md
+system/decommission.sh	platforms	arch	install	docs/platforms/arch/README.md
+system/locale-setup.sh	platforms	arch	install	docs/platforms/arch/README.md
+install/lib/roles.sh	platforms	arch	roles	docs/platforms/arch/README.md
+packages/	platforms	arch	roles	docs/platforms/arch/README.md
+system/	platforms	arch	system-hooks	docs/platforms/arch/README.md
+system/99-refind.hook	platforms	arch	boot-chain	docs/platforms/arch/README.md
+system/apply-refind.sh	platforms	arch	boot-chain	docs/platforms/arch/README.md
+system/apply-ly.sh	platforms	arch	boot-chain	docs/platforms/arch/README.md
+system/plymouth-setup.sh	platforms	arch	boot-chain	docs/platforms/arch/README.md
+system/system-dram.sh	platforms	arch	boot-chain	docs/platforms/arch/README.md
+system/initcpio/	platforms	arch	snapshots	docs/platforms/arch/README.md
+system/snapper/	platforms	arch	snapshots	docs/platforms/arch/README.md
+system/snapshots-setup.sh	platforms	arch	snapshots	docs/platforms/arch/README.md
+system/dram-snapshot.sh	platforms	arch	snapshots	docs/platforms/arch/README.md
+system/hooks/*dram-snap-*.hook	platforms	arch	snapshots	docs/platforms/arch/README.md
+# Windows: the renderer, the units, dram.ps1, debloat, the boot guard, install media
+windows/	platforms	windows	renderer	docs/platforms/windows/README.md
+bin/render-windows.sh	platforms	windows	renderer	docs/platforms/windows/README.md
+bin/winget-diff.rb	platforms	windows	renderer	docs/platforms/windows/README.md
+windows/hosts/	platforms	windows	hosts	docs/platforms/windows/README.md
+windows/units/	platforms	windows	units	docs/platforms/windows/README.md
+windows/units/boot-guard-task.ps1	platforms	windows	boot-guard	docs/platforms/windows/README.md
+windows/units/edge-policies.ps1	platforms	windows	debloat	docs/platforms/windows/README.md
+windows/units/explorer-quiet.ps1	platforms	windows	debloat	docs/platforms/windows/README.md
+windows/units/privacy-user.ps1	platforms	windows	debloat	docs/platforms/windows/README.md
+windows/units/sounds-off.ps1	platforms	windows	debloat	docs/platforms/windows/README.md
+windows/units/windows-ai-*.ps1	platforms	windows	debloat	docs/platforms/windows/README.md
+install/windows/	platforms	windows	-	docs/platforms/windows/README.md
+install/windows/apply-windows.sh	platforms	windows	dram-ps1	docs/platforms/windows/README.md
+install/windows/dram-windows/	platforms	windows	dram-ps1	docs/platforms/windows/README.md
+install/windows/dram-windows/debloat.ps1	platforms	windows	debloat	docs/platforms/windows/README.md
+install/windows/dram-windows/autostart.ps1	platforms	windows	debloat	docs/platforms/windows/README.md
+install/windows/dram-windows/boot-guard.ps1	platforms	windows	boot-guard	docs/platforms/windows/README.md
+install/windows/dram-windows/own-esp.ps1	platforms	windows	boot-guard	docs/platforms/windows/README.md
+install/windows/dram-windows/firstlogon.ps1	platforms	windows	install-media	docs/platforms/windows/README.md
+install/windows/autounattend.xml	platforms	windows	install-media	docs/platforms/windows/README.md
+# WSL clone
+modules/hosts/*-wsl.nix	platforms	wsl	clone	docs/platforms/wsl/README.md
+hosts/*-wsl/	platforms	wsl	clone	docs/platforms/wsl/README.md
+packages/wsl-skip.tsv	platforms	wsl	clone	docs/platforms/wsl/README.md
+system/wsl-setup.sh	platforms	wsl	clone	docs/platforms/wsl/README.md
+system/wsl/	platforms	wsl	clone	docs/platforms/wsl/README.md
+install/windows/dram-windows/wsl.ps1	platforms	wsl	clone	docs/platforms/wsl/README.md
+install/windows/wslconfig	platforms	wsl	clone	docs/platforms/wsl/README.md
+# macOS and the bench
+install/mac-launchd.sh	platforms	macos	lodge	docs/platforms/macos/README.md
+system/bench-disk.sh	platforms	bench	bench-disk	docs/platforms/bench/README.md
+
+# --- Design -----------------------------------------------------------------------------
+docs/design/	design	-	-	docs/design/README.md
+docs/design/themes/	design	themes	-	docs/design/themes/README.md
+docs/design/typography/	design	typography	-	docs/design/typography/README.md
+docs/design/iconography/	design	iconography	-	docs/design/iconography/README.md
+docs/design/shell-and-bars/	design	shell-and-bars	-	docs/design/shell-and-bars/README.md
+docs/design/screenshots/	design	-	screenshots	docs/design/README.md
+docs/design/shell-and-bars/keybinds.md	design	shell-and-bars	keybinds	docs/design/shell-and-bars/README.md
+docs/case-display.md	design	shell-and-bars	case-display	docs/design/shell-and-bars/README.md
+dotfiles/	design	shell-and-bars	-	docs/design/shell-and-bars/README.md
+# Themes: the palettes, their generators, the switcher, day and night, wallpaper, app themes
+dotfiles/.config/themes/	design	themes	palette	docs/design/themes/README.md
+system/house-palette.sh	design	themes	palette	docs/design/themes/README.md
+bin/check-themes.py	design	themes	palette	docs/design/themes/README.md
+bin/gen-*.py	design	themes	generators	docs/design/themes/README.md
+bin/gen-windows-look.py	design	themes	windows-look	docs/design/themes/README.md
+dotfiles/.local/bin/dram-theme	design	themes	switcher	docs/design/themes/README.md
+dotfiles/.local/bin/dram-theme-auto	design	themes	day-and-night	docs/design/themes/README.md
+dotfiles/.local/bin/nightlight.sh	design	themes	day-and-night	docs/design/themes/README.md
+dotfiles/.config/hypr/hyprsunset.conf	design	themes	day-and-night	docs/design/themes/README.md
+dotfiles/.config/quote-wallpaper/	design	themes	wallpaper	docs/design/themes/README.md
+dotfiles/.local/bin/quote-wallpaper.sh	design	themes	wallpaper	docs/design/themes/README.md
+dotfiles/.local/bin/wallpaper-*.sh	design	themes	wallpaper	docs/design/themes/README.md
+dotfiles/.config/gtk-3.0/	design	themes	app-themes	docs/design/themes/README.md
+dotfiles/.config/gtk-4.0/	design	themes	app-themes	docs/design/themes/README.md
+dotfiles/.librewolf/	design	themes	app-themes	docs/design/themes/README.md
+dotfiles/.thunderbird-chrome/	design	themes	app-themes	docs/design/themes/README.md
+dotfiles/.vscode/	design	themes	app-themes	docs/design/themes/README.md
+dotfiles/.local/bin/codium-themes-install	design	themes	app-themes	docs/design/themes/README.md
+install/windows/letterpress/	design	themes	windows-look	docs/design/themes/README.md
+install/windows/upstream/	design	themes	windows-look	docs/design/themes/README.md
+install/windows/dram-windows/look.ps1	design	themes	windows-look	docs/design/themes/README.md
+windows/units/letterpress-*.ps1	design	themes	windows-look	docs/design/themes/README.md
+# Typography
+dotfiles/.local/share/fonts/	design	typography	fonts	docs/design/typography/README.md
+install/windows/fonts.*	design	typography	fonts	docs/design/typography/README.md
+windows/units/fonts-machine.ps1	design	typography	fonts	docs/design/typography/README.md
+windows/units/keyboard-us-ru.ps1	design	typography	keyboard	docs/design/typography/README.md
+# Iconography
+bin/gen-avatar.sh	design	iconography	avatar	docs/design/iconography/README.md
+dotfiles/.local/share/dram/	design	iconography	avatar	docs/design/iconography/README.md
+install/windows/dram-windows/account-picture.ps1	design	iconography	avatar	docs/design/iconography/README.md
+install/windows/dram-windows/icons.ps1	design	iconography	icon-tint	docs/design/iconography/README.md
+install/windows/cursors.*	design	iconography	cursors	docs/design/iconography/README.md
+windows/units/cursors-machine.ps1	design	iconography	cursors	docs/design/iconography/README.md
+windows/units/pointer-adwaita.ps1	design	iconography	cursors	docs/design/iconography/README.md
+# Shell & bars: Hyprland, the bars, launchers and notifications, the terminal, boot screens
+dotfiles/.config/hypr/	design	shell-and-bars	hyprland	docs/design/shell-and-bars/README.md
+dotfiles/.config/hypr/hyprsunset.conf	design	themes	day-and-night	docs/design/themes/README.md
+dotfiles/.config/satty/	design	shell-and-bars	hyprland	docs/design/shell-and-bars/README.md
+system/limits-hyprland.conf	design	shell-and-bars	hyprland	docs/design/shell-and-bars/README.md
+dotfiles/.local/bin/	design	shell-and-bars	hyprland	docs/design/shell-and-bars/README.md
+dotfiles/.local/bin/dram-theme	design	themes	switcher	docs/design/themes/README.md
+dotfiles/.local/bin/dram-theme-auto	design	themes	day-and-night	docs/design/themes/README.md
+dotfiles/.local/bin/nightlight.sh	design	themes	day-and-night	docs/design/themes/README.md
+dotfiles/.local/bin/quote-wallpaper.sh	design	themes	wallpaper	docs/design/themes/README.md
+dotfiles/.local/bin/wallpaper-*.sh	design	themes	wallpaper	docs/design/themes/README.md
+dotfiles/.local/bin/codium-themes-install	design	themes	app-themes	docs/design/themes/README.md
+dotfiles/.local/bin/keybind-cheatsheet.sh	design	shell-and-bars	keybinds	docs/design/shell-and-bars/README.md
+dotfiles/.config/waybar/	design	shell-and-bars	waybar	docs/design/shell-and-bars/README.md
+dotfiles/.config/gsimplecal/	design	shell-and-bars	waybar	docs/design/shell-and-bars/README.md
+dotfiles/.local/bin/waybar-*.sh	design	shell-and-bars	waybar	docs/design/shell-and-bars/README.md
+dotfiles/.local/bin/gsimplecal-dram.sh	design	shell-and-bars	waybar	docs/design/shell-and-bars/README.md
+bin/check-waybar.py	design	shell-and-bars	waybar	docs/design/shell-and-bars/README.md
+install/windows/letterpress/zebar/	design	shell-and-bars	zebar	docs/design/shell-and-bars/README.md
+dotfiles/.config/rofi/	design	shell-and-bars	launchers	docs/design/shell-and-bars/README.md
+dotfiles/.config/nwg-drawer/	design	shell-and-bars	launchers	docs/design/shell-and-bars/README.md
+dotfiles/.config/swaync/	design	shell-and-bars	notifications	docs/design/shell-and-bars/README.md
+dotfiles/.config/swayosd/	design	shell-and-bars	notifications	docs/design/shell-and-bars/README.md
+dotfiles/.config/kitty/	design	shell-and-bars	terminal	docs/design/shell-and-bars/README.md
+dotfiles/.config/btop/	design	shell-and-bars	terminal	docs/design/shell-and-bars/README.md
+dotfiles/.config/cava/	design	shell-and-bars	terminal	docs/design/shell-and-bars/README.md
+dotfiles/.config/yazi/	design	shell-and-bars	terminal	docs/design/shell-and-bars/README.md
+dotfiles/.config/yazi/flavors/	design	themes	app-themes	docs/design/themes/README.md
+windows/units/conhost-letterpress.ps1	design	shell-and-bars	terminal	docs/design/shell-and-bars/README.md
+dotfiles/.config/starship.toml	design	shell-and-bars	prompt	docs/design/shell-and-bars/README.md
+system/gen-boot-assets.py	design	shell-and-bars	boot-screens	docs/design/shell-and-bars/README.md
+system/refind-letterpress/	design	shell-and-bars	boot-screens	docs/design/shell-and-bars/README.md
+system/refind-letterpress/icons/	design	iconography	boot-icons	docs/design/iconography/README.md
+system/refind-catppuccin/	design	shell-and-bars	boot-screens	docs/design/shell-and-bars/README.md
+system/plymouth-*/	design	shell-and-bars	boot-screens	docs/design/shell-and-bars/README.md
+pkgs/dram-case-display/	design	shell-and-bars	case-display	docs/design/shell-and-bars/README.md
+install/windows/dram-windows/case-display.ps1	design	shell-and-bars	case-display	docs/design/shell-and-bars/README.md
+windows/units/case-display-*.ps1	design	shell-and-bars	case-display	docs/design/shell-and-bars/README.md
+
+# --- Toolchain --------------------------------------------------------------------------
+docs/toolchain/	toolchain	-	-	docs/toolchain/README.md
+docs/toolchain/development/	toolchain	development	-	docs/toolchain/development/README.md
+docs/toolchain/packaging/	toolchain	packaging	-	docs/toolchain/packaging/README.md
+docs/toolchain/profiles/	toolchain	profiles	-	docs/toolchain/profiles/README.md
+# the desktop role: the standard app set, on the Toolchain page
+packages/roles/desktop.txt	toolchain	-	apps	docs/toolchain/README.md
+packages/flatpak/desktop.txt	toolchain	-	apps	docs/toolchain/README.md
+packages/winget/desktop.txt	toolchain	-	apps	docs/toolchain/README.md
+dotfiles/.config/chromium-flags.conf	toolchain	-	apps	docs/toolchain/README.md
+dotfiles/.config/spotify-launcher.conf	toolchain	-	apps	docs/toolchain/README.md
+dotfiles/.config/qutebrowser/	toolchain	-	apps	docs/toolchain/README.md
+# Development: the dev kit, containers, the editor, ML, sysadmin
+packages/roles/dev.txt	toolchain	development	dev-kit	docs/toolchain/development/README.md
+packages/roles/docker.txt	toolchain	development	containers	docs/toolchain/development/README.md
+packages/roles/sysadmin.txt	toolchain	development	sysadmin	docs/toolchain/development/README.md
+packages/roles/ml.txt	toolchain	development	ml	docs/toolchain/development/README.md
+packages/roles/ml-cuda.txt	toolchain	development	ml	docs/toolchain/development/README.md
+packages/roles/telephony.txt	toolchain	development	telephony	docs/toolchain/development/README.md
+modules/dev.nix	toolchain	development	dev-kit	docs/toolchain/development/README.md
+modules/ml.nix	toolchain	development	ml	docs/toolchain/development/README.md
+system/virt-setup.sh	toolchain	development	sysadmin	docs/toolchain/development/README.md
+dotfiles/.config/VSCodium/	toolchain	development	editor	docs/toolchain/development/README.md
+dotfiles/.config/codium-flags.conf	toolchain	development	editor	docs/toolchain/development/README.md
+windows/units/vscodium-open-remote-ssh.ps1	toolchain	development	editor	docs/toolchain/development/README.md
+# Packaging: the [dram] repo, Flatpak, the winget lists
+pkgs/	toolchain	packaging	dram-repo	docs/toolchain/packaging/README.md
+pkgs/hyprland-plugin-*/	design	shell-and-bars	hyprland	docs/design/shell-and-bars/README.md
+pkgs/dram-case-display/	design	shell-and-bars	case-display	docs/design/shell-and-bars/README.md
+bin/pkgs.sh	toolchain	packaging	dram-repo	docs/toolchain/packaging/README.md
+bin/sync-dram-repo.sh	toolchain	packaging	dram-repo	docs/toolchain/packaging/README.md
+system/dram-builder-setup.sh	toolchain	packaging	dram-repo	docs/toolchain/packaging/README.md
+system/pacman-dram-repo.sh	toolchain	packaging	dram-repo	docs/toolchain/packaging/README.md
+packages/roles/builder.txt	toolchain	packaging	dram-repo	docs/toolchain/packaging/README.md
+packages/aur.txt	toolchain	packaging	dram-repo	docs/toolchain/packaging/README.md
+system/flatpak-setup.sh	toolchain	packaging	flatpak	docs/toolchain/packaging/README.md
+packages/flatpak/	toolchain	packaging	flatpak	docs/toolchain/packaging/README.md
+packages/flatpak/desktop.txt	toolchain	-	apps	docs/toolchain/README.md
+dotfiles/.local/share/flatpak/	toolchain	packaging	flatpak	docs/toolchain/packaging/README.md
+dotfiles/.local/share/flatpak/overrides/dev.vencord.Vesktop	toolchain	-	apps	docs/toolchain/README.md
+dotfiles/.local/share/flatpak/overrides/org.localsend.localsend_app	toolchain	-	apps	docs/toolchain/README.md
+packages/winget/	toolchain	packaging	winget	docs/toolchain/packaging/README.md
+packages/winget/desktop.txt	toolchain	-	apps	docs/toolchain/README.md
+packages/winget/dev.txt	toolchain	development	dev-kit	docs/toolchain/development/README.md
+packages/winget/sysadmin.txt	toolchain	development	sysadmin	docs/toolchain/development/README.md
+# Profiles: office, college, re-lab, creator, gaming, emulation, chat
+packages/roles/office.txt	toolchain	profiles	office	docs/toolchain/profiles/README.md
+packages/winget/office.txt	toolchain	profiles	office	docs/toolchain/profiles/README.md
+modules/office.nix	toolchain	profiles	office	docs/toolchain/profiles/README.md
+dotfiles/.local/bin/office-init	toolchain	profiles	office	docs/toolchain/profiles/README.md
+templates/	toolchain	profiles	office	docs/toolchain/profiles/README.md
+packages/roles/college.txt	toolchain	profiles	college	docs/toolchain/profiles/README.md
+packages/winget/college.txt	toolchain	profiles	college	docs/toolchain/profiles/README.md
+system/printing-setup.sh	toolchain	profiles	college	docs/toolchain/profiles/README.md
+packages/roles/re-lab.txt	toolchain	profiles	re-lab	docs/toolchain/profiles/README.md
+packages/winget/re-lab.txt	toolchain	profiles	re-lab	docs/toolchain/profiles/README.md
+packages/uv/	toolchain	profiles	re-lab	docs/toolchain/profiles/README.md
+packages/ghidra-extensions.tsv	toolchain	profiles	re-lab	docs/toolchain/profiles/README.md
+system/re-lab-setup.sh	toolchain	profiles	re-lab	docs/toolchain/profiles/README.md
+system/udev/	toolchain	profiles	re-lab	docs/toolchain/profiles/README.md
+dotfiles/.local/bin/re-lab-tools	toolchain	profiles	re-lab	docs/toolchain/profiles/README.md
+packages/roles/creator.txt	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+packages/roles/recording.txt	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+packages/winget/creator.txt	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+modules/creator.nix	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+system/creator-setup.sh	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+system/recording-setup.sh	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+system/v4l2loopback*.conf	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+dotfiles/obs/	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+dotfiles/.local/bin/rec	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+dotfiles/.local/bin/record-toggle.sh	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+windows/units/obs-background-removal.ps1	toolchain	profiles	creator	docs/toolchain/profiles/README.md
+packages/roles/gaming.txt	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+packages/winget/gaming.txt	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+modules/gaming.nix	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+system/gaming-setup.sh	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+dotfiles/.config/gamemode.ini	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+dotfiles/.config/hypr/gaming.lua	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+dotfiles/.local/bin/gamemode.sh	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+pkgs/dram-gaming-mode/	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+windows/units/battle-net.ps1	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+windows/units/jagex-launcher.ps1	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+windows/units/ubisoft-connect.ps1	toolchain	profiles	gaming	docs/toolchain/profiles/README.md
+packages/roles/emulation.txt	toolchain	profiles	emulation	docs/toolchain/profiles/README.md
+packages/roles/dump-kit.txt	toolchain	profiles	emulation	docs/toolchain/profiles/README.md
+packages/flatpak/emulation.txt	toolchain	profiles	emulation	docs/toolchain/profiles/README.md
+system/emulation-setup.sh	toolchain	profiles	emulation	docs/toolchain/profiles/README.md
+packages/winget/chat.txt	toolchain	profiles	chat	docs/toolchain/profiles/README.md
+
+# --- Security ---------------------------------------------------------------------------
+docs/security/	security	-	-	docs/security/README.md
+docs/security/identity/	security	identity	-	docs/security/identity/README.md
+docs/security/boot-trust/	security	boot-trust	-	docs/security/boot-trust/README.md
+docs/security/network/	security	network	-	docs/security/network/README.md
+docs/security/software-supply/	security	software-supply	-	docs/security/software-supply/README.md
+# Identity: the YubiKeys, SSH, secrets
+keys/	security	identity	yubikeys	docs/security/identity/README.md
+bin/yubikey.sh	security	identity	yubikeys	docs/security/identity/README.md
+system/yubikey-setup.sh	security	identity	yubikeys	docs/security/identity/README.md
+system/fido2-enroll.sh	security	identity	yubikeys	docs/security/identity/README.md
+system/pam-u2f.conf	security	identity	yubikeys	docs/security/identity/README.md
+system/u2f-selftest.py	security	identity	yubikeys	docs/security/identity/README.md
+dotfiles/.ssh/	security	identity	ssh	docs/security/identity/README.md
+secrets/	security	identity	secrets	docs/security/identity/README.md
+/.sops.yaml	security	identity	secrets	docs/security/identity/README.md
+modules/secrets.nix	security	identity	secrets	docs/security/identity/README.md
+system/secrets-bootstrap.sh	security	identity	secrets	docs/security/identity/README.md
+dotfiles/.local/share/applications/proton-pass.desktop	security	identity	secrets	docs/security/identity/README.md
+system/hooks/70-proton-pass-sandbox.hook	security	identity	secrets	docs/security/identity/README.md
+pkgs/proton-pass-*/	security	identity	secrets	docs/security/identity/README.md
+# Boot trust: Secure Boot, UKIs, TPM2, Windows' own ESP
+system/secureboot-*.sh	security	boot-trust	secure-boot	docs/security/boot-trust/README.md
+system/uki-presets.sh	security	boot-trust	ukis	docs/security/boot-trust/README.md
+system/tpm2-enroll.sh	security	boot-trust	tpm2	docs/security/boot-trust/README.md
+install/lib/luks.sh	security	boot-trust	tpm2	docs/security/boot-trust/README.md
+system/windows-esp-retire.sh	security	boot-trust	windows-esp	docs/security/boot-trust/README.md
+hosts/cabin/secureboot-baseline-*.txt	security	boot-trust	secure-boot	docs/security/boot-trust/README.md
+windows/units/secureboot-no-revocations.ps1	security	boot-trust	secure-boot	docs/security/boot-trust/README.md
+# Network: the firewall and host hardening, DNS, NetworkManager
+system/harden.sh	security	network	hardening	docs/security/network/README.md
+system/nftables.conf	security	network	firewall	docs/security/network/README.md
+system/network-setup.sh	security	network	networkmanager	docs/security/network/README.md
+system/networkmanager/	security	network	networkmanager	docs/security/network/README.md
+windows/units/dns-quad9-doh.ps1	security	network	dns	docs/security/network/README.md
+# Software supply: the register, integrity checks, pins
+packages/register.tsv	security	software-supply	register	docs/security/software-supply/README.md
+bin/check-register.py	security	software-supply	register	docs/security/software-supply/README.md
+bin/check-pkgnames.py	security	software-supply	register	docs/security/software-supply/README.md
+bin/repro.sh	security	software-supply	integrity	docs/security/software-supply/README.md
+/flake.lock	security	software-supply	pins	docs/security/software-supply/README.md
+install/iso.pin	security	software-supply	pins	docs/security/software-supply/README.md
+install/nix-install.sha256	security	software-supply	pins	docs/security/software-supply/README.md
+install/mirrorlist	security	software-supply	pins	docs/security/software-supply/README.md
+
+# --- Operations -------------------------------------------------------------------------
+docs/operations/	operations	-	-	docs/operations/README.md
+docs/operations/dram/	operations	dram	-	docs/operations/dram/README.md
+docs/operations/releases/	operations	releases	-	docs/operations/releases/README.md
+docs/operations/backups/	operations	backups	-	docs/operations/backups/README.md
+docs/operations/quality/	operations	quality	-	docs/operations/quality/README.md
+docs/commands.md	operations	dram	commands	docs/operations/dram/README.md
+bin/gen-commands-doc.py	operations	dram	commands	docs/operations/dram/README.md
+# dram CLI
+dotfiles/.local/bin/dram	operations	dram	dram	docs/operations/dram/README.md
+dotfiles/.local/bin/dram-switch	operations	dram	dram	docs/operations/dram/README.md
+dotfiles/.local/bin/sysupdate	operations	dram	dram	docs/operations/dram/README.md
+dotfiles/.local/share/bash-completion/	operations	dram	completions	docs/operations/dram/README.md
+modules/cli.nix	operations	dram	dram	docs/operations/dram/README.md
+# Releases & pushes
+bin/release.sh	operations	releases	releases	docs/operations/releases/README.md
+bin/push-host.sh	operations	releases	pushes	docs/operations/releases/README.md
+bin/push-windows.sh	operations	releases	pushes	docs/operations/releases/README.md
+install/lib/windows-stage.sh	operations	releases	pushes	docs/operations/releases/README.md
+# Backups
+modules/backup.nix	operations	backups	borgmatic	docs/operations/backups/README.md
+bin/pull-backups.sh	operations	backups	mac-pull	docs/operations/backups/README.md
+system/backup-eva.sh	operations	backups	offline-copy	docs/operations/backups/README.md
+# Quality: the repo checks, the tests, CI
+bin/check.sh	operations	quality	repo-checks	docs/operations/quality/README.md
+/.gitignore	operations	quality	repo-checks	docs/operations/quality/README.md
+/.editorconfig	operations	quality	repo-checks	docs/operations/quality/README.md
+/treefmt.toml	operations	quality	repo-checks	docs/operations/quality/README.md
+/statix.toml	operations	quality	repo-checks	docs/operations/quality/README.md
+tests/	operations	quality	tests	docs/operations/quality/README.md
+install/presets/vm-test.env	operations	quality	tests	docs/operations/quality/README.md
+.github/	operations	quality	ci	docs/operations/quality/README.md
+.github/workflows/update-lock.yml	security	software-supply	pins	docs/security/software-supply/README.md

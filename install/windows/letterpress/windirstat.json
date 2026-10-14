@@ -1,0 +1,17 @@
+{
+  "FileTreeView": {
+    "FileTreeColor0": [192, 68, 43, 0],
+    "FileTreeColor1": [217, 154, 91, 0],
+    "FileTreeColor2": [110, 138, 143, 0],
+    "FileTreeColor3": [137, 161, 134, 0],
+    "FileTreeColor4": [125, 138, 90, 0],
+    "FileTreeColor5": [172, 156, 146, 0],
+    "FileTreeColor6": [113, 97, 88, 0],
+    "FileTreeColor7": [138, 49, 31, 0],
+    "FileTreeColorCount": 8
+  },
+  "TreeMapView": {
+    "TreeMapHighlightColor": [192, 68, 43, 0],
+    "TreeMapGridColor": [58, 42, 34, 0]
+  }
+}

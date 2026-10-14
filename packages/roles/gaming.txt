@@ -1,0 +1,36 @@
+# role: gaming — Steam and the bits games need (decisions/0012-gaming-mode.md).
+# steam is waived under decisions/0013 (proprietary client).
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "gaming" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+
+steam
+# Feral gamemode (gamemoderun); docs/toolchain/profiles/gaming.md
+gamemode
+lib32-gamemode
+# MangoHud overlay (moved from gpu-nvidia.txt 2026-10-10: it is the game's, not the GPU's)
+mangohud
+lib32-mangohud
+
+# Gaming Mode (decisions/0012): three ly sessions — Desktop, Gaming Mode (Steam Big Picture
+# in Hyprland, the default), Gaming Mode (gamescope, experimental) — and switching between
+# them. gamescope is from extra; the rest is [dram] (pkgs/), installed with this role.
+gamescope
+gamescope-session
+gamescope-session-steam
+dram-gaming-mode
+# Proton's NTSYNC driver loads at boot (steam's optional dependency; an Arch-made modules-load file)
+ntsync-autoload
+# udev rules for third-party pads (8BitDo, Sony, Nintendo, Hori, PowerA …; [dram], Arch staff upstream)
+game-devices-udev
+# Xbox One/Series pads over Bluetooth: rumble, battery, mappings ([dram], DKMS against every kernel's headers)
+xpadneo-dkms
+# OSRS (Jagex Launcher, waived under decisions/0013; docs/toolchain/profiles/gaming.md); [dram]
+jagex-launcher
+# Minecraft (PrismLauncher fetches its own Java) and Windows programs outside Steam (Wine,
+# winetricks; Mono and Gecko for .NET and HTML), as the old build had them (2026-10-12)
+prismlauncher
+wine
+winetricks
+wine-mono
+wine-gecko

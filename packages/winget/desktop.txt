@@ -1,0 +1,36 @@
+# role: desktop (Windows) - every Windows PC with a screen (cabin-win, thermos): browser, mail,
+# music, files, the daily tools; the Letterpress look is the desktop role's and look.ps1's
+# (docs/toolchain/README.md).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in ONE
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A
+# Windows host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh).
+
+# browser and mail (Proton Mail Bridge serves Thunderbird)
+winget:LibreWolf.LibreWolf
+winget:Mozilla.Thunderbird
+winget:Proton.ProtonMailBridge
+# Spotify: the Store build (winget's own installer refuses to run elevated)
+msstore:9NCBCSZSJRSB
+# files to and from the Mac and the phone
+winget:LocalSend.LocalSend
+# the pointer Arch draws: GNOME's Adwaita cursors, pinned by install/windows/cursors.pin
+# (the desktop role's cursors-machine and pointer-adwaita units)
+manual:adwaita-cursors
+# Command Palette, PowerRename (Advanced Renamer's swap), Text Extractor, Color Picker
+winget:Microsoft.PowerToys
+winget:Notepad++.Notepad++
+# media and pictures (VLC: decisions/log.md#d105; nomacs replaced JPEGView)
+winget:VideoLAN.VLC
+winget:nomacs.nomacs
+# disk usage (WinDirStat replaced WizTree); no AutoHotkey (2026-10-12: ARC Raiders'
+# anti-cheat counts it, and no binds script was ever written - packages/register.tsv)
+winget:WinDirStat.WinDirStat
+# torrents (Transmission replaced qBittorrent, decisions/log.md#d104)
+winget:Transmission.Transmission
+# the masthead: Waybar's bar across the top of every monitor (windows/packages.nix pins 3.3.1)
+winget:glzr-io.zebar
+# not installed anywhere yet: the PDF reader and the calculator
+winget:SumatraPDF.SumatraPDF
+winget:Qalculate.Qalculate

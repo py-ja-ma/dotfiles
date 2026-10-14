@@ -1,0 +1,10 @@
+# role: docker — opt-in Docker (decisions/0015: rootless Podman is the default). Docker
+# needs forward rules the default-drop firewall does not have; give a host this role only
+# when a tool insists on the Docker daemon (cabin has it for compose-based labs).
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists the role
+# in `roles` (decisions/0009). One name per line, own-line comments only; a name may appear
+# in ONE packages list (bin/check.sh §3).
+
+docker
+docker-buildx
+docker-compose

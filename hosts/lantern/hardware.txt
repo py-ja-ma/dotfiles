@@ -1,0 +1,21 @@
+hostname:   panasonic
+cpu:        11th Gen Intel(R) Core(TM) i5-1155G7 @ 2.50GHz
+gpu:        02.0 VGA compatible controller: Intel Corporation TigerLake-LP GT2 [Iris Xe Graphics] (rev 03)
+kernel:     7.2.9-arch1-1
+boot mode:  UEFI
+bootloader: refind 0.14.2-3
+esp:        /dev/nvme0n1p1 /boot vfat
+session:    tty
+nix:        nix (Nix) 2.34.7
+form:       laptop
+
+NAME                     SIZE FSTYPE      MOUNTPOINT UUID
+sr0                     1024M                        
+zram0                    7.6G swap        [SWAP]     06d32e45-fd5e-43ae-a500-1fb6ebd7bff1
+nvme0n1                476.9G                        
+|-nvme0n1p1                1G vfat        /boot      A9E4-4882
+|-nvme0n1p2               47G LVM2_member            71Tke7-Tikf-wB6q-nocZ-JuHd-k4PJ-UkfKzu
+| `-ArchinstallVg-home 428.7G ext4        /home      034b0c30-488e-4d0d-9376-5704bb97c14a
+`-nvme0n1p3            428.9G LVM2_member            URW8T6-W9Ku-MksI-Eazp-uUav-aFka-g2WIi3
+  |-ArchinstallVg-root    47G ext4        /          66ed1fc3-6201-42a7-9bba-69a0edf3c1d1
+  `-ArchinstallVg-home 428.7G ext4        /home      034b0c30-488e-4d0d-9376-5704bb97c14a

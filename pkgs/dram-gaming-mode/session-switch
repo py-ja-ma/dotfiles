@@ -1,0 +1,71 @@
+#!/usr/bin/bash
+# usage: session-switch <dram-desktop|dram-gaming|gamescope-session-steam>
+#
+# /usr/lib/dram/session-switch (dram-gaming-mode, decisions/0012). Root, reached only
+# through `pkexec` from /usr/lib/os-session-select (polkit action
+# org.dram.session-select: the active local user, no password). It
+#   1. finds the caller's graphical session that ly started (PAM service ly or
+#      ly-autologin, on a ttyN) — the caller is PKEXEC_UID, never an argument;
+#   2. writes /run/dram/ly-next-session (session, user) for /usr/lib/dram/ly-prepare,
+#      which turns it into ly's one-shot autologin on ly's next start;
+#   3. ends that session and restarts its ly@ttyN from a transient system unit — a
+#      process inside the session would die with it.
+# /run is a tmpfs, so a request never outlives a reboot; ly-prepare also ignores one
+# older than five minutes. Internal: `--finish <session-id> <ttyN>` is what the transient
+# unit runs; it refuses to run under pkexec.
+#
+# exit: 0 switching · 1 refused or failed · 2 bad usage
+
+set -euo pipefail
+RUN=/run/dram
+die() {
+  echo "session-switch: $*" >&2
+  exit 1
+}
+[ "$(id -u)" -eq 0 ] || die "root only — call os-session-select"
+
+if [ "${1:-}" = --finish ]; then
+  [ -z "${PKEXEC_UID:-}" ] || die "--finish is for the transient unit, not for pkexec"
+  sid="${2:-}" tty="${3:-}"
+  [[ "$sid" =~ ^[A-Za-z0-9]+$ ]] && [[ "$tty" =~ ^tty[0-9]+$ ]] || die "bad --finish arguments"
+  loginctl terminate-session "$sid" 2>/dev/null || true
+  # let the compositor exit and ly fall back to its greeter before the restart
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    loginctl show-session "$sid" >/dev/null 2>&1 || break
+    sleep 0.5
+  done
+  systemctl restart "ly@$tty.service"
+  exit 0
+fi
+
+session="${1:-}"
+case "$session" in
+  dram-desktop | dram-gaming | gamescope-session-steam) ;;
+  *)
+    echo "usage: session-switch <dram-desktop|dram-gaming|gamescope-session-steam>" >&2
+    exit 2
+    ;;
+esac
+[ -f "/usr/share/wayland-sessions/$session.desktop" ] || die "session $session is not installed"
+uid="${PKEXEC_UID:-}"
+[[ "$uid" =~ ^[0-9]+$ ]] || die "no PKEXEC_UID — call os-session-select (it goes through pkexec)"
+user="$(id -nu "$uid")" || die "no user with uid $uid"
+
+sid="" tty=""
+for s in $(loginctl show-user "$uid" -p Sessions --value 2>/dev/null); do
+  svc="$(loginctl show-session "$s" -p Service --value 2>/dev/null || true)"
+  t="$(loginctl show-session "$s" -p TTY --value 2>/dev/null || true)"
+  case "$svc" in ly | ly-autologin) ;; *) continue ;; esac
+  [[ "$t" =~ ^tty[0-9]+$ ]] || continue
+  sid="$s" tty="$t"
+  break
+done
+[ -n "$sid" ] || die "no ly session of $user — switching needs ly (decisions/0012)"
+systemctl is-active --quiet "ly@$tty.service" || die "ly@$tty.service is not running"
+
+install -d -m 0755 "$RUN"
+printf '%s\n%s\n' "$session" "$user" >"$RUN/ly-next-session.new"
+mv -f "$RUN/ly-next-session.new" "$RUN/ly-next-session"
+systemd-run --quiet --no-block --collect --unit="dram-session-switch-$sid" \
+  /usr/lib/dram/session-switch --finish "$sid" "$tty"
+echo "switching $user to $session (ly@$tty)"

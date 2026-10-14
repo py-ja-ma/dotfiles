@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Catppuccin
+Description=Catppuccin Mocha script splash — three orbiting dots
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/catppuccin
+ScriptFile=/usr/share/plymouth/themes/catppuccin/catppuccin.script

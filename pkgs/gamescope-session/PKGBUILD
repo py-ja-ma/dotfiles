@@ -1,0 +1,28 @@
+# shellcheck disable=SC2034,SC2154,SC2164
+# [dram] vendored from aur:gamescope-session-git (see UPSTREAM); review in REVIEW.md.
+# Pinned to one OpenGamingCollective commit instead of the AUR's floating -git HEAD.
+# Maintainer (AUR): Joaquín I. Aramendía <samsagax at gmail dot com>
+
+pkgname=gamescope-session
+_commit=08e65a62ed3d7acc6ae17db637091d402a55ae2a # OGC main, 2026-10-02 (390 commits, no tags upstream)
+pkgver=r390.08e65a6
+pkgrel=1
+pkgdesc="Common gamescope session files (OpenGamingCollective fork, pinned)"
+arch=('any')
+url="https://github.com/OpenGamingCollective/gamescope-session"
+license=('MIT')
+depends=('gamescope' 'bash' 'systemd')
+makedepends=('git')
+optdepends=('mangohud: performance overlay through mangoapp')
+provides=('gamescope-session-git')
+conflicts=('gamescope-session-git')
+# [dram] no .install: the AUR's post_install setcaps cap_sys_nice onto /usr/bin/gamescope,
+# a file another package owns (lost on every gamescope update; see REVIEW.md)
+source=("$pkgname::git+$url.git#commit=$_commit")
+b2sums=('79614ff9c675516cf1be7afe162a56560b687e8167800604492ad768113a055ba506bcab19dbb552a8cdeed0eeb98014b8733816f6fc8ac3c4f77a67fdee0bb1')
+
+package() {
+  cd "$srcdir/$pkgname"
+  cp -r --no-preserve=ownership usr "$pkgdir/usr"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

@@ -1,0 +1,4 @@
+# Cassette — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#9a8a5a", "#6e2a2a", "#463f2e", "#7a6a3e", "#4a6a7a", "#5a3a4a"]

@@ -1,0 +1,7 @@
+xpadneo-dkms — how to re-pin
+  1. New release: https://github.com/atar-axis/xpadneo/releases — set pkgver to the tag
+     without the leading v.
+  2. Download the archive, b2sum it yourself, compare with the AUR's b2sums (dram pkgs
+     update shows its diff); updpkgsums must agree.
+  3. Read NEWS.md and the diff of hid-xpadneo/etc-*, dkms.post_* and the Makefile's
+     install target (it runs nothing when PREFIX is set; keep it that way).

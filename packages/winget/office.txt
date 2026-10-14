@@ -1,0 +1,20 @@
+# role: office (Windows) - documents, notes, money, books: the "work" and "finance" profiles
+# with college, on thermos and cabin-win (docs/toolchain/profiles/office.md).
+# Taskwarrior, zk and the other CLI tools run in the WSL clones, which take this role
+# (decisions/log.md#d141). Scanning: driverless, or NAPS2 once it is ruled on
+# (decisions/log.md#d107).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in ONE
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A
+# Windows host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh).
+
+# books
+winget:calibre.calibre
+# documents, the git Markdown vault, hledger (hledger-ui and hledger-web with it), PDF tools:
+# cabin-win's work units since 2026-10-12
+winget:TheDocumentFoundation.LibreOffice
+winget:Zettlr.Zettlr
+winget:simonmichael.hledger
+winget:PDFArranger.PDFArranger
+winget:QPDF.QPDF

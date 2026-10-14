@@ -1,0 +1,9 @@
+# statix (checks.<system>.pre-commit, nix develop). Two lints are off:
+#   repeated_keys  — `programs.x.enable = true;` one per line IS the Home Manager
+#                    style this tree uses; nesting them under one `programs = {`
+#                    makes the per-concern modules harder to read, not easier.
+#   empty_pattern  — a module that takes no arguments is written `{ ... }:`
+#                    (says "module"), not `_:`.
+disabled = ["repeated_keys", "empty_pattern"]
+nix_version = "2.4"
+ignore = ["legacy"]

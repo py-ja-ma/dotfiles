@@ -1,0 +1,15 @@
+# role: re-lab (Windows) - thermos: Ghidra, radare2, flashrom, openocd and the rest live in
+# the WSL clone and reach the USB programmers through usbipd-win; natively a debugger and a
+# process explorer (docs/toolchain/profiles/re-lab.md).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in ONE
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A
+# Windows host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh).
+
+# not installed anywhere yet
+# USB to the clone: waits on a Community waiver (decisions/log.md#d118)
+winget:dorssel.usbipd-win
+winget:x64dbg.x64dbg
+# System Informer for Sysinternals' Process Explorer and TCPView (decisions/log.md#d111)
+winget:WinsiderSS.SystemInformer

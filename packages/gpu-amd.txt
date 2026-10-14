@@ -1,0 +1,5 @@
+# AMD discrete/integrated graphics (not currently used by either host)
+vulkan-radeon
+lib32-vulkan-radeon
+# VA-API: mesa (roles/desktop.txt) has provided libva-mesa-driver since 1:24.2.7; no separate package
+# MangoHud and the rest of the gaming set are in roles/gaming.txt (any GPU)

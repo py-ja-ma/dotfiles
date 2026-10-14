@@ -1,0 +1,24 @@
+# satty — screenshot annotation (replaces swappy in the grim|slurp pipeline)
+#
+# TEMPLATE. The live file is ~/.config/satty/config.toml (gitignored machine
+# state, same pattern as cava/config): dram-theme seeds it from this file on
+# first run and then rewrites ONLY the `palette = [...]` line below from the
+# active theme's satty.toml on every switch. Edit this template for anything
+# else, then delete the live file (or run dram-theme) to re-seed.
+[general]
+fullscreen = false
+early-exit = true
+initial-tool = "arrow"
+copy-command = "wl-copy"
+output-filename = "~/pictures/screenshots/screenshot-%Y%m%d-%H%M%S.png"
+save-after-copy = false
+corner-roundness = 3
+annotation-size-factor = 1.5
+
+[font]
+family = "Fraunces"
+style = "Regular"
+
+# One line, since dram-theme replaces it with sed. Seeded with washi's inks; replaced per theme.
+[color-palette]
+palette = ["#c0442b", "#7d8a5a", "#d99a5b", "#6e8a8f", "#b06a5a"]

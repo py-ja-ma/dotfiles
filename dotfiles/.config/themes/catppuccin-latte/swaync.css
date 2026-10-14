@@ -1,0 +1,11 @@
+/* Catppuccin Latte — swaync palette (imported by swaync/style.css) */
+@define-color base     #eff1f5;
+@define-color mantle   #e6e9ef;
+@define-color crust    #dce0e8;
+@define-color text     #4c4f69;
+@define-color subtext  #5f6276;
+@define-color surface0 #ccd0da;
+@define-color surface1 #bcc0cc;
+@define-color blue     #0a55ea;
+@define-color red      #d20f39;
+@define-color accent   #1e66f5;   /* the ONE accent ink (Letterpress) */

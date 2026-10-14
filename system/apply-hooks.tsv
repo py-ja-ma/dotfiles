@@ -1,0 +1,34 @@
+# Role hooks `dram apply` runs after the package converge (decisions/0008). Each is an
+# existing idempotent script under system/ that takes --dry-run; apply passes --dry-run
+# through on `dram apply --dry-run`. TAB-separated: role, script, mode, when, note.
+#   mode auto  runs on every apply (with --yes, unasked)
+#   mode ask   runs only after a yes at the terminal, never with --yes alone: it touches
+#              sshd/the firewall or the boot chain, where a mistake costs remote access or
+#              a boot. Order matters: rows run top to bottom.
+#   when pre   runs before the package install (the [dram] repo must exist first)
+#   when post  runs after it
+# The role column takes pseudo-roles too: base (every host), metal (every host on its own
+# hardware: the boot chain, the disks, the firewall), wsl (every WSL clone,
+# decisions/0021), and "a,b" for a row that needs both (system/units.tsv says the same).
+metal	system/pacman-dram-repo.sh	auto	pre	the signed [dram] repo stanza + key (before anything installs from it); no [dram] in a WSL clone (v1)
+base	system/maintenance.sh	auto	post	pacman hooks, timers, pacman.conf options, limits, v4l2loopback conf
+metal	system/harden.sh	ask	post	nftables default-deny, sshd keys-only, sysctl, DNS — can cut remote access
+desktop	system/network-setup.sh	auto	post	NetworkManager takes over Wi-Fi + wired from networkd + iwd (not over ssh unless --remote-ok)
+desktop	system/flatpak-setup.sh	auto	post	the Flathub remote, the tracked apps, least-privilege overrides
+builder	system/dram-builder-setup.sh	ask	post	the clean build chroot and /srv/dram
+metal	system/snapshots-setup.sh	auto	post	snapper configs, the dram-snapshot helper + pacman hooks, snapshot boot entries
+metal	system/uki-presets.sh	auto	post	a UKI for every installed kernel (cabin's linux-lts); additive, the running kernel's UKI is not touched
+metal	system/secureboot-setup.sh	ask	post	sbctl keys + Microsoft's, signed systemd-boot + UKIs; enrolls only in Setup Mode
+metal	system/tpm2-enroll.sh	ask	post	LUKS2 laptops: TPM2 (PCR 7) + PIN + recovery key; after Secure Boot is on
+metal	system/fido2-enroll.sh	ask	post	LUKS2 laptops: the plugged-in YubiKey as a second way in beside TPM2 + PIN (one key per run)
+desktop	system/system-dram.sh	ask	post	the boot look: rEFInd (signed) in front of the UKIs, the Plymouth splash, the ly greeter in the house palette, one Hyprland session
+desktop	system/windows-esp-retire.sh	ask	post	once Windows boots from its own ESP (WIN-ESP): Arch's copy of EFI/Microsoft archived and removed, the other Windows boot entries deleted, rEFInd's tile to Windows' own entry; a no-op until then
+desktop	system/yubikey-setup.sh	ask	post	the YubiKey after the password for sudo, polkit, login (ly, hyprlock); on only after a test touch here
+college,metal	system/printing-setup.sh	auto	post	cups.socket for printing (IPP Everywhere, system-config-printer); a WSL clone prints from Windows
+sysadmin,metal	system/virt-setup.sh	ask	post	libvirtd.socket, the main user in libvirt, DHCP/DNS from its VM network through the firewall (the VM kit stays on Arch, never in WSL)
+re-lab	system/re-lab-setup.sh	auto	post	the main user in uucp (serial ports), uaccess for USB flash programmers
+gaming	system/gaming-setup.sh	auto	post	/data/games owned by the main user (Steam's library goes there), ~/games
+emulation	system/emulation-setup.sh	auto	post	the ROM/BIOS tree on /data/emulation and ~/roms
+creator	system/creator-setup.sh	auto	post	/data/recordings owned by the main user (OBS records there), ~/videos/recordings
+recording	system/recording-setup.sh	ask	post	the recorder's firewall opening: OBS websocket + SRT from the creator hosts only
+wsl	system/wsl-setup.sh	auto	post	the clone's /etc/wsl.conf + hostname, Microsoft's masks, linger, rootless Podman's fixes, sshd on 127.0.0.1:2222 for VSCodium

@@ -1,0 +1,20 @@
+pkgbase = gamescope-session-steam
+	pkgdesc = Steam Big Picture session based on gamescope (OpenGamingCollective fork, pinned)
+	pkgver = r23.82c45fc
+	pkgrel = 1
+	url = https://github.com/OpenGamingCollective/gamescope-session-steam
+	arch = any
+	license = MIT
+	makedepends = git
+	depends = gamescope
+	depends = gamescope-session
+	depends = bash
+	optdepends = steam: the client this session runs
+	optdepends = ttf-dejavu: the font Big Picture expects on its first start
+	optdepends = dram-gaming-mode: os-session-select for ly (switching to and from the desktop)
+	provides = gamescope-session-steam-git
+	conflicts = gamescope-session-steam-git
+	source = gamescope-session-steam::git+https://github.com/OpenGamingCollective/gamescope-session-steam.git#commit=82c45fc112775e3fa927d5c326c39b21f1761cc1
+	b2sums = 914b7a5dc2995fdfb29920512e916aa473c54102756adc50a4bdbe2929da733a71a7c1e799f986eddc787a8b957a22cc6ef2ba447d5a56e40e3a0a1613be04ce
+
+pkgname = gamescope-session-steam

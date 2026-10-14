@@ -1,0 +1,11 @@
+LicenseRef-Arch-Recipe
+
+The package recipes under pkgs/<name>/ (PKGBUILD, .SRCINFO and the helper files a
+PKGBUILD installs) were copied from the Arch Linux package sources or the Arch User
+Repository (AUR), then reviewed and pinned. Each recipe keeps the terms its source
+repository grants, and its maintainers and contributors are named in the header of its
+PKGBUILD. The changes made here (pins, removed steps, added checks) are offered under the
+same terms as the recipe they change.
+
+The software a recipe builds is under its own license, which the PKGBUILD's license=()
+array names; nothing built is part of this repository.

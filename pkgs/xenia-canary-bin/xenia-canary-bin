@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+XENIA_DIR="$HOME/.xenia-canary"
+SYSTEM_BIN="/opt/xenia_canary/bin/xenia_canary"
+
+mkdir -p "$XENIA_DIR"
+
+cd "$XENIA_DIR" || {
+  echo "Failed to cd into $XENIA_DIR" >&2
+  exit 1
+}
+
+exec "$SYSTEM_BIN" "$@"

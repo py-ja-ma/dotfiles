@@ -1,0 +1,65 @@
+# Base — installed on EVERY Arch host, headless or not, on metal or in WSL
+# (decisions/0009-roles-and-host-shape.md, decisions/0021-wsl-clone.md): the userland.
+# What a host does beyond this comes from its roles (packages/roles/<role>.txt, chosen by
+# `roles` in modules/hosts/<name>.nix). A host on its own hardware (form metal, the default)
+# also reads packages/metal.txt (kernel, firmware, boot, disks, power, firewall) and its
+# hardware lists (cpu-*.txt, gpu-*.txt, laptop.txt, chosen by install/lib/detect.sh); a WSL
+# clone reads neither (Windows owns its VM). Split out of the old all-in-one base.txt
+# 2026-10-10; metal.txt split off 2026-10-12.
+
+arch-audit
+base
+base-devel
+borg
+# archives: 7zip, unrar and unzip left 2026-10-10 (decisions/0013: Origin, FOSS, Community);
+# libarchive (core, bsdtar) reads 7z, zip and RAR, file-roller is the GUI (roles/desktop.txt)
+# borgmatic: modules/backup.nix drives /usr/bin/borgmatic from a HM user timer
+borgmatic
+# diffutils: cmp and diff, which the repo's scripts use (maintenance.sh, harden.sh, dram's
+# drift checks, pacdiff). A metal host has them through mkinitcpio; a WSL clone, with no
+# kernel to pull them in, would not (the image is `base` alone)
+diffutils
+git
+less
+man-db
+man-pages
+nano
+openssh
+pacman-contrib
+# pciutils: lspci in record-toggle.sh (NVENC probe), dram doctor and the harvesters.
+# A dependency of the base group already; listed so the list says what is used
+pciutils
+# python: dram-theme-auto (the user timer in modules/desktop.nix), bin/check.sh; python3 is also the Hyprland IPC fallback in wallpaper-hotplug.sh
+python
+reflector
+rsync
+sudo
+vim
+wget
+yazi
+# --- maintenance (docs/platforms/arch/hooks.md, system/maintenance.sh) ---------
+# pacman-contrib (checkupdates/paccache/pacdiff), reflector and arch-audit are
+# above. rebuild-detector ships checkrebuild + a PostTransaction hook that
+# flags packages built against replaced libraries (dram doctor reads it).
+rebuild-detector
+# informant (Arch news hook) was here until 2026-10-06: archlinux.org is
+# unreachable from this LAN, so it could never fetch; removed from the hosts
+# with pacman -Rns informant (docs/records/handbook/11-troubleshooting.md §5)
+# bash-completion: loads ~/.local/share/bash-completion/completions/dram
+bash-completion
+# --- supply integrity (docs/security/software-supply/integrity.md) ----------
+# archlinux-repro: `repro -f <pkg>` rebuilds an official package in a clean
+# container and compares it with what the mirrors ship (bin/repro.sh)
+archlinux-repro
+# jq: JSON in the helper scripts (screenshot.sh, record-toggle.sh, wallpaper-menu.sh,
+# quote-wallpaper.sh, waybar-fullscreen.sh). The only layer for jq since 2026-10-07 (the
+# nixpkgs copy left modules/dev.nix): systemd user units start with the manager's
+# default PATH (/usr/bin only; hyprland.lua imports no PATH), so the binary the timers
+# and helpers see has to be pacman's
+jq
+
+# libfido2: FIDO2 for the YubiKeys (decisions/0019). openssh only optdepends on it, yet its
+# ssh-sk-helper needs it for every security-key SSH key; pam-u2f links it; and mkinitcpio's
+# sd-encrypt copies it into the initramfs (the LUKS FIDO2 unlock) only when it is installed.
+# In the WSL clone it serves a key attached with usbipd (docs/platforms/wsl/README.md)
+libfido2

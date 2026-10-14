@@ -1,0 +1,48 @@
+{
+  "$schema": "/etc/xdg/swaync/configSchema.json",
+  "positionX": "right",
+  "positionY": "top",
+  "layer": "overlay",
+  "control-center-layer": "top",
+  "control-center-positionX": "right",
+  "control-center-positionY": "top",
+  "control-center-margin-top": 8,
+  "control-center-margin-bottom": 0,
+  "control-center-margin-right": 0,
+  "control-center-margin-left": 0,
+  "control-center-width": 340,
+  "notification-window-width": 340,
+  "timeout": 6,
+  "timeout-low": 4,
+  "timeout-critical": 0,
+  "fit-to-screen": true,
+  "control-center-height": 700,
+  "keyboard-shortcuts": true,
+  "image-visibility": "when-available",
+  "transition-time": 180,
+  "hide-on-clear": true,
+  "hide-on-action": true,
+  "widgets": ["inhibitors", "title", "dnd", "notifications", "mpris", "calendar"],
+  "widget-config": {
+    "title": {
+      "text": "notifications",
+      "clear-all-button": true,
+      "button-text": "очистить"
+    },
+    "dnd": {
+      "text": "не беспокоить"
+    },
+    "calendar": {
+      "show-day-label": true,
+      "show-date-label": false,
+      "show-heading": true,
+      "show-day-names": true,
+      "show-week-numbers": false,
+      "day-format": "%A, %-d %B"
+    },
+    "mpris": {
+      "image-size": 48,
+      "image-radius": 3
+    }
+  }
+}

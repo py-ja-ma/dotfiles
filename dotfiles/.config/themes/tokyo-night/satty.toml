@@ -1,0 +1,4 @@
+# Tokyo Night — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#7aa2f7", "#f7768e", "#9ece6a", "#e0af68", "#bb9af7"]

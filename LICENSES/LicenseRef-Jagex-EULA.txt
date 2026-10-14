@@ -1,0 +1,6 @@
+LicenseRef-Jagex-EULA
+
+pkgs/jagex-launcher/JAGEX-EULA is the End User Licence Agreement of the Jagex Launcher,
+copyright Jagex Ltd, kept beside the package recipe as the PKGBUILD installs it. It is
+Jagex's text under Jagex's terms, not licensed by this repository. The launcher itself is
+proprietary software; the recipe downloads it and nothing built is part of this repository.

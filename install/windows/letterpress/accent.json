@@ -1,0 +1,18 @@
+{
+  "theme": "washi",
+  "accent": "#c0442b",
+  "AppsUseLightTheme": 0,
+  "SystemUsesLightTheme": 0,
+  "AccentColor": -13941568,
+  "ColorizationColor": -994032597,
+  "ColorizationAfterglow": -994032597,
+  "AccentColorMenu": -13941568,
+  "StartColorMenu": -14469222,
+  "AccentPalette": [233, 168, 155, 0, 221, 125, 105, 0, 213, 92, 68, 0, 192, 68, 43, 0, 154, 55, 35, 0, 117, 41, 26, 0, 75, 27, 17, 0, 28, 20, 15, 0],
+  "hex": {
+    "AccentColor": "0xff2b44c0",
+    "ColorizationColor": "0xc4c0442b",
+    "StartColorMenu": "0xff23379a",
+    "AccentPalette": "#e9a89b #dd7d69 #d55c44 #c0442b #9a3723 #75291a #4b1b11 #1c140f"
+  }
+}

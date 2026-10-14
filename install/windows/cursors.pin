@@ -1,0 +1,34 @@
+# install/windows/cursors.pin - the pointer Arch draws, on Windows: GNOME's Adwaita cursors in
+# GNOME's own Windows build (adwaita-icon-theme, Adwaita/cursors);
+# docs/design/iconography/README.md.
+#
+# <role> <url> <sha256> =<name>
+#   fonts.pin's format; the id is the Windows pointer role the file fills (HKCU\Control
+#   Panel\Cursors names it so). install/windows/apply-windows.sh downloads each URL once into
+#   ~/.cache/dram/cursors, refuses it unless its sha256 is the one here, and stages it as <name>
+#   in C:\ProgramData\dram\cursors beside a copy of this file and a NOTICE; the desktop
+#   role's cursors-machine unit checks each against this file again and copies it to
+#   %SystemRoot%\Cursors\Adwaita, and pointer-adwaita makes the user's "Adwaita" scheme of it.
+#   A role not listed keeps Windows Black's cursor: Adwaita has no pen, up arrow, pin or person.
+#
+# adwaita-icon-theme 51.0 (2026-09-14): 31 .cur and 2 .ani files, each .cur five 32-bit images
+# (96, 64, 48, 32, 24 px, a hotspot each), so Windows' smallest size (32, Arch draws 24) is
+# drawn, not scaled. GNOME dropped the set from master on 2026-09-21 (5fad489e, to an
+# adwaita-icon-theme-legacy), so this pin is where it lives on; Arch's Xcursor Adwaita goes
+# the same way at 52 (packages/register.tsv). Licence: LGPL-3.0 or CC-BY-SA-3.0 US, credited
+# as "GNOME Project" (COPYING at 51.0; the NOTICE says so). Bump: a tag that still ships
+# Adwaita/cursors, each file's sha256 (shasum -a 256 on a download you trust), then
+# apply-windows.sh.
+Arrow        https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/default.cur      99b854540aab02f190e95f5c2cd348d91e1365ba79f2e2c4db13f9172d26f652  =default.cur
+Help         https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/help.cur         8dccb458879b4f5f01e5dce58e8dd75ab4b809c75deab5b302611160062e408c  =help.cur
+AppStarting  https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/progress.ani     494ba0f808a81227f64fd1230edb43430ab549d6e9d2e8549a3c34eea51fcf63  =progress.ani
+Wait         https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/wait.ani         030334cd38279227f3b5a52a7a1eb57634fd6d338d95960ffd0e93c3dff43e7a  =wait.ani
+Crosshair    https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/crosshair.cur    a080981739f1d0bfe69a6179859d2927d39487cca813679e695fe8827701efd7  =crosshair.cur
+IBeam        https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/text.cur         6cb6ac8191a36f3ff0426736fcca02bd9277b428e630ddf9c5dd4696e699d741  =text.cur
+No           https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/not-allowed.cur  6fa022e5d327f126fa612078d4876f4a10bcbe082820b6179bffca2b1ede973e  =not-allowed.cur
+SizeNS       https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/ns-resize.cur    35dff7fe8c77d2aea1c0853e3ff8500a7a8bee355baf7d5d41807c43ffcf7ccb  =ns-resize.cur
+SizeWE       https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/ew-resize.cur    252380cfe46e6640e07e79d4af0202b7e107140ea2a08145fc91cde41f3408e7  =ew-resize.cur
+SizeNWSE     https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/nwse-resize.cur  2c057e50529d109d8e9d712a74c86ff795e0bb233a97ce3f7e0977877939d9b7  =nwse-resize.cur
+SizeNESW     https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/nesw-resize.cur  331e2022bceaada6f440ea0c376b1cf77d333ec774a0a54f62809d0b96c65822  =nesw-resize.cur
+SizeAll      https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/all-scroll.cur   f07e8fdeb2b0f9c908c481bb57f912d21d5cec7b6c778de57460f027ed271fe5  =all-scroll.cur
+Hand         https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/raw/51.0/Adwaita/cursors/pointer.cur      5ee3684a5ff2716a1256f3726a91fb956afe5cca9f916b9a94fe6ca53ec82642  =pointer.cur

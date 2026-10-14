@@ -1,0 +1,8 @@
+gamescope-session-steam — how to re-pin (no tags upstream: decisions/0012, register pass-flag)
+  1. Read the commits since _commit on github.com/OpenGamingCollective/gamescope-session-steam
+     (git log --stat <old>..main) and the diff of every file the package ships.
+  2. Set _commit to the new sha; pkgver = r<git rev-list --count <sha>>.<short sha>.
+  3. Re-check the [dram] changes in prepare()/package() still apply (each sed is
+     followed by a grep that fails the build when it no longer matches).
+  4. updpkgsums (git sources get a real b2sum of the checkout, never SKIP), then
+     makepkg --printsrcinfo > .SRCINFO and update pkgs/manifest.txt.

@@ -1,0 +1,189 @@
+# Starship prompt — two lines, set in words, theme-agnostic (docs/design/shell-and-bars/prompt.md).
+#
+# COLOR RULE: named ANSI colors ONLY (blue, italic yellow, dimmed white...).
+# Never hex. Every theme's kitty.conf defines color0-15, so this prompt
+# recolors itself automatically on every `dram-theme` switch.
+#
+# GLYPH RULE: no Nerd Font (private-use) glyphs. Where other prompts put an
+# icon, this one puts a word ("on main", "took 3s", "bat 20%", "exit 127") —
+# italic is Monaspace Radon, the serif-ish voice. The few non-ASCII marks are
+# ordinary Unicode: Monaspace 1.400 has ❯, and ⇡ ⇣ come from a fallback face.
+"$schema" = 'https://starship.rs/config-schema.json'
+
+add_newline = false       # no blank line above the prompt (was wasting the top row of every new terminal)
+command_timeout = 500     # a slow module gets cut off rather than freezing the prompt
+
+# LAYOUT — balanced two-line prompt. The RIGHT side (right_format) needs ble.sh in
+# bash: starship's bash init renders it only through ble.sh. ble.sh left the hosts
+# 2026-10-10 (decisions/0013: Community), so in bash the right side does not draw —
+# no breakage, the duration/battery/clock group is simply absent until ble.sh (or a
+# compliant replacement) returns; right_format stays for shells that render it.
+#   Line 1 left  :  pj <directory> on <branch> [status] via <toolchain> <state>
+#   Line 1 right :  took <duration>  bat <low-battery>  <clock>
+#   Line 2       :  just the arrow, so typed commands always start at column 3.
+# No hostname: this is a personal box, and anything you SSH into runs its own
+# prompt. No OS logo: the prompt is set in words, not marks.
+format = """
+$username $directory$git_branch$git_status$git_state$nodejs$python$nix_shell$shlvl$jobs$status
+$character"""
+
+# Right edge: how long the last command took, a low-battery warning, and the
+# clock (the time the prompt was drawn = when you kicked off the command).
+right_format = """$cmd_duration$battery$time"""
+
+# ---- identity --------------------------------------------------------------
+
+[os]
+disabled = true
+
+[username]
+show_always = true
+style_user = "bold green"
+style_root = "bold red"       # if the prompt turns red, you're root — be careful
+format = "[$user]($style)"
+
+[directory]
+style = "italic blue"
+truncation_length = 4         # show at most the last 4 path components...
+truncate_to_repo = true       # ...but never truncate past a git repo's root
+truncation_symbol = ".../"
+read_only = " ro"             # the word, not a padlock, when you can't write here
+read_only_style = "yellow"
+format = "[$path]($style)[$read_only]($read_only_style) "
+
+# ---- git -------------------------------------------------------------------
+
+[git_branch]
+symbol = ""
+style = "italic yellow"
+format = "on [$branch(:$remote_branch)]($style) "
+
+# Counts, not just dots: ⇡2 = 2 commits ahead of remote, ⇣1 = 1 behind,
+# +staged !modified ?untracked *stashed >renamed xdeleted =conflicted
+[git_status]
+style = "yellow"
+format = '([\[$ahead_behind$conflicted$staged$modified$renamed$deleted$untracked$stashed\]]($style) )'
+ahead      = "⇡${count}"
+behind     = "⇣${count}"
+diverged   = "⇡${ahead_count}⇣${behind_count}"
+conflicted = "=${count}"
+staged     = "+${count}"
+modified   = "!${count}"
+renamed    = ">${count}"
+deleted    = "x${count}"
+untracked  = "?${count}"
+stashed    = "*${count}"
+
+# Shows REBASING 2/5, MERGING, CHERRY-PICKING... when git is mid-operation
+[git_state]
+style = "bold red"
+format = '\([$state( $progress_current/$progress_total)]($style)\) '
+
+# ---- toolchains (only the ones I use; the rest stay off for speed) ----------
+
+[nodejs]
+symbol = "node "
+style = "green"
+format = "via [$symbol$version]($style) "
+# only appears in dirs with package.json / node_modules / *.js|*.ts
+
+[python]
+symbol = "py "
+style = "yellow"
+format = 'via [$symbol$version( $virtualenv)]($style) '
+
+[nix_shell]
+symbol = "nix "
+style = "cyan"
+format = 'via [$symbol$state( $name)]($style) '
+
+# ---- shell state ------------------------------------------------------------
+
+# The actual exit code when the last command FAILED — "exit 127" (not found),
+# "exit 130" (Ctrl-C), "exit 1" (generic). The red ❯ on line 2 tells you it
+# failed; this tells you why. (map_symbol off: always a number, never an emoji.)
+[status]
+disabled = false
+style = "bold red"
+symbol = "exit "
+success_symbol = ""           # nothing on success — keep the prompt quiet
+map_symbol = false
+format = '[$symbol$status]($style) '
+
+# "sh 2" when you're inside a nested shell (a `bash` within a shell, a subshell
+# you forgot you were in). Hidden at the top level so it only warns when it matters.
+[shlvl]
+disabled = false
+threshold = 2
+symbol = "sh "
+style = "yellow"
+format = '[$symbol$shlvl]($style) '
+
+[jobs]
+symbol = "&"
+style = "blue"
+symbol_threshold = 1          # &  when anything is backgrounded (Ctrl-Z, cmd &)
+number_threshold = 1          # ...with a count
+format = "[$symbol$number]($style) "
+
+[cmd_duration]
+min_time = 2000               # only report commands that took 2s or more
+style = "yellow"
+format = "took [$duration]($style) "
+
+# ---- line 2 ------------------------------------------------------------------
+
+[character]
+success_symbol = "[❯](bold green)"   # green: last command succeeded
+error_symbol = "[❯](bold red)"       # red: last command failed
+
+# ---- clock + battery ------------------------------------------------------------
+
+[time]
+disabled = false
+style = "dimmed white"
+format = "[$time]($style)"
+time_format = "%H:%M"
+
+[battery]
+full_symbol = "bat "
+charging_symbol = "bat+ "
+discharging_symbol = "bat "
+unknown_symbol = "bat? "
+empty_symbol = "bat! "
+format = "[$symbol$percentage]($style) "
+
+[[battery.display]]           # hidden above 30%; red warning below it
+threshold = 30
+style = "bold red"
+discharging_symbol = "bat "
+
+# ---- explicitly disabled: modules that would fork subprocesses for nothing ----
+# (our explicit `format` already skips them, but belt-and-braces)
+
+[package]
+disabled = true
+
+[java]
+disabled = true
+
+[golang]
+disabled = true
+
+[rust]
+disabled = true
+
+[ruby]
+disabled = true
+
+[php]
+disabled = true
+
+[docker_context]
+disabled = true
+
+[aws]
+disabled = true
+
+[gcloud]
+disabled = true

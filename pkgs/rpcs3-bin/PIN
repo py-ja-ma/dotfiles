@@ -1,0 +1,6 @@
+rpcs3-bin — how to re-pin
+  1. Pick a build from https://github.com/RPCS3/rpcs3-binaries-linux/releases (tag
+     build-<commit>); set _build to the commit, _file to the AppImage asset name, pkgver to
+     the version with the dash as a dot (0.0.43-20284 -> 0.0.43.20284).
+  2. The first sha256 is the asset digest GitHub shows (gh api …/releases/tags/build-<sha>);
+     updpkgsums must agree. Icon and LICENSE follow _build automatically.

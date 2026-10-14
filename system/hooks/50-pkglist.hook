@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Writing explicit + foreign package lists to /var/lib/pacman/{pkglist,aurlist}.txt
+When = PostTransaction
+Exec = /bin/sh -c '/usr/bin/pacman -Qqe > /var/lib/pacman/pkglist.txt; /usr/bin/pacman -Qqm > /var/lib/pacman/aurlist.txt || true'

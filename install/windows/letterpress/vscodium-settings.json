@@ -1,0 +1,8 @@
+{
+  "workbench.colorTheme": "Letterpress \u2014 Boulevardier",
+  "editor.fontFamily": "'Monaspace Xenon', 'Symbols Nerd Font Mono', monospace",
+  "editor.fontLigatures": "'calt', 'liga', 'ss01', 'ss02', 'ss03'",
+  "terminal.integrated.fontFamily": "'Monaspace Xenon', 'Symbols Nerd Font Mono', monospace",
+  "workbench.experimental.fontFamily": "Literata",
+  "terminal.integrated.defaultProfile.windows": "PowerShell"
+}

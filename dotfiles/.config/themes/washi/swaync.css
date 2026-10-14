@@ -1,0 +1,11 @@
+/* Washi — swaync palette (imported by swaync/style.css) */
+@define-color base     #1c140f;
+@define-color mantle   #16100c;
+@define-color crust    #100c09;
+@define-color text     #e6d6cb;
+@define-color subtext  #ac9c92;
+@define-color surface0 #2e211a;
+@define-color surface1 #3a2a22;
+@define-color blue     #6e8a8f;
+@define-color red      #c0442b;
+@define-color accent   #c0442b;   /* the ONE accent ink (Letterpress) */

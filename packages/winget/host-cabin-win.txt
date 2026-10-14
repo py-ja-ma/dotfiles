@@ -1,0 +1,17 @@
+# host: cabin-win only - what is about that box, not a role, as packages/host-cabin.txt is on
+# Arch: the case's temperature panel (Antec Flux Pro, pkgs/dram-case-display/README.md)
+# and the companion app of its NVIDIA GPU.
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in one
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A Windows
+# host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh; packages/README.md).
+
+# the panel: case-display.ps1 reads the temperatures through LibreHardwareMonitor's library
+# (0.9.6 from its release zip, pinned by SHA-256: the host's case-display-lhm unit), which
+# needs PawnIO's driver for the CPU's (decisions/log.md#d123, #d124)
+winget:namazso.PawnIO
+manual:librehardwaremonitor-lib
+# the NVIDIA App, by hand from nvidia.com (not in winget); the driver itself comes from
+# Windows Update (decisions/log.md#d102)
+manual:nvidia-app

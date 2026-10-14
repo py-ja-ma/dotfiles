@@ -1,0 +1,9 @@
+# /usr/lib/udev/rules.d/60-dram-case-display.rules (pkgs/dram-case-display, docs/case-display.md)
+# The Antec Flux Pro's temperature panel, USB 2022:0522 (either hardware revision). Its usbfs
+# node goes to the group dram-case-panel, which dram-case-display.service's dynamic user joins
+# (others keep the default read-only access). TAG+="systemd" and SYSTEMD_ALIAS make a stable
+# device unit, dev-dram_case_display.device, that the service BindsTo; SYSTEMD_WANTS starts the
+# service when the panel appears. After 50-udev-default.rules (its MODE), before 99-systemd.rules.
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="2022", ATTR{idProduct}=="0522", \
+  GROUP="dram-case-panel", MODE="0664", \
+  TAG+="systemd", ENV{SYSTEMD_ALIAS}="/dev/dram_case_display", ENV{SYSTEMD_WANTS}+="dram-case-display.service"

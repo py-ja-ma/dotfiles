@@ -1,0 +1,24 @@
+/* Washi Day — waybar palette (imported by waybar/style.css)
+ * The light twin of washi: cream paper, warm ink, the same vermilion accent.
+ * Hues are darkened to read as ink on cream (>= 4.5:1 on base). */
+@define-color base     #f3ead9;
+@define-color mantle   #ede3cf;
+@define-color crust    #e6dac4;
+@define-color text     #2a1f18;
+@define-color subtext  #6b5a50;
+@define-color overlay  #9c8b80;
+@define-color surface0 #e8dcc8;
+@define-color surface1 #d7c8b0;
+@define-color blue     #4a6b70;
+@define-color lavender #7a6660;
+@define-color sapphire #4f6f69;
+@define-color sky      #4a7a6a;
+@define-color teal     #5c7560;
+@define-color green    #5c6a3a;
+@define-color yellow   #9a6a2a;
+@define-color peach    #a8552f;
+@define-color maroon   #8a2f1e;
+@define-color red      #c0442b;
+@define-color mauve    #8f4f42;
+@define-color pink     #9c6559;
+@define-color accent   #c0442b;   /* the ONE accent ink (Letterpress) */

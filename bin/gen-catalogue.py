@@ -1,0 +1,206 @@
+#!/usr/bin/env python3
+"""usage: gen-catalogue.py [--check]
+
+Writes docs/catalogue.md, the list of every part of this repo that can be copied on
+its own, from the fact box at the top of each module's README:
+
+    | | |
+    |---|---|
+    | Needs | <software and the version tested, with the month; files from elsewhere> |
+    | Copy alone | <yes / yes, after one change / no, and why> |
+    | License | <MIT, or the licenses of the files that differ> |
+
+Three rows, these labels, in this order (Licence is read as License). The README's
+title names the module, its directory is where it lives, and docs/map.tsv places it
+under a directorate and a division. Every tracked README.md and REVIEW.md outside docs/
+and decisions/ is read; a table that starts like the box and names Copy alone or
+License but breaks the shape is an error. Deterministic: running it twice produces no
+diff. Needs only python3 and git; runs on the Mac. bin/check.sh §23 runs it with --check.
+
+  --check       write nothing; exit 1 (with a diff) when docs/catalogue.md is stale
+  -h, --help    this text
+
+exit: 0 ok · 1 --check found a difference, or a fact box is malformed · 2 bad usage
+see: docs/records/templates/module.md, docs/map.tsv
+"""
+import difflib
+import os
+import re
+import subprocess
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT = os.path.join(ROOT, "docs", "catalogue.md")
+MAP = os.path.join(ROOT, "docs", "map.tsv")
+LABELS = ["Needs", "Copy alone", "License"]
+BOX_HEAD = re.compile(r"^\|\s*\|\s*\|\s*$")
+BOX_SEP = re.compile(r"^\|\s*:?-+:?\s*\|\s*:?-+:?\s*\|\s*$")
+ROW = re.compile(r"^\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*$")
+
+
+class Malformed(Exception):
+    pass
+
+
+def read(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+def tracked():
+    out = subprocess.run(["git", "-C", ROOT, "ls-files", "-z"], capture_output=True, check=True)
+    return [f for f in out.stdout.decode("utf-8", "replace").split("\0") if f]
+
+
+# --------------------------------------------------------------------------- the map
+def compile_pattern(pat):
+    anchored = "/" in pat.rstrip("/")
+    p = pat.strip("/")
+    out, i = "", 0
+    while i < len(p):
+        if p.startswith("**/", i):
+            out, i = out + "(?:.*/)?", i + 3
+        elif p.startswith("**", i):
+            out, i = out + ".*", i + 2
+        elif p[i] == "*":
+            out, i = out + "[^/]*", i + 1
+        elif p[i] == "?":
+            out, i = out + "[^/]", i + 1
+        else:
+            out, i = out + re.escape(p[i]), i + 1
+    return re.compile(("^" if anchored else "^(?:.*/)?") + out + "(?:/.*)?$")
+
+
+def load_map():
+    chart, rules = [], []
+    for line in read(MAP).split("\n"):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        cols = line.split("\t")
+        if line.startswith("="):
+            chart.append((cols[0][1:], cols[1]))
+        elif len(cols) == 5:
+            rules.append((compile_pattern(cols[0]), cols[1], cols[2]))
+    return chart, rules
+
+
+def place(rules, path):
+    hit = None
+    for pat, d, div in rules:
+        if pat.match(path):
+            hit = (d, div)
+    return hit
+
+
+# --------------------------------------------------------------------------- the boxes
+def fact_box(rel):
+    """{'Needs':…, 'Copy alone':…, 'License':…} or None; Malformed when the box is broken."""
+    lines = read(os.path.join(ROOT, rel)).split("\n")
+    title = next((l[2:].strip() for l in lines if l.startswith("# ")), None)
+    for i, line in enumerate(lines[:60]):
+        if not BOX_HEAD.match(line) or i + 1 >= len(lines) or not BOX_SEP.match(lines[i + 1]):
+            continue
+        rows = []
+        for l in lines[i + 2:]:
+            m = ROW.match(l)
+            if not m:
+                break
+            rows.append((m.group(1), m.group(2)))
+        labels = [("License" if k == "Licence" else k) for k, _ in rows]
+        if not ({"Copy alone", "License"} & set(labels)):
+            continue  # another kind of box (a branch page's Code / Runs on / Needs)
+        if labels != LABELS:
+            raise Malformed("%s:%d: the fact box has rows %s; it needs exactly %s" % (rel, i + 1, labels, LABELS))
+        if not title:
+            raise Malformed("%s: a module README needs a '# <name>' title" % rel)
+        box = {("License" if k == "Licence" else k): v for k, v in rows}
+        box["title"] = title.strip("`")
+        return box
+    return None
+
+
+def modules(files):
+    out = []
+    for f in sorted(files):
+        base = os.path.basename(f)
+        if base not in ("README.md", "REVIEW.md") or f.startswith(("docs/", "decisions/")) or "/" not in f:
+            continue
+        if not os.path.isfile(os.path.join(ROOT, f)):
+            continue
+        box = fact_box(f)
+        if box:
+            box["readme"] = f
+            box["where"] = os.path.dirname(f) + "/"
+            out.append(box)
+    return out
+
+
+def render(chart, rules, mods):
+    o = []
+    o.append("<!-- GENERATED by bin/gen-catalogue.py from the fact box at the top of each module "
+             "README; edit the READMEs, not this page (bin/check.sh §23 fails when it is stale). -->")
+    o.append("# Catalogue")
+    o.append("")
+    o.append("[Organization](README.md) › Catalogue")
+    o.append("")
+    o.append("Each part of this repo that can be copied without the rest, with what it needs and its license.")
+    o.append("The rows come from the three-row box at the top of each module's README, "
+             "so the README is the place to change one.")
+    o.append("How copying works: [Take a piece](../README.md#take-a-piece).")
+    o.append("")
+    titles = dict(chart)
+    placed = {}
+    for m in mods:
+        d, div = place(rules, m["readme"]) or ("records", "-")
+        placed.setdefault(d, []).append((titles.get("%s/%s" % (d, div), ""), m))
+    if not mods:
+        o.append("No module README carries a fact box yet.")
+        o.append("")
+    for node, title in chart:
+        if "/" in node or node not in placed:
+            continue
+        o.append("## %s" % title)
+        o.append("")
+        o.append("| Module | Division | Where | Needs | Copy alone | License |")
+        o.append("|---|---|---|---|---|---|")
+        for div, m in sorted(placed[node], key=lambda x: (x[1]["where"])):
+            o.append("| [%s](../%s) | %s | `%s` | %s | %s | %s |" % (
+                m["title"], m["readme"], div or "-", m["where"], m["Needs"], m["Copy alone"], m["License"]))
+        o.append("")
+    return "\n".join(o)
+
+
+def main(argv):
+    check = False
+    for a in argv:
+        if a in ("-h", "--help"):
+            print(__doc__.strip("\n"))
+            return 0
+        if a == "--check":
+            check = True
+        else:
+            print("gen-catalogue.py: unknown argument: %s" % a, file=sys.stderr)
+            print(__doc__.split("\n", 1)[0], file=sys.stderr)
+            return 2
+    try:
+        chart, rules = load_map()
+        new = render(chart, rules, modules(tracked()))
+    except (Malformed, OSError, subprocess.CalledProcessError) as e:
+        print("gen-catalogue.py: %s" % e, file=sys.stderr)
+        return 1
+    old = read(OUT) if os.path.exists(OUT) else ""
+    if old == new:
+        return 0
+    if check:
+        diff = difflib.unified_diff(old.split("\n"), new.split("\n"), "docs/catalogue.md",
+                                    "docs/catalogue.md (generated)", lineterm="", n=1)
+        print("\n".join(list(diff)[:40]))
+        return 1
+    with open(OUT, "w", encoding="utf-8") as f:
+        f.write(new)
+    print("wrote docs/catalogue.md (%d module(s))" % new.count("\n| ["))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

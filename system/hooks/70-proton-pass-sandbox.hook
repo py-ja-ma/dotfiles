@@ -1,0 +1,17 @@
+# Strip the setuid bit from proton-pass-bin's bundled Electron chrome-sandbox.
+# Arch ships kernel.unprivileged_userns_clone=1, so Chromium's namespace
+# sandbox works without the setuid helper; a setuid-root binary from a
+# lone-maintainer .deb repackage is blast radius for nothing.
+# visual-studio-code-bin already strips its own in package(); Proton Pass does
+# not, and every upgrade re-creates the file, hence a PostTransaction hook.
+# Installed to /etc/pacman.d/hooks/ by system/maintenance.sh.
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = proton-pass-bin
+
+[Action]
+Description = Stripping setuid from /opt/proton-pass/chrome-sandbox (user namespaces do the sandboxing)
+When = PostTransaction
+Exec = /usr/bin/chmod u-s /opt/proton-pass/chrome-sandbox

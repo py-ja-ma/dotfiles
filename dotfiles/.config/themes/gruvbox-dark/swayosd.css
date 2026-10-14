@@ -1,0 +1,6 @@
+/* Gruvbox Dark — swayosd palette (imported by swayosd/style.css) */
+@define-color osd-bg       #282828;
+@define-color osd-border   #83a598;
+@define-color osd-fg       #ebdbb2;
+@define-color osd-progress #83a598;
+@define-color osd-trough   #3c3836;

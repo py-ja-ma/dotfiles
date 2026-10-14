@@ -1,0 +1,11 @@
+# role: builder — the [dram] package builder (one host). system/dram-builder-setup.sh
+# installs this list; install/bootstrap.sh does not (it needs the chroot set up first).
+# pacman-contrib (updpkgsums) and rsync are in base.txt and must not repeat here.
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "builder" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+
+# devtools: mkarchroot, makechrootpkg, arch-nspawn — clean-chroot builds
+devtools
+# diffoscope: explains how two builds of a [dram] package differ (bin/repro.sh --ours)
+diffoscope

@@ -1,0 +1,6 @@
+Adwaita cursors - GNOME Project (https://www.gnome.org), from adwaita-icon-theme
+(Adwaita/cursors), unmodified; the tag and each file's sha256 are in cursors.pin.
+Licensed under either the GNU LGPL v3 or Creative Commons Attribution-Share Alike 3.0
+United States (COPYING in adwaita-icon-theme). Installed by the dotfiles repo's
+install/windows/apply-windows.sh and the desktop role's units (cursors-machine,
+pointer-adwaita).

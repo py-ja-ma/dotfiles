@@ -1,0 +1,585 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+#
+# windows/build/cabin-win/10-machine.winget - rendered by bin/render-windows.sh from
+# windows/hosts/cabin-win.nix and what it names; edit those, never this (decisions/0020).
+# Phase 10, system, the machine's settings; scope machine: every unit elevated, none writing HKCU.
+# dram.ps1 (or converge.ps1) applies the documents in manifest.json's order, from build\:
+#   winget configure -f C:\ProgramData\dram\build\10-machine.winget --accept-configuration-agreements --disable-interactivity
+properties:
+  configurationVersion: "0.2.0"
+  resources:
+    # --- base (windows/roles/base.nix, packages/winget/base.txt) ---
+    - resource: "PSDscResources/Registry"
+      id: "activity-history-off"
+      directives:
+        description: "no activity history published (the record Windows keeps of the apps and files used)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\System"
+        ValueName: "PublishUserActivities"
+        ValueType: "Dword"
+        ValueData: "0"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "activity-history-off-upload"
+      directives:
+        description: "no activity history uploaded to Microsoft"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\System"
+        ValueName: "UploadUserActivities"
+        ValueType: "Dword"
+        ValueData: "0"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "bsod-details"
+      directives:
+        description: "a stop screen shows its four parameters beside the stop code (something to search on when PawnIO, Vanguard or the NVIDIA driver fail)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\CrashControl"
+        ValueName: "DisplayParameters"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "bsod-details-no-emoticon"
+      directives:
+        description: "a stop screen without the sad face"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\CrashControl"
+        ValueName: "DisableEmoticon"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "defender-pua-block"
+      directives:
+        description: "Defender blocks potentially unwanted apps (bundlers, adware, miners) by its own policy; Protection history lists what it stopped"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows Defender"
+        ValueName: "PUAProtection"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "delivery-optimization-http-only"
+      directives:
+        description: "updates and Store apps download from Microsoft alone, never from or for other PCs (Delivery Optimization over HTTP only)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization"
+        ValueName: "DODownloadMode"
+        ValueType: "Dword"
+        ValueData: "0"
+        Force: true
+    - resource: "PSDscResources/Script"
+      id: "edge-policies"
+      directives:
+        description: "Edge is not preloaded or left running, asks nothing at first run, shows no rewards, shopping, sidebar, widgets or suggestions, shares no browsing data and blocks the Copilot extension; Edge Update makes no desktop shortcut"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\edge-policies.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\edge-policies.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\edge-policies.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Registry"
+      id: "llmnr-off"
+      directives:
+        description: "no LLMNR name queries broadcast on the network, as Arch's harden.sh (mDNS stays as shipped; LocalSend finds peers by its own multicast)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient"
+        ValueName: "EnableMulticast"
+        ValueType: "Dword"
+        ValueData: "0"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-device-metadata"
+      directives:
+        description: "no device companion apps or icons fetched for new hardware (the way MSI's and Lenovo's helpers arrive); drivers still come from Windows Update"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Device Metadata"
+        ValueName: "PreventDeviceMetadataFromNetwork"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "powershell-telemetry-off"
+      directives:
+        description: "PowerShell 7 sends no telemetry (a machine environment variable, read by each new session)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"
+        ValueName: "POWERSHELL_TELEMETRY_OPTOUT"
+        ValueType: "String"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "telemetry-required"
+      directives:
+        description: "diagnostic data at required only"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection"
+        ValueName: "AllowTelemetry"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Script"
+      id: "windows-ai-fabric-manual"
+      directives:
+        description: "the Windows AI Fabric service starts only when something asks for it (Manual), on builds that have it"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-ai-fabric-manual.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-ai-fabric-manual.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-ai-fabric-manual.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "windows-ai-off"
+      directives:
+        description: "Recall removed (at the next restart) and no snapshots, no Click to Do, no AI in Notepad or Paint"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-ai-off.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-ai-off.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-ai-off.ps1'))) -Mode Set"
+    # --- desktop (windows/roles/desktop.nix, packages/winget/desktop.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "cursors-machine"
+      directives:
+        description: "the Adwaita cursors (install/windows/cursors.pin, each checked against its sha256 again) in the Windows Cursors folder, Adwaita, with GNOME's licence NOTICE; one dropped from the pin is removed"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\cursors-machine.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\cursors-machine.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\cursors-machine.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "fonts-machine"
+      directives:
+        description: "the house fonts for every account (Windows Fonts folder + HKLM), pinned by install/windows/fonts.pin; one removed from the pin is removed here"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\fonts-machine.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\fonts-machine.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\fonts-machine.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "letterpress-lock-screen"
+      directives:
+        description: "the same art on the lock screen"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\letterpress-lock-screen.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\letterpress-lock-screen.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\letterpress-lock-screen.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Registry"
+      id: "lock-widgets-off"
+      directives:
+        description: "no widgets on the lock screen (Microsoft lists this policy for Insider builds; no-widgets already removes the board on released ones)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Dsh"
+        ValueName: "DisableWidgetsOnLockScreen"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-widgets"
+      directives:
+        description: "no widgets board"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Dsh"
+        ValueName: "AllowNewsAndInterests"
+        ValueType: "Dword"
+        ValueData: "0"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "signin-clear"
+      directives:
+        description: "the sign-in screen shows the lock picture as it is, without the acrylic blur"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\System"
+        ValueName: "DisableAcrylicBackgroundOnLogon"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "start-no-most-used"
+      directives:
+        description: "no Most used list in Start, its toggle locked (ShowOrHideMostUsedApps 2 = hide)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer"
+        ValueName: "ShowOrHideMostUsedApps"
+        ValueType: "Dword"
+        ValueData: "2"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "start-no-recent-apps"
+      directives:
+        description: "Start shows no recently added apps"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer"
+        ValueName: "HideRecentlyAddedApps"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "start-no-recommended"
+      directives:
+        description: "Start shows no Recommended section (HideRecommendedSection)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer"
+        ValueName: "HideRecommendedSection"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "start-no-sites"
+      directives:
+        description: "no personalised website recommendations in Start (HideRecommendedPersonalizedSites)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer"
+        ValueName: "HideRecommendedPersonalizedSites"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "startup-sound-off"
+      directives:
+        description: "no startup sound (policy)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
+        ValueName: "DisableStartupSound"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "startup-sound-off-logonui"
+      directives:
+        description: "no startup sound (the sign-in screen's own switch)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI\\BootAnimation"
+        ValueName: "DisableStartupSound"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "taskbar-taskview-policy"
+      directives:
+        description: "no Task View button, its Settings toggle locked (HideTaskViewButton)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer"
+        ValueName: "HideTaskViewButton"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    # --- host-cabin-win (windows/hosts/cabin-win.nix, packages/winget/host-cabin-win.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "boot-guard-task"
+      directives:
+        description: "rEFInd first and Windows Boot Manager last in the firmware order at every Windows start (dram-windows/boot-guard.ps1)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\boot-guard-task.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\boot-guard-task.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\boot-guard-task.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "dns-quad9-doh"
+      directives:
+        description: "Quad9 (9.9.9.9, 149.112.112.112 and IPv6) over DNS-over-HTTPS on the Ethernet adapter, plaintext fallback allowed"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\dns-quad9-doh.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\dns-quad9-doh.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\dns-quad9-doh.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Registry"
+      id: "no-auto-device-encryption"
+      directives:
+        description: "no automatic device encryption (BitLocker is turned on by hand)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\BitLocker"
+        ValueName: "PreventDeviceEncryption"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-fast-startup"
+      directives:
+        description: "Fast Startup off (Arch mounts this disk cleanly)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power"
+        ValueName: "HiberbootEnabled"
+        ValueType: "Dword"
+        ValueData: "0"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-firmware-class-installs"
+      directives:
+        description: "no UEFI capsule (firmware) packages from Windows Update: the BIOS comes from M-Flash"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions"
+        ValueName: "DenyDeviceClasses"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-firmware-class-installs-list"
+      directives:
+        description: "the Firmware setup class (the NVIDIA driver is Display class: unaffected)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions\\DenyDeviceClasses"
+        ValueName: "1"
+        ValueType: "String"
+        ValueData: "{f2e7dd72-6468-4e36-b6f1-6488f42c1b52}"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-firmware-installers"
+      directives:
+        description: "Windows runs nothing a firmware table hands it (MSI's bundle comes that way)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager"
+        ValueName: "DisableWpbtExecution"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-wch-driver-installs"
+      directives:
+        description: "no driver install for WCH's USB-serial chips (their only driver is WCH's own)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions"
+        ValueName: "DenyDeviceIDs"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-wch-driver-installs-1"
+      directives:
+        description: "WCH CH340 (USB 1A86:7523)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions\\DenyDeviceIDs"
+        ValueName: "1"
+        ValueType: "String"
+        ValueData: "USB\\VID_1A86&PID_7523"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-wch-driver-installs-2"
+      directives:
+        description: "WCH CH340K (USB 1A86:7522)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions\\DenyDeviceIDs"
+        ValueName: "2"
+        ValueType: "String"
+        ValueData: "USB\\VID_1A86&PID_7522"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-wch-driver-installs-3"
+      directives:
+        description: "WCH CH341 serial (USB 1A86:5523)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions\\DenyDeviceIDs"
+        ValueName: "3"
+        ValueType: "String"
+        ValueData: "USB\\VID_1A86&PID_5523"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-wch-driver-installs-4"
+      directives:
+        description: "WCH CH341A as a programmer (USB 1A86:5512)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions\\DenyDeviceIDs"
+        ValueName: "4"
+        ValueType: "String"
+        ValueData: "USB\\VID_1A86&PID_5512"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-wch-driver-installs-5"
+      directives:
+        description: "WCH CH342 (USB 1A86:55D2)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions\\DenyDeviceIDs"
+        ValueName: "5"
+        ValueType: "String"
+        ValueData: "USB\\VID_1A86&PID_55D2"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-wch-driver-installs-6"
+      directives:
+        description: "WCH CH343 (USB 1A86:55D3)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions\\DenyDeviceIDs"
+        ValueName: "6"
+        ValueType: "String"
+        ValueData: "USB\\VID_1A86&PID_55D3"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "no-wch-driver-installs-7"
+      directives:
+        description: "WCH CH9102 (USB 1A86:55D4)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeviceInstall\\Restrictions\\DenyDeviceIDs"
+        ValueName: "7"
+        ValueType: "String"
+        ValueData: "USB\\VID_1A86&PID_55D4"
+        Force: true
+    - resource: "PSDscResources/Script"
+      id: "power-like-arch"
+      directives:
+        description: "as Arch's hypridle on this desktop: never sleeps on AC, locks at 30 min, screens off at 45"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\power-like-arch.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\power-like-arch.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\power-like-arch.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Registry"
+      id: "secureboot-no-managed-rollout"
+      directives:
+        description: "no Microsoft-managed Secure Boot variable rollout (Arch owns KEK, db and dbx)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Secureboot"
+        ValueName: "HighConfidenceOptOut"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Script"
+      id: "secureboot-no-revocations"
+      directives:
+        description: "Windows never queues the PCA 2011 revocation (0x80), SVN (0x200) or SBAT (0x400) updates; Arch decides those"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\secureboot-no-revocations.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\secureboot-no-revocations.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\secureboot-no-revocations.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "time-zone-and-hibernation"
+      directives:
+        description: "US Eastern time like Arch (America/New_York), hibernation off"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\time-zone-and-hibernation.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\time-zone-and-hibernation.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\time-zone-and-hibernation.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Registry"
+      id: "utc-clock"
+      directives:
+        description: "the hardware clock is read as UTC (Arch keeps it so)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation"
+        ValueName: "RealTimeIsUniversal"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Script"
+      id: "windows-update-active-hours"
+      directives:
+        description: "active hours 08:00 to 02:00 (18 hours, the most Windows allows): no update restart inside them"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-update-active-hours.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-update-active-hours.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-update-active-hours.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Registry"
+      id: "windows-update-drivers"
+      directives:
+        description: "drivers keep coming with Windows Update (the NVIDIA driver): the policy that would exclude them, declared off"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate"
+        ValueName: "ExcludeWUDriversInQualityUpdate"
+        ValueType: "Dword"
+        ValueData: "0"
+        Force: true
+    - resource: "PSDscResources/Script"
+      id: "windows-update-feature-pin"
+      directives:
+        description: "Windows 11 stays on 26H2, the version cabin runs, until this line moves"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-update-feature-pin.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-update-feature-pin.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-update-feature-pin.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "windows-update-no-restart-signed-in"
+      directives:
+        description: "updates download and install by themselves, but Windows never restarts for them while pj is signed in (option 4, the one that restart rule needs)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-update-no-restart-signed-in.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-update-no-restart-signed-in.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\windows-update-no-restart-signed-in.ps1'))) -Mode Set"

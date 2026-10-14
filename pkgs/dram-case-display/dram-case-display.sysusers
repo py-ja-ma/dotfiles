@@ -1,0 +1,5 @@
+# /usr/lib/sysusers.d/dram-case-display.conf (pkgs/dram-case-display): the group that may write
+# to the Antec Flux Pro panel's usbfs node (60-dram-case-display.rules). No user: the service
+# runs as a dynamic user that joins this group (SupplementaryGroups=). Not named like the unit:
+# DynamicUser= refuses to start (EILSEQ) when a static group carries its user's name.
+g dram-case-panel -

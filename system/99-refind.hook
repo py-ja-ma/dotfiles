@@ -1,0 +1,13 @@
+# /etc/pacman.d/hooks/99-refind.hook - installed by dotfiles/system/apply-refind.sh.
+# The refind package ships no hook. After an upgrade the ESP copy of rEFInd is renewed
+# (and signed again when sbctl has keys) by /usr/local/lib/dram/refind-update.
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = refind
+
+[Action]
+Description = Updating rEFInd on the ESP (signed when sbctl has keys)...
+When = PostTransaction
+Exec = /usr/local/lib/dram/refind-update

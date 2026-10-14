@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+#
+# windows/build/cabin-win/40-machine.winget - rendered by bin/render-windows.sh from
+# windows/hosts/cabin-win.nix and what it names; edit those, never this (decisions/0020).
+# Phase 40, autostart, what starts by itself; scope machine: every unit elevated, none writing HKCU.
+# dram.ps1 (or converge.ps1) applies the documents in manifest.json's order, from build\:
+#   winget configure -f C:\ProgramData\dram\build\40-machine.winget --accept-configuration-agreements --disable-interactivity
+properties:
+  configurationVersion: "0.2.0"
+  resources:
+    # --- host-cabin-win (windows/hosts/cabin-win.nix, packages/winget/host-cabin-win.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "case-display-task"
+      directives:
+        description: "the SYSTEM task dram-case-display: case-display.ps1 from startup, restarted if it stops"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\case-display-task.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\case-display-task.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\case-display-task.ps1'))) -Mode Set"

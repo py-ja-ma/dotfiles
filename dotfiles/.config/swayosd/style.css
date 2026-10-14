@@ -1,0 +1,34 @@
+@import url("../themes/current/swayosd.css");  /* resolved against ~/.config/swayosd/ (the symlink): works only when loaded through ~/.config */
+
+/* swayosd — volume/brightness OSD, Letterpress: a flat slip of paper with a
+   hairline and a thin accent bar. Colours from the active theme via @import. */
+window {
+  background: alpha(@osd-bg, 0.97);
+  border: 1px solid alpha(@osd-fg, 0.18);
+  border-radius: 3px;
+}
+
+label {
+  color: @osd-fg;
+  font-family: "Monaspace Xenon", monospace;
+  font-size: 12px;
+}
+
+progressbar {
+  border-radius: 0;
+  min-height: 2px;
+}
+
+progress {
+  background: @osd-progress;
+  border-radius: 0;
+}
+
+trough {
+  background: alpha(@osd-fg, 0.14);
+  border-radius: 0;
+}
+
+image {
+  color: @osd-fg;
+}

@@ -1,0 +1,19 @@
+#? btop — Letterpress TUI monitor (docs/design/shell-and-bars/terminal.md, "TUI monitors").
+#? ~/.config/btop/btop.conf is seeded from this template by dram-theme on first run and
+#? then belongs to btop (save_config_on_exit rewrites it with every key, in its own
+#? order). Keys left out here keep btop's defaults.
+
+#* The dram's theme: dram-theme links themes/current/btop.theme into
+#* ~/.config/btop/themes/dram.theme (btop resolves color_theme by name, not path)
+color_theme = "dram"
+
+#* Paper: the terminal's own background (kitty's grain) shows through
+theme_background = false
+truecolor = true
+
+#* Square hairline boxes, not rounded cards
+rounded_corners = false
+
+graph_symbol = "braille"
+vim_keys = true
+update_ms = 1000

@@ -1,0 +1,15 @@
+# role: ml — local models and PyTorch on cabin's GPU (docs/toolchain/development/README.md). PyTorch
+# comes per project from uv (wheels bring their CUDA runtime: waived, decisions/0013); the
+# CUDA toolkit itself is the opt-in ml-cuda role. Weights: that page's allowlist only.
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists the role
+# in `roles` (decisions/0009). One name per line, own-line comments only; a name may appear
+# in ONE packages list (bin/check.sh §3).
+
+# llama.cpp with the Vulkan backend (no CUDA toolkit needed); llama-server is a user unit
+# llama-server: provided by llama-cpp
+llama-cpp
+ggml-vulkan
+# GPU containers for Podman (CDI)
+nvidia-container-toolkit
+# GPU monitor (accepted 2026-10-11)
+nvtop

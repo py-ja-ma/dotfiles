@@ -1,0 +1,6 @@
+/* Soft Color — swayosd palette (imported by swayosd/style.css) */
+@define-color osd-bg       #2b304d;
+@define-color osd-border   #ff9a8b;
+@define-color osd-fg       #fdf0ed;
+@define-color osd-progress #ff9a8b;
+@define-color osd-trough   #3a4061;

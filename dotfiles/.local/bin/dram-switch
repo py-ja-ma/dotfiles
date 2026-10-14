@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# usage: dram-switch [home-manager switch args]
+#
+# Shim kept for muscle memory and old docs: runs `dram switch` with the same
+# arguments (the flake for <user>@$(cat /etc/hostname), dated -b bak-<stamp>, never
+# bare `home-manager switch`).
+#
+#   -h, --help    this text (`dram switch --help` for the real one)
+#
+# needs:  dram on PATH
+# alone:  yes, for any command renamed: one exec line
+# here:   linked into ~/.local/bin by modules/cli.nix on every host
+# exit:   0 ok · 1 dram switch failed · 2 bad usage
+# see:    docs/operations/dram/README.md
+
+# SPDX-FileCopyrightText: 2026 Patrick Jordan
+# SPDX-License-Identifier: MIT
+
+case "${1:-}" in
+  -h | --help)
+    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+esac
+
+exec dram switch "$@"

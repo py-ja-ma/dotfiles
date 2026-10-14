@@ -1,0 +1,85 @@
+/* gsimplecal — the click-to-popup calendar, Letterpress: a card of paper with
+ * a hairline, the month in Fraunces, the days in Literata, today ringed in
+ * the accent — never a fill.
+ *
+ * HOW IT GETS LOADED: gsimplecal 2.5 has no stylesheet option at all (its
+ * config parser knows 19 keys, none about CSS — the old `maincss_file` line was
+ * dead and the popup ran on bare Adwaita). So gsimplecal-dram.sh makes this
+ * file the GTK3 USER stylesheet of the gsimplecal process only: it builds a
+ * private XDG_CONFIG_HOME whose gtk-3.0/gtk.css @imports the current theme's
+ * palette (themes/current/waybar.css) and then this file. Colour names (@base @text @subtext @accent) therefore come
+ * from the palette import that precedes this file — nothing is defined here.
+ * gsimplecal is spawned fresh on every click, so it follows SUPER+T.
+ *
+ * NODES (GTK 3.24 gtkcalendar.c): one `calendar` node (class .view); the title
+ * row is drawn with .header, the arrows with .button (+:hover), the day-name
+ * row and week numbers with .highlight, days outside the month carry
+ * GTK_STATE_FLAG_INCONSISTENT (= :indeterminate), the selected day :selected,
+ * a marked day (mark_today = 1 marks today) :active. GTK3 draws no "today"
+ * frame of its own — the ring below is the :selected border.
+ * Window rounding comes from the Hyprland window rule (GTK3 can't round toplevels). */
+
+window {
+  background-color: @base;
+  color: @text;
+}
+
+calendar {
+  font-family: "Literata";
+  font-size: 13px;
+  background-color: @base;
+  color: @text;
+  border: 1px solid alpha(@text, 0.18);
+  border-radius: 3px;
+  padding: 8px;
+}
+
+/* month + year title */
+calendar.header {
+  font-family: "Fraunces";
+  font-weight: 600;
+  font-size: 15px;
+  color: @text;
+  border-style: solid;
+  border-color: alpha(@text, 0.18);
+  border-width: 0 0 1px 0;   /* adw-gtk3 frames the header box; keep the rule only */
+  border-radius: 0;
+}
+
+/* the month-navigation arrows */
+calendar.button {
+  background-color: transparent;
+  background-image: none;
+  border-color: transparent;
+  box-shadow: none;
+  color: @subtext;
+}
+calendar.button:hover {
+  color: @accent;
+}
+
+/* day names (and week numbers, if ever enabled): quiet ink, not bold */
+calendar.highlight {
+  font-weight: normal;
+  color: @subtext;
+}
+
+/* today (mark_today): accent ink */
+calendar:active {
+  color: @accent;
+  font-weight: 600;
+}
+
+/* the selected day (today, on open): a 1 px accent ring, no fill */
+calendar:selected {
+  background-color: transparent;
+  background-image: none;
+  color: @accent;
+  border: 1px solid @accent;
+  border-radius: 3px;
+}
+
+/* days outside the current month */
+calendar:indeterminate {
+  color: alpha(@text, 0.4);
+}

@@ -1,0 +1,56 @@
+# shellcheck disable=SC2034,SC2154,SC2164
+# [dram] vendored from aur:vita3k-bin (see UPSTREAM), rewritten: Vita3K publishes only a
+# moving "continuous" release, so we pin the x86_64 AppImage of build 4166 by its sha256
+# (the digest GitHub shows) — a later upstream build fails the checksum until PIN is
+# followed. The squashfs is unpacked with unsquashfs; nothing from it runs at build time.
+# Review in REVIEW.md.
+# Maintainer (AUR): Pedro Montes Alcalde
+
+pkgname=vita3k-bin
+_pkgname=vita3k
+_buildno=4168
+_commit=46602447c7f84d53790b44e1869ab5105178bf16 # "Corresponding commit" of build 4168, 2026-10-11
+pkgver=r4168.46602447c
+pkgrel=2
+pkgdesc="Experimental PlayStation Vita emulator (CI AppImage, pinned build)"
+arch=('x86_64')
+url="https://vita3k.org/"
+license=('GPL-2.0-only')
+# no unzip (register: fail since 2026-10-10): the AppImage is unpacked with unsquashfs, and the
+# package is pinned, so Vita3K's own updater is never the update path
+depends=('hicolor-icon-theme' 'vulkan-icd-loader' 'libglvnd' 'xdg-desktop-portal')
+makedepends=('squashfs-tools' 'binutils')
+provides=('vita3k')
+conflicts=('vita3k' 'vita3k-git')
+options=('!strip' '!debug')
+_appimage="Vita3K-x86_64-$_buildno.AppImage"
+source=("$_appimage::https://github.com/Vita3K/Vita3K/releases/download/continuous/Vita3K-x86_64.AppImage"
+  'org.vita3k.vita3k.desktop' 'vita3k')
+noextract=("$_appimage")
+sha256sums=('62ac99799cf799adad5f35c4189e2d15b038147272257079685e088530a9888c'
+            '889982c3350282912181d0408a5dc60b045d6bd677f275f7c5e9fe7ea84c9acb'
+            '0d4fad01d79a75918d3f619c52dffc6e9b2ebe2ac0bdebcf274c7cab47612562')
+
+prepare() {
+  local offset
+  offset=$(readelf -h "$_appimage" | awk '
+    /Start of section headers/ { so = $5 }
+    /Size of section headers/  { ss = $5 }
+    /Number of section headers/ { ns = $5 }
+    END { print so + ss * ns }')
+  [ "$offset" -gt 0 ] || { echo "could not compute the AppImage squashfs offset" >&2; return 1; }
+  rm -rf squashfs-root
+  unsquashfs -q -no-xattrs -d squashfs-root -o "$offset" "$_appimage" >/dev/null
+  chmod -R u+rwX,go+rX,go-w squashfs-root
+}
+
+package() {
+  install -dm755 "$pkgdir/opt/$_pkgname"
+  cp -dR --no-preserve=ownership squashfs-root/. "$pkgdir/opt/$_pkgname/"
+  rm -f "$pkgdir/opt/$_pkgname/.DirIcon"
+  install -Dm755 vita3k "$pkgdir/usr/bin/vita3k"
+  install -Dm644 org.vita3k.vita3k.desktop "$pkgdir/usr/share/applications/org.vita3k.vita3k.desktop"
+  install -Dm644 squashfs-root/usr/share/icons/hicolor/scalable/apps/org.vita3k.vita3k.svg \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.vita3k.vita3k.svg"
+  install -Dm644 squashfs-root/usr/share/licenses/Vita3K/COPYING.txt "$pkgdir/usr/share/licenses/$pkgname/COPYING.txt"
+}

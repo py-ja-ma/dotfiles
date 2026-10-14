@@ -1,0 +1,11 @@
+/* Solarized Paper — swaync palette (imported by swaync/style.css) */
+@define-color base     #fdf6e3;
+@define-color mantle   #f6efdc;
+@define-color crust    #eee8d5;
+@define-color text     #073642;
+@define-color subtext  #586e75;
+@define-color surface0 #e4ddc8;
+@define-color surface1 #d5cdb6;
+@define-color blue     #1e6da5;
+@define-color red      #ca2522;
+@define-color accent   #b58900;   /* the ONE accent ink (Letterpress) */

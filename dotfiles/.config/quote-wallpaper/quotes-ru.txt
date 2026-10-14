@@ -1,0 +1,54 @@
+# quotes-ru.txt — Russian folk proverbs (public-domain sayings, no attributed authors)
+# for the second output's wallpaper. One per line:  <proverb> | <one-line English gloss>
+# Lines starting with # are ignored. Rendered by ~/.local/bin/quote-wallpaper.sh (--ru).
+Без труда не вытащишь и рыбку из пруда. | Without effort you will not even pull a fish from the pond.
+Семь раз отмерь, один раз отрежь. | Measure seven times, cut once.
+Тише едешь — дальше будешь. | Ride slower and you will get further.
+Не имей сто рублей, а имей сто друзей. | Better a hundred friends than a hundred roubles.
+Что посеешь, то и пожнёшь. | What you sow is what you reap.
+Волков бояться — в лес не ходить. | If you fear wolves, stay out of the forest.
+Утро вечера мудренее. | The morning is wiser than the evening.
+В гостях хорошо, а дома лучше. | Visiting is good, but home is better.
+Слово не воробей: вылетит — не поймаешь. | A word is not a sparrow: once it flies out, you cannot catch it.
+Поспешишь — людей насмешишь. | Hurry and you will make people laugh.
+Делу время, потехе час. | Time for work, an hour for play.
+Не всё то золото, что блестит. | Not all that glitters is gold.
+Старый друг лучше новых двух. | An old friend is better than two new ones.
+Под лежачий камень вода не течёт. | Water does not flow under a stone that lies still.
+Любишь кататься — люби и саночки возить. | If you love sledding, love hauling the sled too.
+Один в поле не воин. | One man in a field is no warrior.
+Яблоко от яблони недалеко падает. | The apple does not fall far from the apple tree.
+Ученье — свет, а неученье — тьма. | Learning is light; ignorance is darkness.
+Повторенье — мать ученья. | Repetition is the mother of learning.
+Не откладывай на завтра то, что можно сделать сегодня. | Do not put off until tomorrow what can be done today.
+Глаза боятся, а руки делают. | The eyes are afraid, but the hands do the work.
+Терпение и труд всё перетрут. | Patience and work grind everything down.
+Хорошо смеётся тот, кто смеётся последним. | He laughs best who laughs last.
+Лучше синица в руках, чем журавль в небе. | Better a tit in the hand than a crane in the sky.
+Цыплят по осени считают. | Chickens are counted in the autumn.
+Без кота мышам раздолье. | With the cat away, the mice have free rein.
+Дарёному коню в зубы не смотрят. | Do not look a gift horse in the mouth.
+Куй железо, пока горячо. | Strike the iron while it is hot.
+Москва не сразу строилась. | Moscow was not built all at once.
+Сделал дело — гуляй смело. | Finish the job, then stroll without a care.
+Готовь сани летом, а телегу зимой. | Prepare the sled in summer and the cart in winter.
+Где родился, там и пригодился. | Where you were born is where you are of use.
+На вкус и цвет товарищей нет. | In taste and colour there are no comrades.
+Слово — серебро, молчание — золото. | Speech is silver, silence is gold.
+Язык до Киева доведёт. | Your tongue will get you all the way to Kyiv.
+В тихом омуте черти водятся. | Devils live in the still pool.
+Нет худа без добра. | There is no bad without some good in it.
+Не рой другому яму — сам в неё попадёшь. | Do not dig a pit for another; you will fall into it yourself.
+Друзья познаются в беде. | Friends are known in trouble.
+Чем богаты, тем и рады. | What we have, we gladly share.
+С кем поведёшься, от того и наберёшься. | You take on the ways of the company you keep.
+Гром не грянет — мужик не перекрестится. | Until the thunder claps, the peasant will not cross himself.
+Дело мастера боится. | The work fears its master.
+Худой мир лучше доброй ссоры. | A poor peace is better than a good quarrel.
+Кто рано встаёт, тому Бог подаёт. | God gives to those who rise early.
+Мал золотник, да дорог. | The zolotnik is small, but precious.
+Семеро одного не ждут. | Seven do not wait for one.
+Не было бы счастья, да несчастье помогло. | There would have been no luck, but misfortune helped.
+Своя рубашка ближе к телу. | One's own shirt is closer to the body.
+Век живи — век учись. | Live a century, learn a century.
+Не место красит человека, а человек место. | It is not the position that graces the person, but the person the position.

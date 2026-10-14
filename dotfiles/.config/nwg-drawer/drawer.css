@@ -1,0 +1,135 @@
+/* nwg-drawer — the app grid (SUPER+G), Letterpress: a sheet of paper, names
+   set in Literata, one Fraunces search line on an accent rule, hairlines
+   instead of pills. Theme-agnostic: palette comes from the active dram theme
+   via @import, so the drawer restyles itself on every `dram-theme` switch.
+   NOTE: GTK CSS only — no %% units in margins (they make GTK reject the
+   whole file and fall back to unstyled widgets). */
+
+@import url("../themes/current/waybar.css");  /* resolved against ~/.config/nwg-drawer/ (the symlink): works only when loaded through ~/.config */
+
+window {
+    background-color: alpha(@base, 0.97);   /* near-solid paper; blur is off */
+    color: @text;
+    font-family: "Literata", serif;
+    font-size: 14px;
+}
+
+/* app tiles: unboxed until pointed at */
+button, image {
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+button {
+    padding: 12px;
+    margin: 6px;
+    border-radius: 3px;
+    background-color: transparent;
+    border: 1px solid transparent;
+    color: @text;
+}
+
+button:hover {
+    background-color: transparent;
+    border: 1px solid alpha(@text, 0.18);
+}
+
+button:focus {
+    background-color: transparent;
+    border: 1px solid @accent;
+    color: @accent;
+    box-shadow: none;
+}
+
+/* search field: a line of Fraunces on one accent rule, no box — the same
+   inputbar as rofi. adw-gtk3 draws `entry:focus` with its own accent outline
+   + box-shadow and a pill radius, so the focus state is overridden here too
+   (under layer-shell GTK3 does not reliably flag `:focus`, which is why the
+   rule is accent always rather than on focus), and its "edit-find" primary
+   icon is scaled away (GTK3 has no icon-size property).
+   (nwg-drawer 0.7.x gives the entry no CSS name — target `entry`) */
+entry {
+    background-color: transparent;
+    background-image: none;
+    color: @text;
+    caret-color: @accent;
+    border: none;
+    border-bottom: 1px solid @accent;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+    margin: 18px 0px 10px 0px;
+    padding: 8px 6px;
+    font-family: "Fraunces", serif;
+    font-size: 20px;
+}
+
+entry:focus,
+entry:focus-within {
+    background-color: transparent;
+    border-color: @accent;
+    border-radius: 0;
+    outline: none;
+    outline-width: 0;
+    box-shadow: none;
+}
+
+entry image {
+    -gtk-icon-transform: scale(0);
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+}
+
+entry selection {
+    background-color: alpha(@text, 0.18);
+    color: @text;
+}
+
+/* pinned apps row + separator */
+#pinned-box {
+    padding-bottom: 14px;
+    border-bottom: 1px solid alpha(@text, 0.18);
+}
+
+/* file-search results */
+#files-box {
+    padding: 10px;
+    border: 1px solid alpha(@text, 0.18);
+    border-radius: 3px;
+}
+
+/* category filters: words with a hairline underneath, the active one in accent */
+#category-button {
+    margin: 4px 5px;
+    padding: 4px 10px;
+    border-radius: 0;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid alpha(@text, 0.18);
+    font-style: italic;
+    color: @subtext;
+}
+
+#category-button:hover,
+#category-button:focus {
+    background-color: transparent;
+    border-bottom: 1px solid @accent;
+    color: @accent;
+}
+
+/* small description text under app names */
+#desc {
+    color: @subtext;
+    font-family: "Monaspace Xenon", monospace;
+    font-size: 11px;
+}
+
+/* inline calculator result (type e.g. 2+2 in search) */
+#math-label {
+    font-family: "Fraunces", serif;
+    color: @accent;
+    font-weight: bold;
+}

@@ -1,0 +1,4 @@
+proton-pass-cli — how to re-pin
+  1. New release: https://github.com/protonpass/pass-cli/releases — set pkgver to the tag.
+  2. Resolve the tag to a commit (GitHub → tag → commit sha) and put it in the comment above source=.
+  3. `updpkgsums` recomputes b2sums from the fresh checkout; keep it (never SKIP).

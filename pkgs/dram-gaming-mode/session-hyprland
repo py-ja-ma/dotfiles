@@ -1,0 +1,21 @@
+#!/usr/bin/bash
+# usage: session-hyprland <desktop|gaming>
+#
+# /usr/lib/dram/session-hyprland (dram-gaming-mode, decisions/0012): what ly's "Desktop"
+# and "Gaming Mode" entries run. Both are Hyprland: `desktop` with the normal config,
+# `gaming` with ~/.config/hypr/gaming.lua (Steam Big Picture fullscreen on one monitor,
+# no bar). The two .desktop files carry no DesktopNames= on purpose: ly matches an
+# autologin session by file name, Name= or DesktopNames= and takes the first hit, so
+# "Hyprland" there would make them ambiguous; the desktop variables are set here.
+
+export XDG_CURRENT_DESKTOP=Hyprland XDG_SESSION_DESKTOP=Hyprland
+case "${1:-desktop}" in
+  gaming)
+    export DRAM_SESSION=gaming
+    cfg="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/gaming.lua"
+    if [ -f "$cfg" ]; then exec start-hyprland -- --config "$cfg"; fi
+    echo "session-hyprland: $cfg is missing (dram switch links it) — starting the desktop" >&2
+    ;;
+esac
+export DRAM_SESSION=desktop
+exec start-hyprland

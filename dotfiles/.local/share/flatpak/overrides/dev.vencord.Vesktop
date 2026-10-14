@@ -1,0 +1,46 @@
+# dev.vencord.Vesktop — Discord client (Vencord-published Flatpak, Flathub
+# "verified: vencord.dev"). Least-privilege override on top of the manifest's
+# finish-args; `flatpak-override(1)` / `flatpak-metadata(5)` format. Policy and
+# the reason behind every line: docs/toolchain/packaging/flatpak.md.
+#
+# Lives in the repo: ~/.local/share/flatpak/overrides is a symlink to this
+# directory (modules/desktop.nix), and system/flatpak-setup.sh installs the
+# same file under /var/lib/flatpak/overrides/ for the system installation.
+#
+# Manifest grants kept:       network, wayland, pulseaudio (pipewire-pulse),
+#                             dri, Downloads rw, Pictures ro, the pipewire
+#                             socket (screen-share arrives as a PipeWire node
+#                             from xdg-desktop-portal-hyprland).
+# Manifest grants kept (2):    device=all — the webcam (Razer Kiyo on cabin,
+#                             /dev/video*) is only reachable this way; Electron
+#                             does not use the camera portal yet. Re-removed
+#                             2026-10-06, put back 2026-10-07 (video calls).
+#                             `all` subsumes `dri`, so dri is not listed twice.
+#                             Gate for dropping `all` again (back to `dri;!all;`):
+#                             Chromium ships WebRtcPipeWireCamera ENABLED by
+#                             default (media/capture/capture_switches.cc; still
+#                             disabled in Cr150/152, flag expiry M160) AND
+#                             Vesktop's Electron carries that Chromium. Electron
+#                             #42608 (camera portal) is open as of 2026-10-07.
+# Manifest grants removed:    ipc (X11
+#                             MIT-SHM only), Videos, ~/.steam (game detection),
+#                             speech-dispatcher, the two tray/appmenu names
+#                             (the dram has no tray).
+# Never granted:              host, home — the sandbox cannot read ~/.ssh,
+#                             ~/git, the keyring, or anything but the dirs above.
+
+[Context]
+shared=network;!ipc;
+sockets=wayland;fallback-x11;pulseaudio;!x11;
+devices=all;
+filesystems=xdg-download;xdg-pictures:ro;xdg-run/pipewire-0;!host;!home;!xdg-videos;!xdg-run/speech-dispatcher;!~/.steam;
+
+[Session Bus Policy]
+org.freedesktop.Notifications=talk
+org.kde.StatusNotifierWatcher=none
+com.canonical.AppMenu.Registrar=none
+
+[Environment]
+# Electron inside the sandbox picks Wayland when WAYLAND_DISPLAY is set and
+# falls back to X11 (fallback-x11) otherwise — no --ozone-platform flags file.
+ELECTRON_OZONE_PLATFORM_HINT=auto

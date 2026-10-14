@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# mkinitcpio install hook (decisions/0011): what `systemd.volatile=overlay` needs in a
+# systemd initramfs — Arch's own `systemd` hook carries neither the service nor the
+# overlay module, and without them a snapshot boot entry hangs at the end of the
+# initramfs (found by tests/t3-vm.sh, 2026-10-11). Installed to
+# /etc/initcpio/install/dram-volatile by system/snapshots-setup.sh; used ONLY for the
+# snapshot boot entries (`mkinitcpio -A dram-volatile` in system/dram-snapshot.sh),
+# never added to HOOKS for the live system.
+
+build() {
+  add_module overlay
+  add_binary /usr/lib/systemd/systemd-volatile-root
+  add_systemd_unit systemd-volatile-root.service
+}
+
+help() {
+  cat <<HELPEOF
+systemd.volatile=overlay for dram's read-only snapshot boot entries: the overlay
+module and systemd-volatile-root (a RAM overlay on a read-only root).
+HELPEOF
+}

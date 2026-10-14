@@ -1,0 +1,22 @@
+# Tracked files copied VERBATIM into /etc (decisions/0008). The owning hook writes them
+# (write-on-change, with a .bak); `dram doctor` compares each target with its source and
+# names the hook to re-run. Templated files (reflector.conf, pacman.conf options, the
+# ly/rEFInd configs) are not listed: their hooks own the comparison. TAB-separated:
+# source (repo-relative), target, role (or pseudo-role: base, metal, wsl), owning hook.
+system/hooks/50-pkglist.hook	/etc/pacman.d/hooks/50-pkglist.hook	base	system/maintenance.sh
+system/hooks/70-proton-pass-sandbox.hook	/etc/pacman.d/hooks/70-proton-pass-sandbox.hook	base	system/maintenance.sh
+system/pacman-contrib.conf	/etc/conf.d/pacman-contrib	base	system/maintenance.sh
+system/nftables.conf	/etc/nftables.conf	metal	system/harden.sh
+system/limits-hyprland.conf	/etc/security/limits.d/20-hyprland.conf	desktop	system/maintenance.sh
+system/v4l2loopback.conf	/etc/modprobe.d/v4l2loopback.conf	creator	system/maintenance.sh
+system/v4l2loopback-load.conf	/etc/modules-load.d/v4l2loopback.conf	creator	system/maintenance.sh
+system/reflector-tolerant.conf	/etc/systemd/system/reflector.service.d/dram.conf	base	system/maintenance.sh
+system/hooks/00-dram-snap-pre.hook	/etc/pacman.d/hooks/00-dram-snap-pre.hook	metal	system/snapshots-setup.sh
+system/hooks/zz-dram-snap-post.hook	/etc/pacman.d/hooks/zz-dram-snap-post.hook	metal	system/snapshots-setup.sh
+system/dram-snapshot.sh	/usr/local/lib/dram/dram-snapshot	metal	system/snapshots-setup.sh
+system/initcpio/dram-volatile	/etc/initcpio/install/dram-volatile	metal	system/snapshots-setup.sh
+system/udev/70-dram-re-lab.rules	/etc/udev/rules.d/70-dram-re-lab.rules	re-lab	system/re-lab-setup.sh
+system/networkmanager/dram.conf	/etc/NetworkManager/conf.d/dram.conf	desktop	system/network-setup.sh
+system/wsl/sshd.conf	/etc/ssh/sshd_config.d/10-dram-wsl.conf	wsl	system/wsl-setup.sh
+system/wsl/dram-wsl-rshared.service	/etc/systemd/system/dram-wsl-rshared.service	wsl	system/wsl-setup.sh
+system/wsl/70-dram-wsl-yubikey.rules	/etc/udev/rules.d/70-dram-wsl-yubikey.rules	wsl	system/wsl-setup.sh

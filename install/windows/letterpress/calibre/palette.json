@@ -1,0 +1,31 @@
+{
+  "color_palette": "dark",
+  "dark_palette_name": "Letterpress",
+  "dark_palettes": {
+    "Letterpress": {
+      "Window": "#1c140f",
+      "WindowText": "#e6d6cb",
+      "Base": "#16100c",
+      "AlternateBase": "#1c1612",
+      "Text": "#e6d6cb",
+      "PlaceholderText": "#716158",
+      "ToolTipBase": "#2e211a",
+      "ToolTipText": "#e6d6cb",
+      "BrightText": "#f2eae5",
+      "Button": "#2e211a",
+      "ButtonText": "#e6d6cb",
+      "Highlight": "#3a2a22",
+      "HighlightedText": "#e6d6cb",
+      "Accent": "#c0442b",
+      "Link": "#6e8a8f",
+      "LinkVisited": "#b06a5a",
+      "WindowText-disabled": "#716158",
+      "Text-disabled": "#716158",
+      "ButtonText-disabled": "#716158",
+      "PlaceholderText-disabled": "#716158",
+      "ToolTipText-disabled": "#716158",
+      "BrightText-disabled": "#716158",
+      "HighlightedText-disabled": "#716158"
+    }
+  }
+}

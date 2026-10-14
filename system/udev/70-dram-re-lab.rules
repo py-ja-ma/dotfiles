@@ -1,0 +1,13 @@
+# /etc/udev/rules.d/70-dram-re-lab.rules — USB flash programmers for the re-lab role
+# (docs/toolchain/profiles/re-lab.md). `uaccess` gives the user at the machine access to the device while
+# logged in (not over ssh, not in containers); Arch has no plugdev group and udev ignores
+# rules naming an unknown group, so none is named here. Installed by system/re-lab-setup.sh.
+# Logic analysers (libsigrok) and OpenOCD probes bring their own uaccess rules.
+
+# FTDI FT2232H (Tigard) and FT232H: flashrom ft2232_spi, also JTAG/SWD
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", TAG+="uaccess"
+# WCH CH341A (rev 1.6+ only: older boards put 5 V on the chip) and CH347: flashrom ch341a_spi / ch347_spi
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="5512", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55db", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55de", TAG+="uaccess"

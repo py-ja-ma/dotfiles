@@ -1,0 +1,45 @@
+# shellcheck disable=SC2034,SC2154,SC2164,SC2206
+# [dram] vendored from aur:proton-pass-bin (see UPSTREAM); review in REVIEW.md
+# Maintainer: Echo J. <aidas957 at gmail dot com>
+# Contributor: Mysti
+pkgname=proton-pass-bin
+pkgver=1.41.1
+pkgrel=1
+pkgdesc="Open-source password manager for effortless protection. Securely store, share and auto-login your accounts with Proton Pass, using end-to-end encryption trusted by millions."
+arch=("x86_64")
+url="https://proton.me/pass"
+license=('MIT')                 # Bundled Electron
+license+=('GPL-3.0-or-later')   # The Proton Pass code itself (https://github.com/ProtonMail/WebClients#license)
+groups=("ProtonPass")
+depends=('alsa-lib' 'at-spi2-core' 'cairo' 'dbus' 'expat' 'glib2' 'glibc' 'gtk3' 'libcups'
+  'libgcc' 'libudev.so' 'libx11' 'libxcb' 'libxcomposite' 'libxdamage' 'libxext'
+  'libxfixes' 'libxrandr' 'libxkbcommon' 'mesa' 'nspr' 'nss' 'pango') # Bundled Electron dependencies
+provides=('proton-pass' 'protonpass')
+conflicts=('proton-pass' 'protonpass')
+# URL + sha512 are the vendor's own, from
+# https://proton.me/download/PassDesktop/linux/x64/version.json (Releases[].Version == pkgver,
+# File[].Identifier == ".deb"); the .deb we downloaded 2026-10-06 matched it. See PIN.
+source=("https://proton.me/download/pass/linux/proton-pass_${pkgver}_amd64.deb")
+sha512sums=('a4bb0e90270d0fde7beb2aa7a99a1595fc3bc3fbe1ae0062e842d387cdd46a17c24c5b36dd35a3fa37bd6b879dba123b5e7d4a7a3cf679236e1b8b5e416b34c2')
+
+package() {
+  tar -xf data.tar.xz -C "$pkgdir/"
+
+  install -dm755 "$pkgdir"/opt
+  mv "$pkgdir"/usr/lib/proton-pass "$pkgdir"/opt
+  rmdir "$pkgdir"/usr/lib
+
+  ln -sf "/opt/proton-pass/Proton Pass" "$pkgdir"/usr/bin/proton-pass
+
+  # Remove world-writable bit from some files
+  chmod -R o-w "$pkgdir"/opt/proton-pass/resources/assets
+
+  # [dram] no setuid-root binary from a password manager .deb: Electron uses user
+  # namespaces on an Arch kernel (same choice as visual-studio-code-bin)
+  chmod u-s "$pkgdir"/opt/proton-pass/chrome-sandbox
+
+  # Install bundled Electron license
+  install -Dm644 "$pkgdir"/usr/share/doc/proton-pass/copyright "$pkgdir"/usr/share/licenses/"$pkgname"/copyright
+
+  rm -rf "$pkgdir"/usr/share/{doc,lintian}
+}

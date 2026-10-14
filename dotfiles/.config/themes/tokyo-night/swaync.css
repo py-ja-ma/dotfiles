@@ -1,0 +1,11 @@
+/* Tokyo Night — swaync palette (imported by swaync/style.css) */
+@define-color base     #1a1b26;
+@define-color mantle   #16161e;
+@define-color crust    #0f0f14;
+@define-color text     #c0caf5;
+@define-color subtext  #a9b1d6;
+@define-color surface0 #292e42;
+@define-color surface1 #414868;
+@define-color blue     #7aa2f7;
+@define-color red      #f7768e;
+@define-color accent   #7aa2f7;   /* the ONE accent ink (Letterpress) */

@@ -1,0 +1,17 @@
+# role: chat (Windows) - voice and IRC on every build (2026-10-12, decisions/log.md#d45): the
+# apps only, no servers yet. WeeChat is planned for the WSL clones, with Arch's chat role
+# (docs/toolchain/profiles/README.md).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in ONE
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A
+# Windows host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh).
+
+# voice
+winget:Mumble.Mumble.Client
+# IRC
+winget:squidowl.halloy
+# TeamSpeak 3, under a waiver (decisions/log.md#d46)
+winget:TeamSpeakSystems.TeamSpeakClient
+# Discord, through Vesktop
+winget:Vencord.Vesktop

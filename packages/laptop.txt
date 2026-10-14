@@ -1,0 +1,8 @@
+# Laptop-only. A desktop has no battery, no lid switch, no panel backlight.
+# brightnessctl is in roles/desktop.txt, not here: ly's config.ini and Waybar's
+# backlight module call it by path, so without it those configs break instead of
+# degrading. It is a 50 KB no-op on a desktop.
+sof-firmware
+# tpm2-tss: the TPM2 library the initramfs needs to unlock LUKS2 with TPM2 + PIN
+# (system/tpm2-enroll.sh, decisions/0011)
+tpm2-tss

@@ -1,0 +1,45 @@
+# role: dev — the programmer's kit (decisions/0015, docs/toolchain/development/README.md).
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists the role
+# in `roles` (decisions/0009). One name per line, own-line comments only; a name may appear
+# in ONE packages list (bin/check.sh §3).
+
+# editor: VSCodium ([dram], decisions/log.md#d4) + Open Remote-SSH from Open VSX (docs/toolchain/development/README.md)
+# codium: provided by vscodium-bin
+vscodium-bin
+neovim
+tmux
+# rootless containers (decisions/0015): no firewall forward rules, images on @containers
+podman
+buildah
+skopeo
+aardvark-dns
+passt
+podman-compose
+# other distros' tools in containers
+distrobox
+# toolchains: Rust via rustup, Go, Node LTS (pnpm stays), C/C++
+rustup
+go
+nodejs-lts-krypton
+npm
+pnpm
+clang
+cmake
+ninja
+# debugging and measuring (strace is the re-lab role's)
+valgrind
+perf
+hyperfine
+shfmt
+# GitHub, large files
+github-cli
+git-lfs
+# a terminal AI agent that talks to the local llama-server (docs/toolchain/development/README.md); hosted models
+# only through a signed service waiver
+opencode
+# Python tools and per-project environments (re-lab-tools and the ml role's projects use it)
+uv
+# accepted 2026-10-11: a command runner, shell linting, git hooks
+just
+shellcheck
+pre-commit

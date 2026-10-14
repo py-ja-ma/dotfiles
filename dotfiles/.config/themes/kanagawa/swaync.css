@@ -1,0 +1,11 @@
+/* Kanagawa Wave — swaync palette (imported by swaync/style.css) */
+@define-color base     #1f1f28;
+@define-color mantle   #181820;
+@define-color crust    #16161d;
+@define-color text     #dcd7ba;
+@define-color subtext  #c8c093;
+@define-color surface0 #2a2a37;
+@define-color surface1 #363646;
+@define-color blue     #7e9cd8;
+@define-color red      #c34043;
+@define-color accent   #7e9cd8;   /* the ONE accent ink (Letterpress) */

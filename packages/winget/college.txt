@@ -1,0 +1,20 @@
+# role: college (Windows) - Computer Engineering coursework: the GUI tools of
+# packages/roles/college.txt (cabin-win's work units since 2026-10-12); the HDL tools and TeX Live
+# come from Arch or the WSL clones, which take this role (decisions/log.md#d141);
+# course-mandated closed tools stay per tool and term (docs/toolchain/profiles/college.md).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in ONE
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A
+# Windows host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh).
+
+# circuits and boards
+winget:KiCad.KiCad
+# maths, reports, diagrams, notes, flash cards
+winget:GNU.Octave
+winget:Typst.Typst
+winget:JGraph.Draw
+winget:Xournal++.Xournal++
+winget:Anki.Anki
+# microcontrollers
+winget:ArduinoSA.CLI

@@ -1,0 +1,14 @@
+# NVIDIA discrete graphics (cabin: GA102 RTX 3080 Ti)
+# nvidia-open requires Turing or newer (pre-Turing: bootstrap substitutes nvidia-dkms).
+# Prebuilt modules, one package per kernel (decisions/0011, decisions/log.md#d18): nvidia-open
+# for `linux`,
+# nvidia-open-lts where linux-lts is installed (host-cabin.txt). No DKMS build for the GPU.
+# Only what is about the GPU lives here (2026-10-10, decisions/0009): MangoHud and the
+# lib32 JACK shim moved to roles/gaming.txt, OBS + v4l2loopback to roles/creator.txt.
+# nvidia-utils / lib32-nvidia-utils are waived under decisions/0013 (proprietary userspace).
+nvidia-open
+nvidia-utils
+lib32-nvidia-utils
+nvidia-settings
+libva-nvidia-driver
+egl-wayland

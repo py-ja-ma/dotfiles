@@ -1,0 +1,14 @@
+# role: dev (Windows) - coding happens in the WSL clone (Arch's dev list: podman, rustup, go,
+# node, uv...); natively only the editor, which reaches the clone through Open Remote - SSH at
+# 127.0.0.1:2222 (decisions/log.md#d55). git only in the clone (decisions/log.md#d108;
+# docs/toolchain/development/README.md).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in ONE
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A
+# Windows host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh).
+
+winget:VSCodium.VSCodium
+# its way into the clone: Open Remote - SSH from Open VSX (the dev role's vscodium-open-remote-ssh
+# unit; on Arch, modules/dev.nix installs the same extension)
+manual:open-remote-ssh

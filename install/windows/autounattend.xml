@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  install/windows/autounattend.xml - cabin's Windows 11, alone on its own disk
+  (docs/platforms/windows/README.md).
+
+  Windows Setup reads it only from the root of a removable drive: copy it, and the
+  dram-windows folder beside it, to a removable FAT32 USB stick. The iODD reports itself as
+  a fixed disk, and Setup ignored a copy there on 2026-10-11. Tested by tests/windows-vm.sh
+  in a VM on cabin before every use.
+
+  What it answers, and what it leaves to you:
+    windowsPE   English (US) everywhere and the licence terms. ASKS for the edition (the
+                product key page: "I don't have a product key", then the edition this PC
+                was activated with) and for the disk (the one that is only "Unallocated
+                Space"). It never picks or wipes a disk by itself.
+    specialize  name CABIN-WIN, US Eastern time; the hardware clock read as UTC (Arch keeps
+                it so), Fast Startup and hibernation off, no automatic device encryption
+                (BitLocker is turned on by hand: the key goes to Proton Pass), offline OOBE
+                allowed; copies dram-windows\ from the install drive to
+                C:\Windows\Setup\Scripts\dram-windows.
+    oobeSystem  no EULA, OEM, Microsoft-account or Wi-Fi screens; privacy page answered
+                "off"; the local administrator pj with NO password until the next sign-in,
+                which makes you set one (firstlogon.ps1); one automatic sign-in that runs
+                firstlogon.ps1 (privacy defaults, Steam, Proton Pass).
+  The windowsPE Setup block between the dram:pe markers is the only part
+  tests/windows-vm.sh replaces (a generic Pro key and the VM's one disk, so the test runs
+  unattended); everything after it is tested exactly as written.
+-->
+<unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <SetupUILanguage>
+        <UILanguage>en-US</UILanguage>
+      </SetupUILanguage>
+      <InputLocale>0409:00000409</InputLocale>
+      <SystemLocale>en-US</SystemLocale>
+      <UILanguage>en-US</UILanguage>
+      <UserLocale>en-US</UserLocale>
+    </component>
+    <!-- dram:pe-begin -->
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <UserData>
+        <!-- the all-zero key with WillShowUI=Always shows the product key page: the edition is yours to pick -->
+        <ProductKey>
+          <Key>00000-00000-00000-00000-00000</Key>
+          <WillShowUI>Always</WillShowUI>
+        </ProductKey>
+        <AcceptEula>true</AcceptEula>
+      </UserData>
+      <!-- no DiskConfiguration and no ImageInstall: Setup asks which disk -->
+    </component>
+    <!-- dram:pe-end -->
+  </settings>
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <ComputerName>CABIN-WIN</ComputerName>
+      <TimeZone>Eastern Standard Time</TimeZone>
+    </component>
+    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Description>dram: copy dram-windows from the install drive</Description>
+          <Path>cmd.exe /c "for %d in (C D E F G H I J K L M N O P Q R S T U V W X Y Z) do @if exist %d:\dram-windows\firstlogon.ps1 xcopy /e /i /y %d:\dram-windows C:\Windows\Setup\Scripts\dram-windows"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Description>dram: the hardware clock is UTC (Arch keeps it so)</Description>
+          <Path>reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation" /v RealTimeIsUniversal /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Description>dram: Fast Startup off (Arch mounts this disk's partitions cleanly)</Description>
+          <Path>reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>4</Order>
+          <Description>dram: hibernation off</Description>
+          <Path>powercfg.exe /hibernate off</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <Description>dram: no automatic device encryption (BitLocker is turned on by hand)</Description>
+          <Path>reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\BitLocker" /v PreventDeviceEncryption /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>6</Order>
+          <Description>dram: OOBE may finish without a network</Description>
+          <Path>reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <InputLocale>0409:00000409</InputLocale>
+      <SystemLocale>en-US</SystemLocale>
+      <UILanguage>en-US</UILanguage>
+      <UserLocale>en-US</UserLocale>
+    </component>
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+        <!-- 3: the privacy page answered with everything optional turned off -->
+        <ProtectYourPC>3</ProtectYourPC>
+      </OOBE>
+      <UserAccounts>
+        <LocalAccounts>
+          <LocalAccount wcm:action="add">
+            <Name>pj</Name>
+            <DisplayName>pj</DisplayName>
+            <Group>Administrators</Group>
+            <!-- no password here (this file is public): firstlogon.ps1 makes the next sign-in set one -->
+            <Password>
+              <Value></Value>
+              <PlainText>true</PlainText>
+            </Password>
+          </LocalAccount>
+        </LocalAccounts>
+      </UserAccounts>
+      <AutoLogon>
+        <Username>pj</Username>
+        <Enabled>true</Enabled>
+        <LogonCount>1</LogonCount>
+        <Password>
+          <Value></Value>
+          <PlainText>true</PlainText>
+        </Password>
+      </AutoLogon>
+      <FirstLogonCommands>
+        <SynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Description>dram: first-logon settings and apps (install/windows/dram-windows/firstlogon.ps1)</Description>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Windows\Setup\Scripts\dram-windows\firstlogon.ps1"</CommandLine>
+        </SynchronousCommand>
+      </FirstLogonCommands>
+    </component>
+  </settings>
+</unattend>

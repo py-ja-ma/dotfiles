@@ -1,0 +1,5 @@
+dram-case-display — how to bump (our own code; the sources are the files in this directory)
+  1. Edit the files here; run python3 -I tests/case-display.py (bin/check.sh section 20 runs it).
+  2. pkgver = the date of the change (YYYY.MM.DD), pkgrel 1 (2, 3 … the same day).
+  3. updpkgsums, makepkg --printsrcinfo > .SRCINFO, update pkgs/manifest.txt, and set
+     UPSTREAM to `own:dram-case-display <commit the change was written on> <date>`.

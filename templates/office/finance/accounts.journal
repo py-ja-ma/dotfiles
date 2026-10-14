@@ -1,0 +1,10 @@
+account assets:bank:checking
+account assets:bank:savings
+account liabilities:credit-card
+account income:salary
+account expenses:food
+account expenses:housing
+account expenses:transport
+account expenses:subscriptions
+account expenses:school
+account equity:opening-balances

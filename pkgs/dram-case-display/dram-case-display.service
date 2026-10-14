@@ -1,0 +1,50 @@
+# /usr/lib/systemd/system/dram-case-display.service (pkgs/dram-case-display, docs/case-display.md)
+# The Antec Flux Pro's temperature panel. No [Install]: 60-dram-case-display.rules starts this
+# when the panel appears (SYSTEMD_WANTS) and BindsTo= stops it when the panel goes, so nothing
+# is enabled and a machine without the panel never runs it.
+#
+# Least privilege: a dynamic user, no capabilities, nothing writable but the panel. Its only
+# grant is the group dram-case-panel (sysusers.d), which the udev rule gives the panel's usbfs
+# node (rw); every other USB device stays root's. Detaching usbhid from revision B and claiming
+# the interface need write access to that node, not root. The sensors need no grant: k10temp's
+# sysfs files and NVML's /dev/nvidia* (0666) are open to every user. The dynamic user is named
+# after the unit, so the static group must not be: DynamicUser= refuses that (EILSEQ).
+[Unit]
+Description=CPU and GPU temperatures on the Antec Flux Pro's side panel (dram)
+BindsTo=dev-dram_case_display.device
+After=dev-dram_case_display.device
+
+[Service]
+Type=exec
+ExecStart=/usr/lib/dram/case-display
+Restart=on-failure
+RestartSec=5
+DynamicUser=yes
+SupplementaryGroups=dram-case-panel
+# Devices by group, not by path: nvidia-modprobe may create /dev/nvidia* after this starts,
+# and a path that is missing at start would stay denied until a restart.
+DevicePolicy=closed
+DeviceAllow=char-usb_device rw
+DeviceAllow=char-nvidia* rw
+CapabilityBoundingSet=
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+PrivateIPC=yes
+ProtectHome=yes
+ProtectProc=invisible
+ProtectClock=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+# a call outside the filter fails (NVML then reports an error) instead of killing the service
+SystemCallErrorNumber=EPERM
+UMask=0077

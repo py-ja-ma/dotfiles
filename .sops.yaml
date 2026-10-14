@@ -1,0 +1,24 @@
+# sops recipients. Both hosts must be able to decrypt secrets/pj.yaml, so both
+# public keys are listed; the private half of each stays in that host's
+# ~/.config/sops/age/keys.txt and is never committed (docs/security/identity/secrets.md).
+#
+# Fill in a real key from the Mac:
+#   bash system/secrets-bootstrap.sh --register <host> <age1...>
+# (the host prints its public key from `bash system/secrets-bootstrap.sh`, or
+# any time with `age-keygen -y ~/.config/sops/age/keys.txt`). The `# host:`
+# marker and the `&<host>` anchor on the next line are what --register matches.
+# After changing a recipient once pj.yaml exists:  sops updatekeys secrets/pj.yaml
+keys:
+  # host: cabin
+  - &cabin age1c7qj0r0awpx3709990xrtd7de3v7j9zt0lwsx6hfa98ejfg45clq7fk5ml
+  # host: lantern
+  - &lantern age180jn58ay9uwlur0gzm05hdkrz0efu0a8c55c0uy0ua697qhkqslsmszvsh
+  # yubikey: primary
+  - &yk_primary age1yubikey1q0n09uhj7j3kzt3jum550kzchfdvldtuezm8rxxphzth6a5drsynyc7xmdd
+creation_rules:
+  - path_regex: ^secrets/.*\.yaml$
+    key_groups:
+      - age:
+          - *cabin
+          - *lantern
+          - *yk_primary

@@ -1,0 +1,31 @@
+# shellcheck disable=SC2034,SC2154,SC2164,SC2206
+# [dram] own package (no AUR upstream, see UPSTREAM) on the hyprland-plugins template; review in
+# REVIEW.md. Rebuild + bump `depends` whenever the hyprland package changes (docs/toolchain/packaging/README.md §9).
+pkgname=hyprland-plugin-hyprtasking
+# pkgver tracks the Hyprland ABI it is built for (same convention as the AUR hyprland-plugins);
+# the plugin's own revision is _commit below (hyprtasking has no release tags).
+pkgver=0.56.2
+pkgrel=1
+pkgdesc='A Hyprland plugin that adds a workspace overview (grid of every workspace, drag windows between them)'
+arch=('x86_64')
+url='https://github.com/raybbian/hyprtasking'
+license=('BSD-3-Clause')
+# exact match: a plugin is ABI-bound to the Hyprland build it was compiled against
+depends=('hyprland=0.56.2')
+makedepends=('git' 'meson' 'hyprland')
+options=('!lto')
+_commit=4d3c39511c3f38966abf1ec4393f5a7220ffb1a3 # 2026-08-30 "Merge pull request #129 … pr-blur-cache"
+source=("hyprtasking::git+https://github.com/raybbian/hyprtasking#commit=$_commit")
+sha256sums=('SKIP') # git checkout pinned by commit above
+
+build() {
+  # hyprtasking's meson.build resolves the compositor headers through `dependency('hyprland')`
+  # (pkg-config from the hyprland package). arch-meson = Arch flags, buildtype plain, b_lto off (options).
+  arch-meson hyprtasking build
+  meson compile -C build
+}
+
+package() {
+  install -Dm755 build/libhyprtasking.so "$pkgdir/usr/lib/hyprland/libhyprtasking.so"
+  install -Dm644 hyprtasking/LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

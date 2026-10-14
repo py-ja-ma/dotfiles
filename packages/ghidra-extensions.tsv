@@ -1,0 +1,9 @@
+# Ghidra extensions for the re-lab role, installed per user by re-lab-tools into
+# ~/.config/ghidra/ghidra_<version>_PUBLIC/Extensions. TAB-separated: name, the Ghidra
+# release it was built for (major.minor), download URL, sha256 (the digest GitHub publishes).
+# Each name needs a register row. The second column is the extension's own `version=`: a
+# build for 12.1 on Ghidra 12.1.2 may make Ghidra ask (or refuse) at start — use the
+# exact-version build when upstream has one. The Xbox loader (ghidra-xbe) states no licence.
+ghidra-gamecube-loader	12.1	https://github.com/Cuyler36/Ghidra-GameCube-Loader/releases/download/1.3.1/GameCubeLoader-1.3.0-921504c-Ghidra_12.1.zip	9892f28fc1e7f19bb3fcec7cfb4ad2ab7504503b571d93de8b142a6f7bec8ed0
+ghidra-emotionengine-reloaded	12.1.2	https://github.com/chaoticgd/ghidra-emotionengine-reloaded/releases/download/v2.1.38/ghidra_12.1.2_PUBLIC_20261004_ghidra-emotionengine-reloaded.zip	2e6bdd8ed8e762b302b47f0ce7a0fdf55b5fe7ad6b04cfe8cfa078a9758e67ae
+ghidra-allegrex	12.1	https://github.com/kotcrab/ghidra-allegrex/releases/download/v21.3/ghidra_12.1_PUBLIC_20260520_ghidra-allegrex.zip	a72675aa4af37f4319ed587a1bb5d93c7220901309b4de175d1e9ab1e5b6902c

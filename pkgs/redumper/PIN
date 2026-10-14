@@ -1,0 +1,3 @@
+redumper — how to re-pin
+  1. New tag bNNN on github.com/superg/redumper: pkgver=NNN.
+  2. updpkgsums against your own download of the tag archive.

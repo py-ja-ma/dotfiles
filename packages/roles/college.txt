@@ -1,0 +1,52 @@
+# role: college — Computer Engineering coursework (docs/toolchain/profiles/college.md). Course-
+# mandated closed tools (MATLAB, Quartus, Vivado …): school VDI or cabin's Windows first,
+# then a per-term waiver. Never Qucs-S (its donations go through Boosty). openocd and the
+# sigrok tools are the re-lab role's.
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists the role
+# in `roles` (decisions/0009). One name per line, own-line comments only; a name may appear
+# in ONE packages list (bin/check.sh §3).
+
+# circuits and boards
+kicad
+kicad-library
+kicad-library-3d
+ngspice
+# HDL: simulate, view waves, synthesise, program FPGAs (Lattice ECP5 via prjtrellis)
+verilator
+iverilog
+gtkwave
+yosys
+prjtrellis
+openfpgaloader
+# maths, reports, notes
+octave
+typst
+texlive-basic
+texlive-latex
+texlive-latexrecommended
+texlive-latexextra
+texlive-bibtexextra
+texlive-mathscience
+texlive-pictures
+texlive-plaingeneric
+texlive-publishers
+texlive-fontsextra
+texlive-binextra
+biber
+drawio-desktop
+xournalpp
+anki
+# microcontrollers
+arduino-cli
+platformio-core
+avr-gcc
+avr-libc
+avrdude
+# plots for lab reports
+gnuplot
+# printing: CUPS with driverless IPP Everywhere for network printers, the settings GUI and
+# its polkit helper (system/printing-setup.sh enables cups.socket); 2026-10-12, from the
+# old build
+cups
+cups-pk-helper
+system-config-printer

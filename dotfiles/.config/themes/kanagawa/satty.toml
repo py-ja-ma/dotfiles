@@ -1,0 +1,4 @@
+# Kanagawa — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#7e9cd8", "#c34043", "#98bb6c", "#e6c384", "#957fb8"]

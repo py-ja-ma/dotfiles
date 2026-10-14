@@ -1,0 +1,8 @@
+hyprland-plugin-hyprfocus — how to re-pin (after a hyprland package bump)
+  1. Find the hyprland-plugins commit that matches the new Hyprland: the AUR hyprland-plugins PKGBUILD
+     (dram pkgs update shows it) or https://github.com/hyprwm/hyprland-plugins/commits (look for
+     "chase hyprland" / the tag matching the Hyprland release).
+  2. _commit = that sha; pkgver = the Hyprland version; depends=('hyprland=<that version>');
+     pkgrel = the AUR's or 1.
+  3. Rebuild (dram pkgs build hyprland-plugin-hyprfocus) — the chroot pulls the current hyprland from the
+     mirrors; if the mirrors are ahead of your host, update the host first or the package will not install.

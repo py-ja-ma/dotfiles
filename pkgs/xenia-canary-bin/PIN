@@ -1,0 +1,5 @@
+xenia-canary-bin — how to re-pin
+  1. Pick a release from https://github.com/xenia-canary/xenia-canary/releases (tag = short
+     commit). Set _tag, _commit (the full sha, `target_commitish`) and pkgver=r<_tag>.
+  2. The first sha256 is the xenia_canary_linux.AppImage digest GitHub shows; updpkgsums must
+     agree. Builds are per commit and experimental: bump when a game needs a fix, not daily.

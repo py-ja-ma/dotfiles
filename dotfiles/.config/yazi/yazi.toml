@@ -1,0 +1,15 @@
+# yazi — terminal file manager (pacman: yazi). Minimal: defaults are good.
+# Colours come from the flavor named in theme.toml, which dram-theme rewrites
+# per theme (see README.md here, "The flavors"). The flavors are generated
+# in-repo (flavors/letterpress-<theme>.yazi, bin/gen-yazi-flavors.py); nothing
+# is fetched with `ya pkg` — package.toml next to this file declares no deps.
+[mgr]
+show_hidden = false
+sort_by = "natural"
+sort_dir_first = true
+linemode = "size"
+
+[preview]
+tab_size = 4
+max_width = 1200
+max_height = 1600

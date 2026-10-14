@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=letterpress
+Description=House palette splash: paper, the pj wordmark, a 1px vermilion progress rule
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/letterpress
+ScriptFile=/usr/share/plymouth/themes/letterpress/letterpress.script

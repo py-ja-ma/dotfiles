@@ -1,0 +1,16 @@
+# role: sysadmin (Windows) - the "homelab" profile's native half: capture, VPN, serial, boot
+# sticks; nmap, kubectl and the rest live in the WSL clone. No Npcap (decisions/log.md#d110):
+# capture with etwdump, pktmon or sshdump, raw scans from Arch
+# (docs/toolchain/development/README.md).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in ONE
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A
+# Windows host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh).
+
+winget:WiresharkFoundation.Wireshark
+# the community client (OpenVPN Connect is proprietary: swapped out)
+winget:OpenVPNTechnologies.OpenVPN
+# serial consoles, boot sticks
+winget:PuTTY.PuTTY
+winget:Rufus.Rufus

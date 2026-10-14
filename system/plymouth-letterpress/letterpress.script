@@ -1,0 +1,107 @@
+# =============================================================================
+#  letterpress — Plymouth "script" theme in the house palette.
+#    paper #1c140f (top) -> #100c09 (bottom), ink #e6d6cb, accent #c0442b
+#    - wordmark.png ("pj", pre-rendered: Plymouth has no fonts of its own)
+#    - a 1px-tall accent rule under it whose width is progress * 240, centred
+#      (Plymouth.SetBootProgressFunction), over a faint 240px track
+#    - LUKS password prompt + message handlers kept from the catppuccin theme
+#  A script error never blocks the boot: Plymouth keeps the background and
+#  the kernel carries on, so a bad asset costs the splash, not the machine.
+#  Reference: plymouth/themes/script/script.script (freedesktop) + the repo's
+#  plymouth-catppuccin/catppuccin.script.
+# =============================================================================
+
+Window.SetBackgroundTopColor(0.110, 0.078, 0.059);      # paper         #1c140f
+Window.SetBackgroundBottomColor(0.063, 0.047, 0.035);   # paper-bottom  #100c09
+
+sw = Window.GetWidth();
+sh = Window.GetHeight();
+cx = Window.GetX() + sw / 2;
+cy = Window.GetY() + sh / 2;
+
+BAR_W = 240;                      # full width of the progress rule
+GAP   = 28;                       # space between wordmark and rule
+
+# ---- wordmark ----------------------------------------------------------------
+wordmark.image  = Image("wordmark.png");
+wordmark.sprite = Sprite(wordmark.image);
+wordmark.sprite.SetX(cx - wordmark.image.GetWidth() / 2);
+wordmark.sprite.SetY(cy - wordmark.image.GetHeight() - GAP / 2);
+wordmark.sprite.SetZ(10);
+
+# ---- progress rule -------------------------------------------------------------
+# track.png / bar.png are 240x1 strips (subtext / accent); the bar is scaled to
+# the current progress so no per-frame text rendering is needed.
+rule_y = cy + GAP / 2;
+
+track.image  = Image("track.png");
+track.sprite = Sprite(track.image);
+track.sprite.SetX(cx - BAR_W / 2);
+track.sprite.SetY(rule_y);
+track.sprite.SetZ(11);
+track.sprite.SetOpacity(0.35);
+
+bar.source = Image("bar.png");
+bar.sprite = Sprite();
+bar.sprite.SetY(rule_y);
+bar.sprite.SetZ(12);
+bar.width  = 0;
+
+fun set_bar(width) {
+    if (width < 1) width = 1;
+    if (width > BAR_W) width = BAR_W;
+    if (width != bar.width) {
+        bar.width = width;
+        bar.sprite.SetImage(bar.source.Scale(width, 1));
+        bar.sprite.SetX(cx - width / 2);           # grows from the centre
+    }
+}
+set_bar(1);
+
+fun progress_cb(duration, progress) {
+    set_bar(Math.Int(progress * BAR_W));      # progress is 0..1 (no Plymouth.GetProgress in the API)
+}
+Plymouth.SetBootProgressFunction(progress_cb);
+
+# ---- messages (fsck, errors) --------------------------------------------------
+msg.sprite = Sprite();
+fun message_cb(text) {
+    msg.image = Image.Text(text, 0.902, 0.839, 0.796, 1, "Sans 12");   # ink
+    msg.sprite.SetImage(msg.image);
+    msg.sprite.SetX(cx - msg.image.GetWidth() / 2);
+    msg.sprite.SetY(sh - 60);
+    msg.sprite.SetZ(20);
+}
+fun hide_message_cb(text) {
+    msg.image = Image.Text("", 0, 0, 0);
+    msg.sprite.SetImage(msg.image);
+}
+Plymouth.SetDisplayMessageFunction(message_cb);
+Plymouth.SetHideMessageFunction(hide_message_cb);
+
+# ---- password prompt (LUKS; lantern may get it later) -----------------------
+prompt.sprite = Sprite();
+fun display_password_cb(prompt_text, bullets) {
+    stars = "";
+    for (i = 0; i < bullets; i++) { stars = stars + "*"; }
+    prompt.image = Image.Text("password  " + stars, 0.902, 0.839, 0.796, 1, "Sans 14");
+    prompt.sprite.SetImage(prompt.image);
+    prompt.sprite.SetX(cx - prompt.image.GetWidth() / 2);
+    prompt.sprite.SetY(rule_y + 48);
+    prompt.sprite.SetZ(20);
+}
+Plymouth.SetDisplayPasswordFunction(display_password_cb);
+
+fun display_normal_cb() {
+    prompt.image = Image.Text("", 0, 0, 0);
+    prompt.sprite.SetImage(prompt.image);
+}
+Plymouth.SetDisplayNormalFunction(display_normal_cb);
+
+# ---- quit: fill the rule so the hand-off to ly is a full line, not a stub ----
+fun quit_cb() {
+    set_bar(BAR_W);
+    prompt.image = Image.Text("", 0, 0, 0);
+    prompt.sprite.SetImage(prompt.image);
+}
+Plymouth.SetQuitFunction(quit_cb);

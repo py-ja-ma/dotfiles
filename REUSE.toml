@@ -1,0 +1,303 @@
+# REUSE.toml: the copyright holder and license of every file in this repo, in the
+# REUSE layout (https://reuse.software/spec-3.3/); the license texts are in LICENSES/.
+# Everything I wrote is MIT. A file's own SPDX lines win over a table here unless the
+# table says "override", and when several tables match a path the last one wins, so the
+# catch-all comes first and the exceptions after it.
+version = 1
+
+# Everything I wrote: code, configuration and pages.
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "2026 Patrick Jordan"
+SPDX-License-Identifier = "MIT"
+
+# Facts with no author: the lock file, harvested host state, public keys.
+[[annotations]]
+path = [
+  "flake.lock",
+  "hosts/*/packages/**",
+  "hosts/*/systemd/**",
+  "hosts/*/hardware.txt",
+  "hosts/*/secureboot-baseline-*.txt",
+  "keys/**",
+  "pkgs/dram.asc",
+]
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Copies of /etc files from the Arch packages that ship them, with local edits.
+[[annotations]]
+path = "hosts/*/etc/**"
+precedence = "override"
+SPDX-FileCopyrightText = "The authors of the Arch Linux packages that ship each file"
+SPDX-License-Identifier = "LicenseRef-Arch-Package-Files"
+
+# The rEFInd Catppuccin theme, vendored unmodified (its LICENSE is in the directory).
+[[annotations]]
+path = "system/refind-catppuccin/**"
+precedence = "override"
+SPDX-FileCopyrightText = "2021 Catppuccin"
+SPDX-License-Identifier = "MIT"
+
+# The Letterpress boot icons: Catppuccin's Mocha icons, recolored by system/gen-boot-assets.py.
+[[annotations]]
+path = "system/refind-letterpress/icons/**"
+precedence = "override"
+SPDX-FileCopyrightText = ["2021 Catppuccin", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "MIT"
+
+# EB Garamond Italic 1.003, with the OFL text beside it.
+[[annotations]]
+path = ["dotfiles/.local/share/fonts/EBGaramond-Italic.ttf", "dotfiles/.local/share/fonts/OFL.txt"]
+precedence = "override"
+SPDX-FileCopyrightText = "2017 The EB Garamond Project Authors"
+SPDX-License-Identifier = "OFL-1.1"
+
+# Hyprland's example configuration, which hyprland.lua grew from.
+[[annotations]]
+path = "dotfiles/.config/hypr/hyprland.lua"
+precedence = "override"
+SPDX-FileCopyrightText = ["2022-2026 vaxerski", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "MIT AND BSD-3-Clause"
+
+# yazi's status bar component, mirrored by init.lua with one change.
+[[annotations]]
+path = "dotfiles/.config/yazi/init.lua"
+precedence = "override"
+SPDX-FileCopyrightText = ["2023 sxyazi", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "MIT"
+
+# Upstream inputs of bin/gen-windows-look.py, pinned by sha256, and the files it derives from them.
+[[annotations]]
+path = "install/windows/upstream/mumble/**"
+precedence = "override"
+SPDX-FileCopyrightText = "The authors of mumble-voip/mumble-theme"
+SPDX-License-Identifier = "Unlicense"
+
+[[annotations]]
+path = "install/windows/upstream/notepad++/**"
+precedence = "override"
+SPDX-FileCopyrightText = "The Notepad++ authors"
+SPDX-License-Identifier = "GPL-2.0-only"
+
+[[annotations]]
+path = "install/windows/letterpress/notepad++/**"
+precedence = "override"
+SPDX-FileCopyrightText = ["The Notepad++ authors", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "GPL-2.0-only"
+
+[[annotations]]
+path = "install/windows/upstream/wireshark/**"
+precedence = "override"
+SPDX-FileCopyrightText = "The Wireshark authors"
+SPDX-License-Identifier = "GPL-2.0-or-later"
+
+[[annotations]]
+path = "install/windows/letterpress/wireshark/**"
+precedence = "override"
+SPDX-FileCopyrightText = ["The Wireshark authors", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "GPL-2.0-or-later"
+
+# The Windows side of the case display began as motiop's antec-flux-pro-display-windows.
+[[annotations]]
+path = "install/windows/dram-windows/case-display.ps1"
+precedence = "override"
+SPDX-FileCopyrightText = ["2026 motiop", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "MIT"
+
+# Package recipes from the Arch package sources and the AUR (pkgs/<name>/): each keeps
+# its source's terms; the maintainers are named in each PKGBUILD's header.
+[[annotations]]
+path = "pkgs/*/**"
+precedence = "override"
+SPDX-FileCopyrightText = ["The maintainers named in each PKGBUILD", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "LicenseRef-Arch-Recipe"
+
+# My review, upstream and pin records beside each recipe, and my own two packages.
+[[annotations]]
+path = ["pkgs/*/REVIEW.md", "pkgs/*/UPSTREAM", "pkgs/*/PIN", "pkgs/dram-case-display/**", "pkgs/dram-gaming-mode/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Patrick Jordan"
+SPDX-License-Identifier = "MIT"
+
+# Upstream signing keys a recipe verifies its sources with.
+[[annotations]]
+path = "pkgs/*/keys/**"
+precedence = "override"
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "pkgs/vscodium-bin/LICENSE"
+precedence = "override"
+SPDX-FileCopyrightText = "2018-present The VSCodium contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "pkgs/jagex-launcher/JAGEX-EULA"
+precedence = "override"
+SPDX-FileCopyrightText = "Jagex Ltd"
+SPDX-License-Identifier = "LicenseRef-Jagex-EULA"
+
+# rEFInd's own stock icons, in the Catppuccin theme's four flavors and recolored in the
+# Letterpress theme (system/refind-letterpress/README.md lists each one): the AwOken and
+# Ubuntu icons are CC-BY-SA-3.0, the ones rEFInd's author drew are LGPL-3.0 or later or
+# CC-BY-SA-3.0, Devuan's is CC-BY-SA-4.0 and EndeavourOS's GPL-3.0. Recoloring keeps the license.
+[[annotations]]
+path = [
+  "system/refind-letterpress/icons/arrow_left.png",
+  "system/refind-letterpress/icons/arrow_right.png",
+  "system/refind-letterpress/icons/boot_linux.png",
+  "system/refind-letterpress/icons/func_bootorder.png",
+  "system/refind-letterpress/icons/func_install.png",
+  "system/refind-letterpress/icons/os_artful.png",
+  "system/refind-letterpress/icons/os_bionic.png",
+  "system/refind-letterpress/icons/os_chakra.png",
+  "system/refind-letterpress/icons/os_chrome.png",
+  "system/refind-letterpress/icons/os_clover.png",
+  "system/refind-letterpress/icons/os_crunchbang.png",
+  "system/refind-letterpress/icons/os_frugalware.png",
+  "system/refind-letterpress/icons/os_hwtest.png",
+  "system/refind-letterpress/icons/os_lubuntu.png",
+  "system/refind-letterpress/icons/os_mageia.png",
+  "system/refind-letterpress/icons/os_mandriva.png",
+  "system/refind-letterpress/icons/os_network.png",
+  "system/refind-letterpress/icons/os_opensuse.png",
+  "system/refind-letterpress/icons/os_slackware.png",
+  "system/refind-letterpress/icons/os_suse.png",
+  "system/refind-letterpress/icons/os_trusty.png",
+  "system/refind-letterpress/icons/os_uefi.png",
+  "system/refind-letterpress/icons/os_xenial.png",
+  "system/refind-letterpress/icons/os_xubuntu.png",
+  "system/refind-letterpress/icons/os_zesty.png",
+  "system/refind-letterpress/icons/tool_netboot.png",
+  "system/refind-letterpress/icons/tool_part.png",
+  "system/refind-letterpress/icons/tool_shell.png",
+  "system/refind-letterpress/icons/tool_windows_rescue.png",
+  "system/refind-letterpress/icons/vol_efi.png",
+  "system/refind-letterpress/icons/vol_external.png",
+  "system/refind-letterpress/icons/vol_internal.png",
+  "system/refind-letterpress/icons/vol_net.png",
+  "system/refind-letterpress/icons/vol_optical.png",
+  "system/refind-catppuccin/assets/mocha/icons/arrow_left.png",
+  "system/refind-catppuccin/assets/mocha/icons/arrow_right.png",
+  "system/refind-catppuccin/assets/mocha/icons/boot_linux.png",
+  "system/refind-catppuccin/assets/mocha/icons/func_bootorder.png",
+  "system/refind-catppuccin/assets/mocha/icons/func_install.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_artful.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_bionic.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_chakra.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_chrome.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_clover.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_crunchbang.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_frugalware.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_hwtest.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_lubuntu.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_mageia.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_mandriva.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_network.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_opensuse.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_slackware.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_suse.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_trusty.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_uefi.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_xenial.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_xubuntu.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_zesty.png",
+  "system/refind-catppuccin/assets/mocha/icons/tool_netboot.png",
+  "system/refind-catppuccin/assets/mocha/icons/tool_part.png",
+  "system/refind-catppuccin/assets/mocha/icons/tool_shell.png",
+  "system/refind-catppuccin/assets/mocha/icons/tool_windows_rescue.png",
+  "system/refind-catppuccin/assets/mocha/icons/vol_efi.png",
+  "system/refind-catppuccin/assets/mocha/icons/vol_external.png",
+  "system/refind-catppuccin/assets/mocha/icons/vol_internal.png",
+  "system/refind-catppuccin/assets/mocha/icons/vol_net.png",
+  "system/refind-catppuccin/assets/mocha/icons/vol_optical.png",
+]
+precedence = "override"
+SPDX-FileCopyrightText = ["Alessandro Roncone (AwOken)", "Canonical Ltd.", "Roderick W. Smith", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "CC-BY-SA-3.0"
+
+[[annotations]]
+path = [
+  "system/refind-letterpress/icons/boot_win.png",
+  "system/refind-letterpress/icons/func_csr_rotate.png",
+  "system/refind-letterpress/icons/mouse.png",
+  "system/refind-letterpress/icons/os_gummiboot.png",
+  "system/refind-letterpress/icons/os_haiku.png",
+  "system/refind-letterpress/icons/os_legacy.png",
+  "system/refind-letterpress/icons/os_netbsd.png",
+  "system/refind-letterpress/icons/os_redhat.png",
+  "system/refind-letterpress/icons/os_refind.png",
+  "system/refind-letterpress/icons/os_refit.png",
+  "system/refind-letterpress/icons/tool_apple_rescue.png",
+  "system/refind-letterpress/icons/tool_fwupdate.png",
+  "system/refind-letterpress/icons/tool_memtest.png",
+  "system/refind-letterpress/icons/tool_rescue.png",
+  "system/refind-letterpress/icons/transparent.png",
+  "system/refind-catppuccin/assets/mocha/icons/boot_win.png",
+  "system/refind-catppuccin/assets/mocha/icons/func_csr_rotate.png",
+  "system/refind-catppuccin/assets/mocha/icons/mouse.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_gummiboot.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_haiku.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_legacy.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_netbsd.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_redhat.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_refind.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_refit.png",
+  "system/refind-catppuccin/assets/mocha/icons/tool_apple_rescue.png",
+  "system/refind-catppuccin/assets/mocha/icons/tool_fwupdate.png",
+  "system/refind-catppuccin/assets/mocha/icons/tool_memtest.png",
+  "system/refind-catppuccin/assets/mocha/icons/tool_rescue.png",
+  "system/refind-catppuccin/assets/mocha/icons/transparent.png",
+]
+precedence = "override"
+SPDX-FileCopyrightText = ["Roderick W. Smith", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "LGPL-3.0-or-later OR CC-BY-SA-3.0"
+
+[[annotations]]
+path = [
+  "system/refind-letterpress/icons/os_devuan.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_devuan.png",
+]
+precedence = "override"
+SPDX-FileCopyrightText = ["Dyne.org foundation", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+[[annotations]]
+path = [
+  "system/refind-letterpress/icons/os_endeavouros.png",
+  "system/refind-catppuccin/assets/mocha/icons/os_endeavouros.png",
+]
+precedence = "override"
+SPDX-FileCopyrightText = ["The EndeavourOS team", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "GPL-3.0-only"
+
+# The six palettes ported from ryoku-arch, whose repository is GPL-3.0
+# (dotfiles/.config/themes/README.md, "Where the palettes come from").
+[[annotations]]
+path = [
+  "dotfiles/.config/themes/aqua/**",
+  "dotfiles/.config/themes/cassette/**",
+  "dotfiles/.config/themes/crt/**",
+  "dotfiles/.config/themes/mountains/**",
+  "dotfiles/.config/themes/soft-color/**",
+  "dotfiles/.config/themes/washi/**",
+]
+precedence = "override"
+SPDX-FileCopyrightText = ["The ryoku-arch authors", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "GPL-3.0-only"
+
+# The Zebar masthead's three IPC calls follow Zebar's GPL-3.0 client (npm zebar 3.3.1):
+# the pack's script and the generator that writes it (docs/design/shell-and-bars/zebar.md).
+[[annotations]]
+path = "install/windows/letterpress/zebar/letterpress/masthead.js"
+precedence = "override"
+SPDX-FileCopyrightText = ["glzr.io and the Zebar contributors", "2026 Patrick Jordan"]
+SPDX-License-Identifier = "GPL-3.0-only"
+
+[[annotations]]
+path = "bin/gen-windows-look.py"
+precedence = "override"
+SPDX-FileCopyrightText = ["2026 Patrick Jordan", "glzr.io and the Zebar contributors"]
+SPDX-License-Identifier = "MIT AND GPL-3.0-only"

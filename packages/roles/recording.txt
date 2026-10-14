@@ -1,0 +1,17 @@
+# role: recording — editing on the recorder (docs/toolchain/profiles/creator.md). The recorder ALSO has
+# the creator role (OBS lives there: a name may be in one list only). Its GPU comes from
+# its host file: campfire's RTX 3060 (gpu = "nvidia") encodes with NVENC.
+# Never: Audacity (Origin), DaVinci Resolve (not FOSS), NDI/DistroAV (proprietary runtime),
+# showmethekey (Origin), OBS plugins from the AUR. Tenacity left out (Ardour covers it).
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "recording" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+
+# the video editor (KDE; proxies for 1440p/4K, audio align, multitrack MKV import)
+kdenlive
+# narration processing and mixing
+ardour
+# thumbnails and channel art
+inkscape
+gimp
+krita

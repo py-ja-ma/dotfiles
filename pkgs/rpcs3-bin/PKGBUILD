@@ -1,0 +1,42 @@
+# shellcheck disable=SC2034,SC2154,SC2164
+# [dram] vendored from aur:rpcs3-bin (see UPSTREAM), rewritten: one pinned build instead of
+# "latest" fetched in prepare(); the AppImage is installed as-is (its uruntime carries a
+# DwarFS image, which nothing in Arch's repos unpacks) and nothing from it runs during the
+# build. Review in REVIEW.md.
+# Maintainers (AUR): italoghost, Kaleb; creator Sanpi
+
+pkgname=rpcs3-bin
+_pkgname=rpcs3
+_build=2ba2f75bcea7ef6bdd687046c7fcfb790faf9853 # RPCS3/rpcs3-binaries-linux release build-<sha>, 2026-10-11
+_file=rpcs3-v0.0.43-20284-2ba2f75b_linux64.AppImage
+pkgver=0.0.43.20284
+pkgrel=1
+pkgdesc='Sony PlayStation 3 emulator (official Linux AppImage, pinned build)'
+arch=('x86_64')
+url='https://rpcs3.net/'
+license=('GPL-2.0-only')
+provides=("$_pkgname")
+conflicts=("$_pkgname" 'rpcs3-git')
+options=('!strip' '!debug')
+depends=('fuse3' 'vulkan-icd-loader' 'libglvnd' 'alsa-lib' 'hicolor-icon-theme')
+optdepends=('pipewire-pulse: audio through PulseAudio')
+# the sha256 equals the asset digest GitHub publishes for the release; the icon is the
+# repository file at the commit the build was made from
+source=("$_file::https://github.com/RPCS3/rpcs3-binaries-linux/releases/download/build-$_build/$_file"
+  "rpcs3.svg::https://raw.githubusercontent.com/RPCS3/rpcs3/$_build/rpcs3/rpcs3.svg"
+  "LICENSE::https://raw.githubusercontent.com/RPCS3/rpcs3/$_build/LICENSE"
+  'rpcs3.desktop' 'rpcs3')
+noextract=("$_file")
+sha256sums=('21aa550a312b449ad1f1a2868ccd2100c3ae52f5a03e6fcb46774df0632195cb'
+            'fbe61d67ae5531ce9260571f077b93ac74c7bd8191ced7f08be2ad837c76f9dd'
+            '39db8f9acf036595a2566ea3fe560bc7bd65d8749f088e0f4a4ef2f8a6cb4b34'
+            'fe78019f69725703552031544fd9e2214cffe875a2e93c758ca42ee3fdbefd62'
+            'ab430b60ccb87724436163c566c4e3e8c5114c8b27d68e22bd50b11988515c12')
+
+package() {
+  install -Dm755 "$_file" "$pkgdir/opt/$_pkgname/rpcs3.AppImage"
+  install -Dm755 rpcs3 "$pkgdir/usr/bin/rpcs3"
+  install -Dm644 rpcs3.desktop "$pkgdir/usr/share/applications/rpcs3.desktop"
+  install -Dm644 rpcs3.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/rpcs3.svg"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

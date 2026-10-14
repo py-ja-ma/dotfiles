@@ -1,0 +1,14 @@
+# Installed by system/snapshots-setup.sh (decisions/0011). Runs after mkinitcpio's
+# hook (90-…), so the live UKI is current; builds the snapshot boot entries.
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = dram: snapper post snapshot + snapshot boot entries
+Depends = snapper
+When = PostTransaction
+Exec = /usr/local/lib/dram/dram-snapshot post

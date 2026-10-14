@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# usage: sysupdate [dram update flags]
+#
+# Shim kept for muscle memory and old docs: runs `dram update` with the same
+# flags (sysupdate --clean == dram update --clean == the `upgrade` alias;
+# --check, --full and --no-switch pass through unchanged).
+#
+#   -h, --help    this text (`dram update --help` for the flags)
+#
+# needs:  dram on PATH
+# alone:  yes, for any command renamed: one exec line
+# here:   linked into ~/.local/bin by modules/cli.nix on every host
+# exit:   0 ok · 1 dram update failed · 2 bad usage · 7 `--check`: nothing pending
+# see:    docs/operations/dram/README.md
+
+# SPDX-FileCopyrightText: 2026 Patrick Jordan
+# SPDX-License-Identifier: MIT
+
+case "${1:-}" in
+  -h | --help)
+    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+esac
+
+exec dram update "$@"

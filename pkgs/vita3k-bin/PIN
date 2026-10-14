@@ -1,0 +1,5 @@
+vita3k-bin — how to re-pin (upstream has only the moving "continuous" release)
+  1. gh api repos/Vita3K/Vita3K/releases/tags/continuous: read "Vita3K Build: N" and
+     "Corresponding commit: <sha>" from the body and the Vita3K-x86_64.AppImage digest.
+  2. Set _buildno, _commit, pkgver=r<N>.<first 9 of sha>, the first sha256 = that digest;
+     updpkgsums must agree. Build and publish at once: the asset moves on the next CI run.

@@ -1,0 +1,4 @@
+# Mountains — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#7c907a", "#b06a5a", "#c2a86a", "#6f8a94", "#9a8298"]

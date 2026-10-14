@@ -1,0 +1,69 @@
+# cabin's Secure Boot state, read from Windows on 2026-10-12 ~17:05, the baseline before any change (docs/security/boot-trust/secure-boot.md)
+# read-only: Get-SecureBootUEFI, bcdedit, Get-Tpm, the Secureboot servicing keys, TPM-WMI events
+
+== Secure Boot on: True
+== PK : 1255 bytes, sha256 e92b8a83ce68fb060bc43e3995dfd61f86903a147ffc66aca78de0f8ef622e24
+   cert: CN=Platform Key (until 2031-10-11)
+== KEK : 5146 bytes, sha256 73858f0cd7279c5170cd26ec331e11973c735026c64e0745110d61adf9f13338
+   cert: CN=Key Exchange Key (until 2031-10-11)
+   cert: CN=Microsoft Corporation KEK CA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US (until 2026-06-24)
+   cert: CN=Microsoft Corporation KEK 2K CA 2023, O=Microsoft Corporation, C=US (until 2038-03-02)
+   cert: CN=MSI SHIP KEK (until 2041-12-30)
+== db : 9709 bytes, sha256 904d569d2b6f4071227032c7eb6f80b294b7ec5dc250618103cb166475a50979
+   cert: CN=Database Key (until 2031-10-11)
+   cert: CN=Microsoft Corporation UEFI CA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US (until 2026-06-27)
+   cert: CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US (until 2026-10-19)
+   cert: CN=Microsoft Option ROM UEFI CA 2023, O=Microsoft Corporation, C=US (until 2038-10-26)
+   cert: CN=Microsoft UEFI CA 2023, O=Microsoft Corporation, C=US (until 2038-06-13)
+   cert: CN=Windows UEFI CA 2023, O=Microsoft Corporation, C=US (until 2035-06-13)
+   cert: CN=MSI SHIP DB (until 2041-12-30)
+== dbx : 13996 bytes, sha256 e6c5405fe32e307d3a50029426fca7903426bfb433043db25d835d27a7fc95f7
+   sha256 hashes: 291
+== dbxDefault : 20716 bytes, sha256 baec621c46e3ad84961abf2933591b1c8ecd304fd4605b0114c967fd4e17a6ff
+   sha256 hashes: 431
+== dbDefault : 8454 bytes, sha256 355882ef9e92aa2c42f7a90a60ce46b34fc2f071a8f8ffbf84cf7f952ce28f65
+   cert: CN=Microsoft Windows Production PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US (until 2026-10-19)
+   cert: CN=Microsoft UEFI CA 2023, O=Microsoft Corporation, C=US (until 2038-06-13)
+   cert: CN=Windows UEFI CA 2023, O=Microsoft Corporation, C=US (until 2035-06-13)
+   cert: CN=Microsoft Option ROM UEFI CA 2023, O=Microsoft Corporation, C=US (until 2038-10-26)
+   cert: CN=Microsoft Corporation UEFI CA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US (until 2026-06-27)
+   cert: CN=MSI SHIP DB (until 2041-12-30)
+== KEKDefault : 3884 bytes, sha256 265844498003ce87a0dfc5156302e33552008c9c9e0e91f7d96e073c47a386d9
+   cert: CN=Microsoft Corporation KEK CA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US (until 2026-06-24)
+   cert: CN=Microsoft Corporation KEK 2K CA 2023, O=Microsoft Corporation, C=US (until 2038-03-02)
+   cert: CN=MSI SHIP KEK (until 2041-12-30)
+== PKDefault : 817 bytes, sha256 b46ef1bfaf986ae65df9f580d631a9b1eccb608557f6ef097dec73900f45bb2d
+   cert: CN=MSI SHIP PK (until 2041-12-30)
+== firmware boot order
+   displayorder            {b6cc53cb-c68e-11f1-84ab-806e6f6e6963}
+   {868e65e4-c61f-11f1-9bc4-97f486cf0f33}
+   {868e65e3-c61f-11f1-9bc4-97f486cf0f33}
+   {73acf116-c663-11f1-84ad-806e6f6e6963}
+   {73acf117-c663-11f1-84ad-806e6f6e6963}
+   {bootmgr}
+== TPM
+TpmPresent          : True
+TpmReady            : True
+TpmEnabled          : True
+TpmActivated        : True
+TpmOwned            : True
+ManufacturerIdTxt   : AMD
+ManufacturerVersion : 3.95.2.5
+AutoProvisioning    : Enabled
+== Secure Boot servicing
+AvailableUpdates     : 0
+HighConfidenceOptOut : 1
+== Secure Boot events (TPM-WMI 1795-1808, last 15)
+   2026-10-12 15:11 1808 This device has updated Secure Boot CA/keys. This device signature information is included here.
+   2026-10-12 14:26 1808 This device has updated Secure Boot CA/keys. This device signature information is included here.
+   2026-10-12 13:41 1808 This device has updated Secure Boot CA/keys. This device signature information is included here.
+   2026-10-12 12:15 1808 This device has updated Secure Boot CA/keys. This device signature information is included here.
+   2026-10-12 18:51 1808 This device has updated Secure Boot CA/keys. This device signature information is included here.
+   2026-10-12 04:57 1808 This device has updated Secure Boot CA/keys. This device signature information is included here.
+== Vanguard
+   vgk: Running, start System
+   vgc: Running, start Manual
+== HVCI/VBS
+VirtualizationBasedSecurityStatus : 2
+SecurityServicesRunning           : {2}
+SecurityServicesConfigured        : {2}

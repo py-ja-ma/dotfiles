@@ -1,0 +1,3 @@
+# Packages that exist only to build other packages (fed into the chroot with
+# makechrootpkg -I). They are published to [dram] but never installed on a host:
+# `dram pkgs list --install` and the bootstrap stanza skip them.

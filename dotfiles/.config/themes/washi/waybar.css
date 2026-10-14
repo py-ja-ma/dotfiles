@@ -1,0 +1,22 @@
+/* Washi — waybar palette (imported by waybar/style.css) */
+@define-color base     #1c140f;
+@define-color mantle   #16100c;
+@define-color crust    #100c09;
+@define-color text     #e6d6cb;
+@define-color subtext  #ac9c92;
+@define-color overlay  #716158;
+@define-color surface0 #2e211a;
+@define-color surface1 #3a2a22;
+@define-color blue     #6e8a8f;
+@define-color lavender #8f7a74;
+@define-color sapphire #7e9c96;
+@define-color sky      #8fae9e;
+@define-color teal     #89a186;
+@define-color green    #7d8a5a;
+@define-color yellow   #d99a5b;
+@define-color peach    #cc6f43;
+@define-color maroon   #923723;
+@define-color red      #c0442b;
+@define-color mauve    #b06a5a;
+@define-color pink     #c0887b;
+@define-color accent   #c0442b;   /* the ONE accent ink (Letterpress) */

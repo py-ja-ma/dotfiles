@@ -1,0 +1,45 @@
+# role: re-lab — reverse engineering and hardware hacking. The
+# Python tools (frida-tools, angr) and the Ghidra loaders are per-user: re-lab-tools
+# (dotfiles/.local/bin). Serial ports need the uucp group, USB programmers a uaccess rule:
+# system/re-lab-setup.sh. Guide: docs/toolchain/profiles/re-lab.md.
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "re-lab" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+
+# reverse engineering (imhex-bin is a [dram] package: pkgs/imhex-bin; there is no extra/imhex)
+# radare2 replaced rizin + cutter 2026-10-10 (decisions/0013, decisions/log.md#d21). Note: extra/cutter is
+# a TCP connection cutter, not Rizin's GUI (that is rz-cutter) — it was never the RE tool.
+ghidra
+jdk21-openjdk
+# hex editor with pattern language ([dram], installs with this role only)
+imhex-bin
+binwalk
+radare2
+gdb
+pwndbg
+python-capstone
+# Accepted 2026-10-11 (Origin rulings). The Xbox loader (ghidra-xbe) states no licence:
+# not shipped until it does.
+# exploit development, CPU emulation, Android/Java decompiling
+python-pwntools
+unicorn
+python-unicorn
+jadx
+# UEFI firmware images: UEFITool, UEFIExtract, UEFIFind ([dram])
+uefitool-ng
+# JTAG/SWD (the Tigard), the serial console
+openocd
+minicom
+
+# debug and trace (strace: Origin ruling 2026-10-10)
+strace
+# run foreign binaries; a PowerPC system for GameCube/Wii (Gekko/Broadway) work
+qemu-user
+qemu-system-ppc
+# pattern matching over binaries and firmware
+yara
+# firmware and hardware: SPI flash (Tigard, Pico serprog, CH341A), logic analysers (FX2)
+flashrom
+sigrok-cli
+pulseview
+sigrok-firmware-fx2lafw

@@ -1,0 +1,27 @@
+pkgbase = vita3k-bin
+	pkgdesc = Experimental PlayStation Vita emulator (CI AppImage, pinned build)
+	pkgver = r4168.46602447c
+	pkgrel = 2
+	url = https://vita3k.org/
+	arch = x86_64
+	license = GPL-2.0-only
+	makedepends = squashfs-tools
+	makedepends = binutils
+	depends = hicolor-icon-theme
+	depends = vulkan-icd-loader
+	depends = libglvnd
+	depends = xdg-desktop-portal
+	provides = vita3k
+	conflicts = vita3k
+	conflicts = vita3k-git
+	noextract = Vita3K-x86_64-4168.AppImage
+	options = !strip
+	options = !debug
+	source = Vita3K-x86_64-4168.AppImage::https://github.com/Vita3K/Vita3K/releases/download/continuous/Vita3K-x86_64.AppImage
+	source = org.vita3k.vita3k.desktop
+	source = vita3k
+	sha256sums = 62ac99799cf799adad5f35c4189e2d15b038147272257079685e088530a9888c
+	sha256sums = 889982c3350282912181d0408a5dc60b045d6bd677f275f7c5e9fe7ea84c9acb
+	sha256sums = 0d4fad01d79a75918d3f619c52dffc6e9b2ebe2ac0bdebcf274c7cab47612562
+
+pkgname = vita3k-bin

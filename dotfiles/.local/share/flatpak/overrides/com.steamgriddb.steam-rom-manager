@@ -1,0 +1,12 @@
+# com.steamgriddb.steam-rom-manager — adds ES-DE and the emulators to Steam as non-Steam
+# shortcuts with artwork (Flathub verified: steamgriddb.com). Least-privilege override on top
+# of the manifest's finish-args (it asks for the whole host read-write); policy:
+# docs/toolchain/packaging/flatpak.md, set: decisions/0016.
+#
+# Granted here:   Steam's user data (where shortcuts.vdf and the grid art live), the ROM
+#                 tree read-only, ES-DE's own folder read-only (its parser reads the
+#                 gamelists). T4 on cabin checks the parsers still find everything.
+# Never granted:  host, home.
+
+[Context]
+filesystems=~/.local/share/Steam;~/.steam;/data/emulation:ro;~/ES-DE:ro;!host;!home;!/media;!/run/media;!xdg-desktop;!xdg-data/applications;!~/.local/share/applications;!xdg-run/app/com.discordapp.Discord;!xdg-run/app/com.discordapp.DiscordCanary;!xdg-run/discord-ipc-0;

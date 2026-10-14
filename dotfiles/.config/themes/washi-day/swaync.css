@@ -1,0 +1,11 @@
+/* Washi Day — swaync palette (imported by swaync/style.css) */
+@define-color base     #f3ead9;
+@define-color mantle   #ede3cf;
+@define-color crust    #e6dac4;
+@define-color text     #2a1f18;
+@define-color subtext  #6b5a50;
+@define-color surface0 #e8dcc8;
+@define-color surface1 #d7c8b0;
+@define-color blue     #4a6b70;
+@define-color red      #c0442b;
+@define-color accent   #c0442b;   /* the ONE accent ink (Letterpress) */

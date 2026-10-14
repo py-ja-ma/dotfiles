@@ -1,0 +1,25 @@
+# org.localsend.localsend_app — LocalSend (Flutter; Flathub "verified:
+# localsend.org"). Least-privilege override on top of the manifest's
+# finish-args; `flatpak-override(1)` / `flatpak-metadata(5)` format. Policy:
+# docs/toolchain/packaging/flatpak.md. Same two homes as the Vesktop file (repo dir symlinked to
+# ~/.local/share/flatpak/overrides, copied to /var/lib/flatpak/overrides/).
+#
+# Manifest grants kept:       network (LAN discovery + transfer), wayland,
+#                             dri, Downloads rw (received files land there),
+#                             org.freedesktop.hostname1 (device name).
+# Manifest grants removed:    ipc (X11 only), the tray name (no tray in the
+#                             dram), NetworkManager on the system bus — both
+#                             hosts run iwd, the name does not exist here.
+# Never granted:              host, home.
+
+[Context]
+shared=network;!ipc;
+sockets=wayland;fallback-x11;!x11;
+devices=dri;
+filesystems=xdg-download;!host;!home;
+
+[Session Bus Policy]
+org.kde.StatusNotifierWatcher=none
+
+[System Bus Policy]
+org.freedesktop.NetworkManager=none

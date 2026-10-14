@@ -1,0 +1,404 @@
+#!/usr/bin/python3 -I
+"""usage: case-display [--print | --once] [--pad]
+
+The temperature panel on the side of cabin's Antec Flux Pro (USB 2022:0522), driven from Arch.
+The panel has no sensors and stays dark unless the PC sends it both temperatures about once a
+second. Every second this reads the CPU's Tctl (k10temp) and the first GPU's core temperature
+(NVML through libnvidia-ml.so.1: nvidia-open registers no hwmon sensor) and writes them as one
+12-byte frame through usbfs to interface 0's interrupt OUT endpoint (0x03 on the panel's
+revision A, 0x02 on revision B; read from sysfs, never assumed). A reading it cannot get shows
+as "--.-". After an error (unplug, suspend) it finds the panel again; on SIGTERM it sends one
+blank frame and hands the interface back. udev starts it as dram-case-display.service when the
+panel appears (60-dram-case-display.rules).
+
+  --print     read both sensors and print the frame; the panel is not touched
+  --once      the same, then send that one frame (stop the service first: it holds the panel)
+  --pad       send 64-byte reports from the start, as Windows does (default: 12 bytes, and 64
+              from the moment the panel refuses a 12-byte write)
+  -h, --help  this text
+
+exit: 0 done, or stopped by a signal · 1 --once could not reach the panel · 2 bad usage
+see: docs/case-display.md
+"""
+import ctypes
+import errno
+import fcntl
+import glob
+import math
+import os
+import signal
+import sys
+import threading
+import time
+
+SYS = "/sys"  # the tests point SYS and DEV at a fake tree
+DEV = "/dev/bus/usb"
+VID, PID = "2022", "0522"
+PERIOD = 1.0  # the panel blanks itself 1-2 s after the last frame
+RETRY = 2.0  # seconds before the panel is looked for again
+NVML_RETRY = 10.0  # NVML is often not up yet when udev starts this at boot
+REVISION = {"0006": "A", "0100": "B"}  # bcdDevice -> the panel's hardware revision
+
+
+# --- the frame (docs/case-display.md, "The protocol") --------------------------------
+def digits(t):
+    """Degrees C -> the field's three digits (tens, ones, tenths); 0xEE x3 shows "--.-"."""
+    if t is None or not math.isfinite(t):
+        return [0xEE] * 3
+    v = max(0, min(999, round(t * 10)))  # 0.0-99.9: a digit above 9 would show as 9
+    return [v // 100, v // 10 % 10, v % 10]
+
+
+def frame(cpu, gpu):
+    """55 AA 01 01 06, the CPU's digits, the GPU's digits, the low byte of the sum."""
+    body = [0x55, 0xAA, 0x01, 0x01, 0x06] + digits(cpu) + digits(gpu)
+    return bytes(body + [sum(body) & 0xFF])
+
+
+def fmt(t):
+    return "--.-" if t is None else "%.1f" % t
+
+
+_said = {}
+
+
+def say(topic, msg, warning=False):
+    """Log msg unless it is what this topic said last; <4> makes it a warning in the journal."""
+    if _said.get(topic) == msg:
+        return
+    _said[topic] = msg
+    try:
+        st = os.fstat(2)
+        journal = os.environ.get("JOURNAL_STREAM") == "%d:%d" % (st.st_dev, st.st_ino)
+    except OSError:
+        journal = False
+    print(("<4>" if warning and journal else "") + msg, file=sys.stderr, flush=True)
+
+
+def read(path):
+    with open(path, errors="replace") as f:
+        return f.read().strip()
+
+
+# --- the CPU: k10temp's Tctl ---------------------------------------------------------
+class Cpu:
+    def __init__(self):
+        self.path = None
+
+    def find(self):
+        for hw in sorted(glob.glob(SYS + "/class/hwmon/hwmon*")):
+            try:
+                if read(hw + "/name") != "k10temp":
+                    continue
+                for label in sorted(glob.glob(hw + "/temp*_label")):
+                    if read(label) == "Tctl":
+                        return label[: -len("label")] + "input"
+            except OSError:
+                continue
+        return None
+
+    def read(self):
+        if self.path is None:
+            self.path = self.find()
+            if self.path is None:
+                say("cpu", "CPU: no k10temp hwmon with a Tctl sensor: the CPU field stays blank", warning=True)
+                return None
+            say("cpu", "CPU: Tctl from " + self.path)
+        try:
+            return int(read(self.path)) / 1000
+        except (OSError, ValueError):
+            self.path = None  # the hwmon went away (a module reload): look again next time
+            return None
+
+
+# --- the GPU: NVML -------------------------------------------------------------------
+class TempV(ctypes.Structure):  # nvmlTemperature_v1_t
+    _fields_ = [("version", ctypes.c_uint), ("sensorType", ctypes.c_int), ("temperature", ctypes.c_int)]
+
+
+class Gpu:
+    """The first GPU's core temperature (NVML_TEMPERATURE_GPU, whole degrees)."""
+
+    def __init__(self, lib="libnvidia-ml.so.1"):
+        self.lib, self.nvml, self.dev, self.next_try, self.v = lib, None, None, 0.0, False
+
+    def load(self):
+        c = ctypes
+        n = c.CDLL(self.lib)
+        sigs = {"nvmlInit_v2": [], "nvmlShutdown": [], "nvmlErrorString": [c.c_int],
+                "nvmlDeviceGetHandleByIndex_v2": [c.c_uint, c.POINTER(c.c_void_p)],
+                "nvmlDeviceGetName": [c.c_void_p, c.c_char_p, c.c_uint]}
+        if hasattr(n, "nvmlDeviceGetTemperature"):  # deprecated in NVML 13, still there
+            sigs["nvmlDeviceGetTemperature"] = [c.c_void_p, c.c_int, c.POINTER(c.c_uint)]
+        else:  # its replacement takes a versioned struct
+            sigs["nvmlDeviceGetTemperatureV"] = [c.c_void_p, c.POINTER(TempV)]
+            self.v = True
+        for name, args in sigs.items():
+            f = getattr(n, name)
+            f.argtypes, f.restype = args, c.c_int
+        n.nvmlErrorString.restype = c.c_char_p
+        return n
+
+    def error(self, rc):
+        return "%s, NVML error %d" % ((self.nvml.nvmlErrorString(rc) or b"?").decode(errors="replace"), rc)
+
+    def start(self):
+        now = time.monotonic()
+        if now < self.next_try:
+            return False
+        self.next_try = now + NVML_RETRY
+        if self.nvml is None:
+            try:
+                self.nvml = self.load()
+            except (OSError, AttributeError) as e:
+                say("gpu", "GPU: no NVML (%s; nvidia-utils has it): the GPU field stays blank" % e, warning=True)
+                return False
+        rc = self.nvml.nvmlInit_v2()
+        if rc:
+            say("gpu", "GPU: NVML not ready (%s); trying again every %g s" % (self.error(rc), NVML_RETRY),
+                warning=True)
+            return False
+        dev = ctypes.c_void_p()
+        rc = self.nvml.nvmlDeviceGetHandleByIndex_v2(0, ctypes.byref(dev))
+        if rc:
+            say("gpu", "GPU: NVML has no GPU 0 (%s); trying again every %g s" % (self.error(rc), NVML_RETRY),
+                warning=True)
+            self.nvml.nvmlShutdown()
+            return False
+        name = ctypes.create_string_buffer(96)
+        if self.nvml.nvmlDeviceGetName(dev, name, len(name)):
+            name.value = b"GPU 0"
+        say("gpu", "GPU: %s, through NVML" % name.value.decode(errors="replace"))
+        self.dev = dev
+        return True
+
+    def read(self):
+        if self.dev is None and not self.start():
+            return None
+        if self.v:
+            t = TempV(ctypes.sizeof(TempV) | 1 << 24, 0)  # struct version 1; NVML_TEMPERATURE_GPU
+            rc = self.nvml.nvmlDeviceGetTemperatureV(self.dev, ctypes.byref(t))
+            value = t.temperature
+        else:
+            u = ctypes.c_uint()
+            rc = self.nvml.nvmlDeviceGetTemperature(self.dev, 0, ctypes.byref(u))  # NVML_TEMPERATURE_GPU
+            value = u.value
+        if rc == 0:
+            return float(value)
+        say("gpu", "GPU: no reading (%s); NVML starts again in %g s" % (self.error(rc), NVML_RETRY), warning=True)
+        self.stop()
+        self.next_try = time.monotonic() + NVML_RETRY
+        return None
+
+    def stop(self):
+        if self.dev is not None:
+            self.dev = None
+            self.nvml.nvmlShutdown()
+
+
+# --- the panel: usbfs (linux/usbdevice_fs.h) ----------------------------------------
+class Bulk(ctypes.Structure):  # struct usbdevfs_bulktransfer
+    _fields_ = [("ep", ctypes.c_uint), ("len", ctypes.c_uint), ("timeout", ctypes.c_uint), ("data", ctypes.c_void_p)]
+
+
+class UsbIoctl(ctypes.Structure):  # struct usbdevfs_ioctl
+    _fields_ = [("ifno", ctypes.c_int), ("ioctl_code", ctypes.c_int), ("data", ctypes.c_void_p)]
+
+
+class DisconnectClaim(ctypes.Structure):  # struct usbdevfs_disconnect_claim
+    _fields_ = [("interface", ctypes.c_uint), ("flags", ctypes.c_uint), ("driver", ctypes.c_char * 256)]
+
+
+def _ioc(direction, nr, size):  # asm-generic/ioctl.h (x86_64, arm64): _IO/_IOR/_IOWR('U', nr, type)
+    return direction << 30 | size << 16 | ord("U") << 8 | nr
+
+
+UINT = ctypes.sizeof(ctypes.c_uint)
+USBDEVFS_BULK = _ioc(3, 2, ctypes.sizeof(Bulk))  # an interrupt transfer on an interrupt endpoint
+USBDEVFS_RELEASEINTERFACE = _ioc(2, 16, UINT)
+USBDEVFS_IOCTL = _ioc(3, 18, ctypes.sizeof(UsbIoctl))
+USBDEVFS_CLEAR_HALT = _ioc(2, 21, UINT)
+USBDEVFS_CONNECT = _ioc(0, 23, 0)  # inside USBDEVFS_IOCTL: let a kernel driver bind again
+USBDEVFS_DISCONNECT_CLAIM = _ioc(2, 27, ctypes.sizeof(DisconnectClaim))
+EXCEPT_DRIVER = 0x02  # ...unless the driver is the one named: "usbfs" is another program
+
+
+def find_panel():
+    """The panel in sysfs -> {node, ep, bcd, driver}, or None."""
+    for dev in sorted(glob.glob(SYS + "/bus/usb/devices/*")):
+        try:
+            if read(dev + "/idVendor") != VID or read(dev + "/idProduct") != PID:
+                continue
+            node = "%s/%03d/%03d" % (DEV, int(read(dev + "/busnum")), int(read(dev + "/devnum")))
+            bcd = read(dev + "/bcdDevice")
+        except (OSError, ValueError):
+            continue  # interfaces have no idVendor
+        intf = sorted(glob.glob("%s/%s:*.0" % (dev, os.path.basename(dev))))  # interface 0
+        eps = sorted(glob.glob(intf[0] + "/ep_*")) if intf else []
+        outs = []
+        for ep in eps:
+            try:
+                if read(ep + "/direction") == "out":
+                    outs.append((read(ep + "/type") != "Interrupt", int(read(ep + "/bEndpointAddress"), 16)))
+            except (OSError, ValueError):
+                continue
+        driver = "none"
+        if intf and os.path.islink(intf[0] + "/driver"):
+            driver = os.path.basename(os.readlink(intf[0] + "/driver"))
+        return {"node": node, "ep": min(outs)[1] if outs else None, "bcd": bcd, "driver": driver}
+    return None
+
+
+def describe(p):
+    ep = "none" if p["ep"] is None else "0x%02x" % p["ep"]
+    return "panel %s:%s at %s: revision %s (bcdDevice %s), OUT endpoint %s, kernel driver %s" % (
+        VID, PID, p["node"], REVISION.get(p["bcd"], "?"), p["bcd"], ep, p["driver"])
+
+
+class Panel:
+    def __init__(self, info, size=12):
+        self.info, self.ep, self.size, self.fd = info, info["ep"], size, None
+        self.detached = info["driver"] not in ("none", "usbfs")  # usbhid, on revision B
+
+    def open(self):
+        fd = os.open(self.info["node"], os.O_RDWR | os.O_CLOEXEC)
+        try:  # one step: detach usbhid if bound, claim interface 0; EBUSY if a program has it
+            fcntl.ioctl(fd, USBDEVFS_DISCONNECT_CLAIM, DisconnectClaim(0, EXCEPT_DRIVER, b"usbfs"))
+        except OSError:
+            os.close(fd)
+            raise
+        self.fd = fd
+
+    def _bulk(self, data, size):
+        buf = ctypes.create_string_buffer(data.ljust(size, b"\0"), size)
+        return fcntl.ioctl(self.fd, USBDEVFS_BULK, Bulk(self.ep, size, 1000, ctypes.addressof(buf)))
+
+    def send(self, data):
+        """One frame; padded to 64 bytes (and from then on) if the panel refuses 12."""
+        try:
+            return self._bulk(data, self.size)
+        except OSError as e:
+            if self.size >= 64 or e.errno in (errno.ENODEV, errno.ESHUTDOWN):
+                raise
+            if e.errno == errno.EPIPE:  # a stall halts the endpoint until it is cleared
+                fcntl.ioctl(self.fd, USBDEVFS_CLEAR_HALT, ctypes.c_uint(self.ep))
+            n = self._bulk(data, 64)
+            self.size = 64
+            say("size", "the panel refused a 12-byte frame (%s): sending 64-byte reports" % e.strerror, warning=True)
+            return n
+
+    def close(self, final=False):
+        """Release interface 0; at the final stop also give it back to its kernel driver."""
+        if self.fd is None:
+            return
+        try:
+            fcntl.ioctl(self.fd, USBDEVFS_RELEASEINTERFACE, ctypes.c_uint(0))
+            if final and self.detached:
+                fcntl.ioctl(self.fd, USBDEVFS_IOCTL, UsbIoctl(0, USBDEVFS_CONNECT, None))
+        except OSError:
+            pass
+        os.close(self.fd)
+        self.fd = None
+
+
+def open_panel(size):
+    info = find_panel()
+    if info is None:
+        say("usb", "no panel (USB %s:%s) in sysfs" % (VID, PID), warning=True)
+        return None
+    if info["ep"] is None:
+        say("usb", describe(info) + ": interface 0 has no OUT endpoint", warning=True)
+        return None
+    panel = Panel(info, size)
+    try:
+        panel.open()
+    except OSError as e:
+        hint = {errno.EACCES: " (only root and the service may write to it)",
+                errno.EBUSY: " (another program holds it: systemctl stop dram-case-display)"}.get(e.errno, "")
+        say("usb", "%s: cannot claim it: %s%s" % (describe(info), e.strerror, hint), warning=True)
+        return None
+    say("usb", describe(info) + ": claimed")
+    return panel
+
+
+def run(stop, once=False, size=12):
+    """Send a frame every PERIOD until stop is set (--once: one). Returns the exit code."""
+    cpu, gpu, panel, first = Cpu(), Gpu(), None, False
+    due = time.monotonic()
+    while not stop.is_set():
+        if panel is None:
+            panel = open_panel(size)
+            if panel is None:
+                if once:
+                    return 1
+                stop.wait(RETRY)
+                continue
+            first = True
+        c, g = cpu.read(), gpu.read()
+        f = frame(c, g)
+        try:
+            panel.send(f)
+        except OSError as e:
+            say("usb", "writing to the panel failed (%s)%s" % (e.strerror, "" if once else "; finding it again"),
+                warning=True)
+            panel.close()
+            panel = None
+            if once:
+                return 1
+            stop.wait(RETRY)
+            continue
+        size = panel.size
+        if once:
+            print("cpu %s gpu %s frame %s" % (fmt(c), fmt(g), f.hex(" ")))
+            panel.close(final=True)
+            gpu.stop()
+            return 0
+        if first:
+            first = False
+            say("usb", "sending a frame a second, the first: CPU %s, GPU %s (%s)" % (fmt(c), fmt(g), f.hex(" ")))
+        due += PERIOD
+        now = time.monotonic()
+        if due < now:  # late (a slow NVML call, a suspend): keep the beat from now on
+            due = now
+        stop.wait(due - now)
+    if panel is not None:
+        try:
+            panel.send(frame(None, None))  # dashes at once, not after the panel's own timeout
+        except OSError:
+            pass
+        panel.close(final=True)
+    gpu.stop()
+    say("usb", "stopped")
+    return 0
+
+
+def usage():
+    print(__doc__.strip().splitlines()[0], file=sys.stderr)
+    return 2
+
+
+def main(argv):
+    opts = set()
+    for a in argv:
+        if a in ("-h", "--help"):
+            print(__doc__.strip())
+            return 0
+        if a not in ("--print", "--once", "--pad"):
+            return usage()
+        opts.add(a)
+    if {"--print", "--once"} <= opts:
+        return usage()
+    if "--print" in opts:
+        cpu, gpu = Cpu(), Gpu()
+        c, g = cpu.read(), gpu.read()
+        gpu.stop()
+        print("cpu %s gpu %s frame %s" % (fmt(c), fmt(g), frame(c, g).hex(" ")))
+        return 0
+    stop = threading.Event()
+    for s in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+        signal.signal(s, lambda *_: stop.set())
+    return run(stop, "--once" in opts, 64 if "--pad" in opts else 12)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -1,0 +1,7 @@
+# uv tools for the re-lab role, installed per user by re-lab-tools (dotfiles/.local/bin):
+# `uv tool install <name>==<version>`, each in its own isolated environment. One
+# name==version per line, own-line comments only; each name needs a register row.
+# Dynamic instrumentation (wxWindows Library Licence 3.1)
+frida-tools==14.11.0
+# binary analysis and symbolic execution (BSD-2-Clause; needs Python >= 3.12)
+angr==10.0.3

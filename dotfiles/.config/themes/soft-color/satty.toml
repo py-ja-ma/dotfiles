@@ -1,0 +1,4 @@
+# Soft Color — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#ff9a8b", "#ff7a85", "#a8d8b0", "#ffcf8b", "#8ba6ff", "#d8a8e8"]

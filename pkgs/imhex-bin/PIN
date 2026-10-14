@@ -1,0 +1,5 @@
+imhex-bin — how to re-pin
+  1. New release: https://github.com/WerWolv/ImHex/releases — pkgver = tag without the v.
+  2. gh api repos/WerWolv/ImHex/releases/latest --jq '.assets[] | select(.name|test("ArchLinux-x86_64.pkg.tar.zst")) | .digest'
+     (or the "sha256:" line GitHub shows next to the asset). sha256sums = that digest, by hand.
+  3. `updpkgsums` must agree.

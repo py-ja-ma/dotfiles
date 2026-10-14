@@ -1,0 +1,55 @@
+#!/usr/bin/bash
+# usage: os-session-select [--print] [desktop|gaming|big-picture|gamescope|<SteamOS name>]
+#
+# /usr/lib/os-session-select (dram-gaming-mode, decisions/0012): the hook that
+# gamescope-session-steam's `steamos-session-select` execs, so Steam's own "Switch to
+# Desktop" lands here, and so do our keybinds and menu entries. It maps the SteamOS /
+# ChimeraOS names onto our three ly sessions:
+#   desktop, plasma*, hyprland                        -> dram-desktop  ("Desktop")
+#   gaming (the default)                              -> the default Gaming Mode
+#   big-picture, gaming-hyprland, dram-gaming         -> dram-gaming   ("Gaming Mode")
+#   gamescope, steam, steam-plus, gamescope-session-steam
+#                                                     -> gamescope-session-steam
+#                                                        ("Gaming Mode (gamescope, experimental)")
+# The default Gaming Mode is dram-gaming; /etc/dram/gaming-mode containing the word
+# `gamescope` flips it (the promotion rule in decisions/0012). Then it asks
+# /usr/lib/dram/session-switch (root, polkit: the active local user, no password) to
+# end this session and have ly log the same user into the chosen one, once.
+#
+#   --print      print the ly session name and stop
+#   -h, --help   this text
+#
+# exit: 0 switching (or printed) · 1 the switch failed · 2 bad usage
+
+set -euo pipefail
+print=0
+case "${1:-}" in
+  -h | --help)
+    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+  --print)
+    print=1
+    shift
+    ;;
+esac
+mode="$(grep -vE '^[[:space:]]*(#|$)' "${DRAM_GAMING_MODE_FILE:-/etc/dram/gaming-mode}" 2>/dev/null | awk '{print $1; exit}' || true)"
+case "$mode" in
+  gamescope) gaming=gamescope-session-steam ;;
+  *) gaming=dram-gaming ;;
+esac
+case "${1:-gaming}" in
+  desktop | plasma | plasma-wayland | plasma-wayland-persistent | plasma-x11 | plasma-x11-persistent | hyprland | dram-desktop) session=dram-desktop ;;
+  gaming) session="$gaming" ;;
+  big-picture | gaming-hyprland | dram-gaming) session=dram-gaming ;;
+  gamescope | steam | steam-plus | gamescope-session-steam) session=gamescope-session-steam ;;
+  *)
+    echo "os-session-select: unknown session '$1' (desktop, gaming, big-picture, gamescope)" >&2
+    exit 2
+    ;;
+esac
+if [ "$print" -eq 1 ]; then
+  echo "$session"
+  exit 0
+fi
+exec pkexec --disable-internal-agent /usr/lib/dram/session-switch "$session"

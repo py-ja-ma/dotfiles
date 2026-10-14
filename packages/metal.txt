@@ -1,0 +1,52 @@
+# Metal — every Arch host on its own hardware (form metal, the default in
+# modules/options.nix), never a WSL clone (decisions/0021-wsl-clone.md): the kernel and
+# its firmware, the boot chain, the disks, power, Wi-Fi, disk health, snapshots and the
+# firewall. In WSL, Windows owns all of that: Microsoft's kernel boots the VM, the root is
+# an ext4 VHDX, the network and the firewall are Windows' (Microsoft: a WSL rootfs "should
+# not contain a kernel or an initramfs"). install/lib/roles.sh adds this file, the
+# cpu-*/gpu-*/laptop lists and host-<name>.txt for metal hosts only. Split out of
+# packages/base.txt 2026-10-12; one name per line, own-line comments only.
+
+# btrfs-progs, cryptsetup: install/arch-install.sh pacstraps them (btrfs pools on every
+# metal host, cryptsetup for the LUKS2 presets and a systemd dependency anyway)
+btrfs-progs
+cryptsetup
+# dosfstools: mkfs.fat/fsck.fat for the ESP (systemd-fsck checks /efi at boot) and FAT media
+dosfstools
+# efibootmgr: install/arch-install.sh writes systemd-boot's NVRAM entry with it;
+# `dram doctor --boot` reads BootOrder through it
+efibootmgr
+iwd
+# cabin boots linux-lts as well (its own UKI: system/uki-presets.sh); packages/host-cabin.txt
+# declares that kernel and its headers
+linux
+linux-firmware
+# linux-headers + dkms: every DKMS module builds against the headers of EVERY installed
+# kernel (v4l2loopback-dkms in roles/creator.txt, xpadneo-dkms in roles/gaming.txt).
+# Moved here from gpu-nvidia.txt 2026-10-10 so a non-NVIDIA creator box can build too.
+linux-headers
+dkms
+lvm2
+# nftables: the firewall. system/harden.sh installs it and writes the ruleset today;
+# declared here so a host built from the manifests before harden.sh runs has the package
+nftables
+smartmontools
+tuned
+# tuned-ppd: power-profiles-daemon's D-Bus API on top of tuned (gamemode.ini, modules/gpu.nix).
+# It conflicts with AND provides power-profiles-daemon: never install ppd next to it
+tuned-ppd
+zram-generator
+# wireguard-tools: VPN client to the UniFi gateway (docs/security/network/vpn.md), no account needed.
+# Tailscale was tried and removed 2026-10-05 (requires a sign-in). In WSL the tunnel is
+# Windows' (mirrored networking carries it into the clone)
+wireguard-tools
+
+# --- boot safety (decisions/0011) ---------------------------------------------
+# snapper: pre/post snapshots of / on every pacman transaction (our own hooks,
+# system/hooks/*dram-snap*; snap-pac is not used) + the /home timeline
+snapper
+# sbctl: our Secure Boot keys (+ Microsoft's), signing of systemd-boot and the UKIs
+sbctl
+# arch-install-scripts: arch-chroot, which dram-snapshot uses to build a boot entry
+# inside each snapshot from that snapshot's own kernel
+arch-install-scripts

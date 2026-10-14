@@ -1,0 +1,6 @@
+/* CRT — swayosd palette (imported by swayosd/style.css) */
+@define-color osd-bg       #050a0a;
+@define-color osd-border   #22dddd;
+@define-color osd-fg       #aaffff;
+@define-color osd-progress #22dddd;
+@define-color osd-trough   #0b3333;

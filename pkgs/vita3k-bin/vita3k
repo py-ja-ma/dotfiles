@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+# [dram] vita3k-bin launcher: AppRun finds its tree from its own path, so call it there
+exec /opt/vita3k/AppRun "$@"

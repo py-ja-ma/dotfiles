@@ -1,0 +1,6 @@
+/* Washi — swayosd palette (imported by swayosd/style.css) */
+@define-color osd-bg       #1c140f;
+@define-color osd-border   #c0442b;
+@define-color osd-fg       #e6d6cb;
+@define-color osd-progress #c0442b;
+@define-color osd-trough   #2e211a;

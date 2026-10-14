@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+#
+# tests/fixtures/cabin-win/30-user.winget - a stand-in for windows/build/cabin-win's, in the
+# renderer's shape (bin/render-windows.sh), for tests/push-windows.sh: a Store app in pj's scope.
+properties:
+  configurationVersion: "0.2.0"
+  resources:
+    # --- desktop (windows/roles/desktop.nix, packages/winget/desktop.txt) ---
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "spotify"
+      directives:
+        description: "Spotify (Microsoft Store source)"
+        allowPrerelease: true
+      settings:
+        id: "9NCBCSZSJRSB"
+        source: "msstore"

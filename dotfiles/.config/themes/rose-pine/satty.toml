@@ -1,0 +1,4 @@
+# Rose Pine — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#c4a7e7", "#eb6f92", "#9ccfd8", "#f6c177"]

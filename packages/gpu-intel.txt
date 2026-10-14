@@ -1,0 +1,7 @@
+# Intel integrated graphics (lantern: TigerLake-LP Iris Xe)
+# intel-media-driver is the iHD VA-API driver (Broadwell and newer); modules/gpu.nix pins
+# LIBVA_DRIVER_NAME=iHD. libva-intel-driver (the legacy i965 driver) left 2026-10-07:
+# TigerLake never loads it
+intel-media-driver
+vulkan-intel
+lib32-vulkan-intel

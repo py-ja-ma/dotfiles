@@ -1,0 +1,25 @@
+/* Catppuccin Latte — waybar palette (imported by waybar/style.css)
+ * Accents darkened from stock latte so foreground icons/text hit ~4.5:1
+ * WCAG contrast on the light bar background (crust). Stock latte accents
+ * sat at 2-3:1 and were hard to see. */
+@define-color base     #eff1f5;
+@define-color mantle   #e6e9ef;
+@define-color crust    #dce0e8;
+@define-color text     #4c4f69;
+@define-color subtext  #5f6276;
+@define-color overlay  #6c7187;
+@define-color surface0 #ccd0da;
+@define-color surface1 #828aa0;
+@define-color blue     #0a55ea;
+@define-color lavender #2c4bfc;
+@define-color sapphire #166c7a;
+@define-color sky      #036992;
+@define-color teal     #116e73;
+@define-color green    #2d701e;
+@define-color yellow   #895712;
+@define-color peach    #ac4001;
+@define-color maroon   #c21a29;
+@define-color red      #c60e36;
+@define-color mauve    #7f2bee;
+@define-color pink     #b51c8c;
+@define-color accent   #1e66f5;   /* the ONE accent ink (Letterpress) */

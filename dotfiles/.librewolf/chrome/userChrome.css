@@ -1,0 +1,218 @@
+/* Letterpress chrome for LibreWolf — dotfiles/.librewolf/README.md.
+ *
+ * Static rules, tracked once. Every colour comes from letterpress-colors.css,
+ * which dram-theme links next to this file in each PROFILE's chrome/ dir to
+ * ~/.config/themes/current/browser.css (generated per theme by
+ * bin/gen-browser-css.py: --lp-* names + color-scheme). Switch the dram, restart
+ * LibreWolf (userChrome.css is read at startup only).
+ *
+ * userChrome.css is a USER-level sheet; the browser's own skin is AUTHOR-level,
+ * so every declaration here carries !important — that is the userChrome
+ * contract, not sloppiness. Loaded only when
+ * toolkit.legacyUserProfileCustomizations.stylesheets = true
+ * (dotfiles/.librewolf/librewolf.overrides.cfg).
+ *
+ * Written against Firefox 157 (LibreWolf 157.0, extra, 2026-09-30): the Nova
+ * chrome (browser.nova.enabled=true, browser/app/profile/firefox.js) and its
+ * design tokens — toolkit/themes/shared/design-system/src/tokens/components/
+ * {toolbar,toolbox,toolbarbutton,panel,popup}.tokens.json,
+ * browser/themes/shared/tabbrowser/tab.tokens.css, browser/themes/shared/urlbar/
+ * urlbar.tokens.css. The pre-Nova names (ESR 140: --toolbar-bgcolor,
+ * --tab-selected-bgcolor, --arrowpanel-*, --lwt-*) are set alongside so an
+ * older build gets the same page; unknown names are ignored, never an error.
+ *
+ * The page: chrome on paper. Toolbars, tab strip and the window = @base; the
+ * urlbar and sidebar = @mantle (the reading surface, one step down); popovers
+ * lift off the page on @raised. 1 px hairlines in alpha(@text,.18) separate the
+ * strips; 3 px radii; no pills, no tab shadows, no Nova gradient. The selected
+ * tab is an accent RULE under its title (the waybar hover rule), never a fill;
+ * urlbar focus is a 1 px accent border. Dark/light follows the dram: the
+ * generated sheet sets color-scheme on :root, so every light-dark() token we do
+ * not name still resolves with the theme. */
+@import url("letterpress-colors.css");
+
+:root {
+  /* ---- the UI face: Literata 13 (docs/design/typography/README.md). Firefox's
+   * :root { font: message-box } would take the GTK font-name (Literata 11 =
+   * 14.7 px); 13 px is the widget-label size. Pages keep their own prefs. */
+  font-family: "Literata", serif !important;
+  font-size: 13px !important;
+
+  /* ---- window + toolbox: one sheet. Nova paints a violet→orange gradient
+   * (--toolbox-background-gradient) over the toolbox — off. */
+  --toolbox-background-color: var(--lp-base) !important;
+  --toolbox-background-color-inactive: var(--lp-base) !important;
+  --toolbox-text-color: var(--lp-text) !important;
+  --toolbox-text-color-inactive: var(--lp-subtext) !important;
+  --toolbox-text-color-current: var(--lp-text) !important;
+  --toolbox-background-gradient: none !important;
+  --toolbox-background-image: none !important;
+  --toolbar-background-color: var(--lp-base) !important;
+  --toolbar-text-color: var(--lp-text) !important;
+  --toolbar-bgcolor: var(--lp-base) !important;              /* pre-Nova */
+  --toolbar-color: var(--lp-text) !important;                /* pre-Nova */
+  --lwt-accent-color: var(--lp-base) !important;
+  --lwt-accent-color-inactive: var(--lp-base) !important;
+  --lwt-text-color: var(--lp-text) !important;
+  --chrome-content-separator-color: var(--lp-rule) !important;
+  --content-area-shadow: none !important;
+  --tabs-navbar-separator-color: var(--lp-rule) !important;
+  --tabs-navbar-separator-style: solid !important;
+  --tabstrip-inner-border: 1px solid var(--lp-rule) !important;
+  --lwt-tabs-border-color: var(--lp-rule) !important;        /* pre-Nova */
+
+  /* ---- radii: 3 px everywhere Letterpress has a corner (GTK gets the same) */
+  --border-radius-small: 2px !important;
+  --border-radius-medium: 3px !important;
+  --border-radius-large: 3px !important;
+  --border-radius-xlarge: 3px !important;
+  --button-border-radius: 3px !important;
+  --toolbarbutton-border-radius: 3px !important;
+  --popup-border-radius: 3px !important;
+  --panel-border-radius: 3px !important;
+  --panel-menuitem-border-radius: 2px !important;
+  --arrowpanel-border-radius: 3px !important;                /* pre-Nova */
+  --tab-border-radius: 3px !important;
+
+  /* ---- toolbar buttons: ink on paper, a faint wash on hover, no outlines */
+  --toolbarbutton-icon-fill: var(--lp-text) !important;
+  --toolbarbutton-icon-fill-attention: var(--lp-accent) !important;
+  --toolbarbutton-background-color-hover: var(--lp-hover) !important;
+  --toolbarbutton-background-color-active: var(--lp-active) !important;
+  --toolbarbutton-outline-color: transparent !important;
+  --toolbarbutton-outline-color-hover: transparent !important;
+  --toolbarbutton-outline-color-active: transparent !important;
+  --toolbarbutton-outline-color-selected: var(--lp-rule) !important;
+  --lwt-toolbarbutton-hover-background: var(--lp-hover) !important;   /* pre-Nova */
+  --lwt-toolbarbutton-active-background: var(--lp-active) !important; /* pre-Nova */
+  --panel-icon-fill: var(--lp-text) !important;
+
+  /* ---- urlbar + search field: the reading surface, hairline, accent focus */
+  --toolbar-field-background-color: var(--lp-mantle) !important;
+  --toolbar-field-background-color-focus: var(--lp-mantle) !important;
+  --toolbar-field-text-color: var(--lp-text) !important;
+  --toolbar-field-text-color-focus: var(--lp-text) !important;
+  --toolbar-field-border-color: var(--lp-rule) !important;
+  --toolbar-field-border-color-focus: var(--lp-accent) !important;
+  --toolbar-field-color: var(--lp-text) !important;                  /* pre-Nova */
+  --toolbar-field-focus-color: var(--lp-text) !important;            /* pre-Nova */
+  --toolbar-field-focus-background-color: var(--lp-mantle) !important; /* pre-Nova */
+  --toolbar-field-focus-border-color: var(--lp-accent) !important;   /* pre-Nova */
+  --urlbar-background-color: var(--lp-mantle) !important;
+  --urlbar-background-color-focus: var(--lp-mantle) !important;
+  --urlbar-border-radius: 3px !important;
+  --urlbarview-border-radius: 3px !important;
+  --urlbar-background-border-radius: 3px !important;
+  --urlbar-background-border-focused: 1px solid var(--lp-accent) !important;
+  --urlbar-background-outline-focused: none !important;
+  --urlbar-background-box-shadow-open: 0 0 0 1px var(--lp-rule) !important;
+  --urlbar-input-container-outline-open: 1px solid var(--lp-rule) !important;
+  --urlbar-input-container-outline-open-focused: 1px solid var(--lp-accent) !important;
+  --urlbar-input-container-outline-offset-open: -1px !important;
+  --chrome-box-shadow: transparent !important;
+  --urlbar-box-background-color: var(--lp-surface0) !important;
+  --urlbar-box-background-color-hover: var(--lp-surface1) !important;
+  --urlbar-box-background-color-active: var(--lp-surface1) !important;
+  --urlbar-box-background-color-focus: var(--lp-surface0) !important;
+  --urlbar-box-text-color: var(--lp-text) !important;
+  --urlbar-box-bgcolor: var(--lp-surface0) !important;               /* pre-Nova */
+  --urlbar-box-hover-bgcolor: var(--lp-surface1) !important;         /* pre-Nova */
+  --urlbar-box-active-bgcolor: var(--lp-surface1) !important;        /* pre-Nova */
+  --urlbar-box-text-color: var(--lp-text) !important;
+  --urlbarview-background-color-hover: var(--lp-surface0) !important;
+  --urlbarview-background-color-selected: var(--lp-surface1) !important;
+  --urlbarview-text-color-selected: var(--lp-text) !important;
+  --urlbarview-text-color-action: var(--lp-subtext) !important;
+  --urlbarview-separator-color: var(--lp-rule) !important;
+  --urlbarView-separator-color: var(--lp-rule) !important;           /* pre-Nova */
+  --urlbar-popup-url-color: var(--lp-blue) !important;               /* pre-Nova */
+
+  /* ---- tabs: no fill, no shadow; the title is subtext, the selected one ink */
+  --tab-background-color: transparent !important;
+  --tab-background-color-hover: var(--lp-hover) !important;
+  --tab-background-color-selected: transparent !important;
+  --tab-text-color: var(--lp-subtext) !important;
+  --tab-text-color-hover: var(--lp-text) !important;
+  --tab-text-color-selected: var(--lp-text) !important;
+  --tab-border-color: transparent !important;
+  --tab-border-color-hover: transparent !important;
+  --tab-border-color-selected: transparent !important;
+  --tab-box-shadow-selected: none !important;
+  --tab-loading-fill: var(--lp-accent) !important;
+  --tab-selected-bgcolor: transparent !important;                    /* pre-Nova */
+  --tab-selected-textcolor: var(--lp-text) !important;               /* pre-Nova */
+  --tab-hover-background-color: var(--lp-hover) !important;          /* pre-Nova */
+  --tab-selected-shadow: none !important;                            /* pre-Nova */
+  --lwt-tab-line-color: var(--lp-accent) !important;                 /* pre-Nova */
+  --lwt-selected-tab-background-color: transparent !important;       /* pre-Nova */
+
+  /* ---- popovers, menus, panels: raised a step, hairline edge, light shadow */
+  --panel-background-color: var(--lp-raised) !important;
+  --panel-text-color: var(--lp-text) !important;
+  --panel-border-color: var(--lp-rule) !important;
+  --panel-separator-color: var(--lp-rule) !important;
+  --panel-box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  --popup-background-color: var(--lp-raised) !important;
+  --popup-border-color: var(--lp-rule) !important;
+  --popup-box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  --background-color-box: var(--lp-raised) !important;
+  --arrowpanel-background: var(--lp-raised) !important;              /* pre-Nova */
+  --arrowpanel-color: var(--lp-text) !important;                     /* pre-Nova */
+  --arrowpanel-border-color: var(--lp-rule) !important;              /* pre-Nova */
+
+  /* ---- the accent: focus rings, switches, attention; links in the theme blue */
+  --focus-outline-color: var(--lp-accent) !important;
+  --color-accent-primary: var(--lp-accent) !important;
+  --color-accent-primary-hover: var(--lp-accent-dim) !important;
+  --color-accent-primary-active: var(--lp-accent-dim) !important;
+  --color-accent-attention: var(--lp-accent) !important;
+  --link-color: var(--lp-blue) !important;
+  --link-color-hover: var(--lp-blue) !important;
+  --link-color-active: var(--lp-blue) !important;
+
+  /* ---- sidebar (bookmarks/history, vertical tabs): the reading surface */
+  --sidebar-background-color: var(--lp-mantle) !important;
+  --sidebar-text-color: var(--lp-text) !important;
+  --sidebar-border-color: var(--lp-rule) !important;
+  --lwt-sidebar-background-color: var(--lp-mantle) !important;       /* pre-Nova */
+  --lwt-sidebar-text-color: var(--lp-text) !important;               /* pre-Nova */
+}
+
+/* The selected tab: an accent rule under the title (vertical tabs: at its
+ * leading edge), replacing Nova's filled tab with a gradient border. The
+ * inset shadow is the rule — it adds no box, so nothing reflows. */
+.tab-background:is([selected], [multiselected]) {
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: inset 0 -2px 0 0 var(--lp-accent) !important;
+}
+#tabbrowser-tabs[orient="vertical"] .tab-background:is([selected], [multiselected]) {
+  box-shadow: inset 2px 0 0 0 var(--lp-accent) !important;
+}
+
+/* Hairlines where the strips meet: tab strip / nav-bar / bookmarks / content. */
+#navigator-toolbox:not([tabs-hidden]) > #nav-bar {
+  border-top: 1px solid var(--lp-rule) !important;
+}
+#PersonalToolbar:not([collapsed="true"]) {
+  border-top: 1px solid var(--lp-rule) !important;
+}
+#navigator-toolbox {
+  border-bottom: 1px solid var(--lp-rule) !important;
+  box-shadow: none !important;
+}
+
+/* The urlbar box: hairline at rest, accent when focused (set above), no glow. */
+.urlbar-background {
+  box-shadow: none !important;
+}
+
+/* Window controls: Hyprland draws no server-side decorations and has its own
+ * binds, so the GTK CSD buttons in the tab strip are only glyph soup. Linux
+ * only: on Windows the same box holds minimise, maximise and close, the only
+ * window controls there are (the sheet is shared, install/windows/). */
+@media (-moz-platform: linux) {
+  .titlebar-buttonbox-container {
+    display: none !important;
+  }
+}

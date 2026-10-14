@@ -1,0 +1,25 @@
+# %UserProfile%\.wslconfig for the WSL Arch clone (decisions/0021, docs/platforms/wsl/README.md):
+# written by dram-windows/wsl.ps1 from this file, @MEMORY@ @SWAP@ @VHD@ filled from the PC's
+# "#:" row below, before the clone exists: defaultVhdSize caps only a disk created after
+# it. `dram doctor` in the clone compares the file Windows reads with this one, filled
+# the same way. A change takes effect once WSL has stopped: wsl --shutdown.
+#: cabin    16GB  4GB  128GB
+#: thermos  12GB  4GB  96GB
+
+[wsl2]
+# Windows and the clone share 127.0.0.1 (VSCodium reaches the clone's sshd on 2222);
+# Windows' VPN tunnels and IPv6 reach the clone as they are
+networkingMode=mirrored
+memory=@MEMORY@
+swap=@SWAP@
+# the cap on a new distro's ext4 VHDX (1 TB by default), on C:, never on Arch's disks
+defaultVhdSize=@VHD@
+# the VM kit stays on Arch
+nestedVirtualization=false
+# WSLg off until a Linux-only GUI tool is wanted (decisions/log.md#d80); the GUIs run natively
+# on Windows
+guiApplications=false
+
+[experimental]
+# freed blocks go back to C:; still experimental, so the cap above is the real bound
+sparseVhd=true

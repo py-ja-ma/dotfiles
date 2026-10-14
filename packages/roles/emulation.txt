@@ -1,0 +1,62 @@
+# role: emulation — the emulator set and frontends (decisions/0016-emulation-set-and-flatpak.md).
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "emulation" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+# Flathub-verified emulators are in packages/flatpak/emulation.txt; the ROM/BIOS tree
+# is /data/emulation (system/emulation-setup.sh, docs/toolchain/profiles/emulation.md).
+
+# RetroArch with FREE cores only. The libretro allow-list is THIS list: `dram doctor`
+# warns about any other libretro core (Arch's own metadata calls two non-commercial
+# cores BSD-3, so licence strings cannot be trusted; decisions/0016).
+retroarch
+retroarch-assets-ozone
+libretro-core-info
+libretro-shaders-slang
+# NES / Famicom
+libretro-mesen
+libretro-nestopia
+# SNES (Snes9x is non-commercial: never)
+libretro-bsnes
+libretro-mesen-s
+# Game Boy / Color
+libretro-gambatte
+libretro-sameboy
+# PS1 (DuckStation is CC BY-NC-ND: never)
+libretro-beetle-psx-hw
+# PC Engine / SuperGrafx
+libretro-beetle-pce-fast
+libretro-beetle-supergrafx
+# Mega Drive (Genesis Plus GX and PicoDrive are non-commercial: never)
+libretro-blastem
+# Saturn
+libretro-kronos
+libretro-yabause
+# Dreamcast / NAOMI / Atomiswave
+libretro-flycast
+# N64 fallback (RMG is the main one, Flatpak)
+libretro-mupen64plus-next
+
+# standalone emulators from extra
+# GameCube / Wii
+dolphin-emu
+# PSP
+ppsspp
+ppsspp-assets
+# arcade, Neo Geo, Sega Model 2
+mame
+# Master System, Game Gear, SG-1000, Mega CD, 32X and more
+ares-emu
+# GBA
+mgba-qt
+# point-and-click adventures
+scummvm
+
+# [dram] (pkgs/): no Flathub-verified build exists. No ES-DE (decisions/log.md#d32): it needs
+# FreeImage, which Arch dropped and upstream has not released since 2018 (unpatched CVEs).
+# Steam ROM Manager's emulator parsers add games to Steam without it.
+# PS3
+rpcs3-bin
+# PS Vita
+vita3k-bin
+# Xbox 360 (upstream calls the Linux build experimental)
+xenia-canary-bin

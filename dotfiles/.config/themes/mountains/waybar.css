@@ -1,0 +1,22 @@
+/* Mountains — waybar palette (imported by waybar/style.css) */
+@define-color base     #1a1814;
+@define-color mantle   #141310;
+@define-color crust    #0f0e0c;
+@define-color text     #e8e9e1;
+@define-color subtext  #abaaa3;
+@define-color overlay  #6e6b65;
+@define-color surface0 #2a2621;
+@define-color surface1 #34302a;
+@define-color blue     #6f8a94;
+@define-color lavender #848696;
+@define-color sapphire #7c999a;
+@define-color sky      #88a8a0;
+@define-color teal     #84a093;
+@define-color green    #7c907a;
+@define-color yellow   #c2a86a;
+@define-color peach    #b98962;
+@define-color maroon   #865346;
+@define-color red      #b06a5a;
+@define-color mauve    #9a8298;
+@define-color pink     #ae9bad;
+@define-color accent   #7c907a;   /* the ONE accent ink (Letterpress) */

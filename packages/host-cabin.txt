@@ -1,0 +1,13 @@
+# cabin-only: read by install/bootstrap.sh / dram apply / bin/check.sh §3 when
+# /etc/hostname (or hosts/<name>) is cabin. GUI-and-system packages that are about THIS
+# box, not the GPU (the GPU's are gpu-nvidia.txt). One name per line, own-line comments.
+
+# grub left 2026-10-10 (decisions/0011: systemd-boot; the firmware menu is the fallback)
+# linux-lts: cabin's second kernel (its own UKI on /efi); headers for v4l2loopback-dkms
+# (roles/creator.txt), and its own prebuilt NVIDIA module
+linux-lts
+linux-lts-headers
+nvidia-open-lts
+# the temperature panel on the case (Antec Flux Pro, USB 2022:0522): our own [dram] package;
+# udev starts its service when the panel appears (pkgs/dram-case-display/README.md)
+dram-case-display

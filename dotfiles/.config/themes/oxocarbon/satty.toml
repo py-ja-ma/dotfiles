@@ -1,0 +1,4 @@
+# Oxocarbon — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#33b1ff", "#ee5396", "#42be65", "#fdd13a", "#be95ff"]

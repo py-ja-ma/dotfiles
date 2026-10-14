@@ -1,0 +1,61 @@
+# shellcheck disable=SC2034,SC2154,SC2164
+# [dram] vendored from aur:xenia-canary-bin (see UPSTREAM), rewritten: one pinned build
+# instead of pkgver=$(curl …latest…) and a SKIP checksum; the AppImage's squashfs is
+# unpacked with unsquashfs at the offset the ELF header gives, so nothing from it runs
+# during the build. Review in REVIEW.md. Upstream calls these Linux builds experimental.
+# Maintainer (AUR): Ash; contributor baboon
+
+pkgname=xenia-canary-bin
+_binary=xenia_canary
+_tag=103257c
+_commit=103257c5aa0a49a0893dc9b93dc1882e129bc165 # xenia-canary/xenia-canary release 103257c, 2026-10-11
+pkgver=r103257c
+pkgrel=1
+pkgdesc="Xbox 360 emulator research project (Canary, experimental Linux AppImage, pinned build)"
+arch=('x86_64')
+url="https://github.com/xenia-canary/xenia-canary"
+license=('BSD-3-Clause')
+depends=('alsa-lib' 'fontconfig' 'gcc-libs' 'glib2' 'gtk3' 'hicolor-icon-theme' 'libx11' 'libxcb' 'lz4' 'sdl2' 'zlib' 'vulkan-icd-loader')
+makedepends=('squashfs-tools' 'binutils')
+conflicts=('xenia-git' 'xenia-canary-git')
+provides=('xenia')
+options=('!strip' '!debug')
+_appimage="${_binary}_linux-${_tag}.AppImage"
+source=("$_appimage::$url/releases/download/$_tag/${_binary}_linux.AppImage"
+  "LICENSE::https://raw.githubusercontent.com/xenia-canary/xenia-canary/$_commit/LICENSE"
+  'xenia-canary-bin'
+  'xenia-canary-bin.desktop')
+noextract=("$_appimage")
+# the AppImage sha256 equals the asset digest GitHub publishes for the release
+sha256sums=('363e1c4a8f40f9d16583624e1b0a0df0b0f284cc3af89b84f3e9f3aafb2ef009'
+            '369ea6b0f7ba57544067e9d470ca82a927da787fb0a749b11cb55f1fd0ba47ae'
+            '8f21e197b28d8b0fd430881f26fbffae683057a4d0e48ab3fe4d0f1d5c7dc624'
+            '31263c7ca8951466d5cbed9588ce97328bd9815b922f77366691479ba48085ad')
+
+prepare() {
+  local offset
+  offset=$(readelf -h "$_appimage" | awk '
+    /Start of section headers/ { so = $5 }
+    /Size of section headers/  { ss = $5 }
+    /Number of section headers/ { ns = $5 }
+    END { print so + ss * ns }')
+  [ "$offset" -gt 0 ] || { echo "could not compute the AppImage squashfs offset" >&2; return 1; }
+  rm -rf squashfs-root
+  unsquashfs -q -no-xattrs -d squashfs-root -o "$offset" "$_appimage" >/dev/null
+  chmod -R u+rwX,go+rX,go-w squashfs-root
+}
+
+package() {
+  install -Dm755 "squashfs-root/usr/bin/$_binary" "$pkgdir/opt/$_binary/bin/$_binary"
+  install -dm755 "$pkgdir/opt/$_binary/lib"
+  cp -dR --no-preserve=ownership squashfs-root/usr/lib/. "$pkgdir/opt/$_binary/lib/"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  local png
+  for png in squashfs-root/usr/share/icons/hicolor/*/apps/xenia_canary.png; do
+    [ -f "$png" ] || continue
+    install -Dm644 "$png" "$pkgdir/usr/share/icons/hicolor/$(basename "$(dirname "$(dirname "$png")")")/apps/xenia-canary.png"
+  done
+  install -Dm644 xenia-canary-bin.desktop "$pkgdir/usr/share/applications/xenia-canary-bin.desktop"
+  install -Dm755 xenia-canary-bin "$pkgdir/usr/bin/xenia-canary-bin"
+  ln -s xenia-canary-bin "$pkgdir/usr/bin/$_binary"
+}

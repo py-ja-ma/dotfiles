@@ -1,0 +1,22 @@
+/* Cassette — waybar palette (imported by waybar/style.css) */
+@define-color base     #0b0906;
+@define-color mantle   #090705;
+@define-color crust    #060503;
+@define-color text     #c8b89a;
+@define-color subtext  #928671;
+@define-color overlay  #5d5347;
+@define-color surface0 #1e1916;
+@define-color surface1 #2a2420;
+@define-color blue     #4a6a7a;
+@define-color lavender #525262;
+@define-color sapphire #42626a;
+@define-color sky      #3a5a5a;
+@define-color teal     #3e514b;
+@define-color green    #463f2e;
+@define-color yellow   #7a6a3e;
+@define-color peach    #744a34;
+@define-color maroon   #522120;
+@define-color red      #6e2a2a;
+@define-color mauve    #5a3a4a;
+@define-color pink     #7b616e;
+@define-color accent   #9a8a5a;   /* the ONE accent ink (Letterpress) */

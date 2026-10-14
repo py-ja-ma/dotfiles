@@ -1,0 +1,43 @@
+# bash completion for `dram` (dotfiles/.local/bin/dram). Loaded lazily by the
+# bash-completion package from ~/.local/share/bash-completion/completions/.
+# SPDX-FileCopyrightText: 2026 Patrick Jordan
+# SPDX-License-Identifier: MIT
+_dram() {
+  local cur prev cmd
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD - 1]}"
+  cmd="${COMP_WORDS[1]:-}"
+  if [ "$COMP_CWORD" -eq 1 ]; then
+    mapfile -t COMPREPLY < <(compgen -W "switch update receive version channel changelog theme check doctor pacnew rollback builds backup harvest apply pkgs yubikey help" -- "$cur")
+    return 0
+  fi
+  case "$cmd" in
+    update) mapfile -t COMPREPLY < <(compgen -W "--check --full --clean --aur-only --no-switch" -- "$cur") ;;
+    pkgs) mapfile -t COMPREPLY < <(compgen -W "check update build publish log list" -- "$cur") ;;
+    doctor) mapfile -t COMPREPLY < <(compgen -W "--boot --brief --supply" -- "$cur") ;;
+    receive) mapfile -t COMPREPLY < <(compgen -f -- "$cur") ;;
+    theme)
+      [ "$COMP_CWORD" -eq 2 ] || return 0
+      # --ids: directory ids only; --list is two columns and its bar names contain spaces
+      mapfile -t COMPREPLY < <(compgen -W "--list --ids $(dram-theme --ids 2>/dev/null | tr '\n' ' ')" -- "$cur")
+      ;;
+    backup)
+      case "$prev" in
+        backup) mapfile -t COMPREPLY < <(compgen -W "run list check restore" -- "$cur") ;;
+        restore) mapfile -t COMPREPLY < <(compgen -f -- "$cur") ;;
+      esac
+      ;;
+    rollback) mapfile -t COMPREPLY < <(compgen -W "--list 1 2 3" -- "$cur") ;;
+    version) mapfile -t COMPREPLY < <(compgen -W "--json" -- "$cur") ;;
+    channel) mapfile -t COMPREPLY < <(compgen -W "stable main --target" -- "$cur") ;;
+    changelog)
+      case "$prev" in
+        changelog) mapfile -t COMPREPLY < <(compgen -W "--since $(git -C "${DRAM_REPO:-$HOME/git/dotfiles}" tag -l 'v*' --sort=-v:refname 2>/dev/null | head -8 | tr '\n' ' ')" -- "$cur") ;;
+        --since) mapfile -t COMPREPLY < <(compgen -W "$(git -C "${DRAM_REPO:-$HOME/git/dotfiles}" tag -l 'v*' --sort=-v:refname 2>/dev/null | head -8 | tr '\n' ' ')" -- "$cur") ;;
+      esac
+      ;;
+  esac
+  return 0
+}
+complete -F _dram dram

@@ -1,0 +1,4 @@
+; Personal ledger (hledger, docs/toolchain/profiles/office.md in the dotfiles repo). One file per year is included below.
+; hledger -f ~/documents/finance/main.journal balance ; hledger-ui ; hledger-web
+include accounts.journal
+include 2026.journal

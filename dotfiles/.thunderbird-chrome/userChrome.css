@@ -1,0 +1,215 @@
+/* Letterpress chrome for Thunderbird — dotfiles/.librewolf/README.md.
+ *
+ * Same contract as ~/.librewolf/chrome/userChrome.css: static rules tracked
+ * once, colours from letterpress-colors.css (dram-theme links it in each
+ * profile's chrome/ dir to ~/.config/themes/current/browser.css), every
+ * declaration !important because userChrome.css is a USER sheet under the
+ * app's AUTHOR sheets. Needs toolkit.legacyUserProfileCustomizations.stylesheets
+ * = true, which the seeded user.js sets (dotfiles/.thunderbird-chrome/
+ * user.js.default; dram-theme copies it into a profile that has none).
+ * Read at startup only: restart Thunderbird after a theme switch.
+ *
+ * Written against Thunderbird 156 (extra, 2026-10-01). Thunderbird has no
+ * Nova; its chrome is built on the --layout-* scale (mail/themes/shared/mail/
+ * layout.css: background 0 = main content, 1 = centre panes + toolbars,
+ * 2 = primary sidebar, 3/4 = blocks inside content; color 0..3 = emphasis;
+ * border 0/1/2) plus variables.css (--toolbar-*, --selected-item-*,
+ * --tabline-color, --focus-outline-color, --button-border-radius (3 px already),
+ * --panel-*) and the Bolt --color-surface-* / --color-text-* tokens
+ * (colors.css). The Linux skin paints #navigation-toolbox in -moz-headerbar
+ * (GTK) — overridden below so the toolbox is the same paper as the rest.
+ *
+ * The page: toolbars and the centre panes on @base, the folder pane and
+ * reading surface on @mantle, the spaces rail on @crust; hairlines in
+ * alpha(@text,.18); selected rows are a paper shade (@surface1) with ink text,
+ * never an accent fill; the accent is the tab rule, the focus ring, the
+ * primary button and the unread-new badge. */
+@import url("letterpress-colors.css");
+
+:root {
+  /* ---- the UI face: Literata 13. mail.uifontsize=13 (user.js) sets the same
+   * size as an inline style on :root; this keeps it when the pref is lost. */
+  font-family: "Literata", serif !important;
+  font-size: 13px !important;
+
+  /* ---- the layout scale */
+  --layout-background-0: var(--lp-view) !important;     /* message list, reading pane */
+  --layout-background-1: var(--lp-base) !important;     /* toolbars, centre panes, headers */
+  --layout-background-2: var(--lp-mantle) !important;   /* folder pane */
+  --layout-background-3: var(--lp-surface0) !important; /* blocks inside content */
+  --layout-background-4: var(--lp-surface1) !important; /* elements inside those */
+  --layout-color-0: var(--lp-text) !important;
+  --layout-color-1: var(--lp-text) !important;
+  --layout-color-2: var(--lp-subtext) !important;
+  --layout-color-3: var(--lp-overlay) !important;
+  --layout-border-0: var(--lp-rule) !important;
+  --layout-border-1: var(--lp-rule) !important;
+  --layout-border-2: var(--lp-rule) !important;
+
+  /* ---- Bolt surface/text tokens (panels, cards, the spaces rail) */
+  --color-surface-lower: var(--lp-crust) !important;
+  --color-surface-base: var(--lp-base) !important;
+  --color-surface-subtle: var(--lp-raised) !important;
+  --color-surface-raised: var(--lp-raised) !important;
+  --color-surface-deep: var(--lp-surface1) !important;
+  --color-surface-border: var(--lp-rule) !important;
+  --color-surface-border-intense: var(--lp-rule) !important;
+  --color-neutral-200: var(--lp-rule) !important;
+  --color-text-base: var(--lp-text) !important;
+  --color-text-secondary: var(--lp-subtext) !important;
+  --color-text-muted: var(--lp-overlay) !important;
+  --color-text-brand: var(--lp-accent) !important;
+  --color-text-highlight: var(--lp-accent) !important;
+  --color-primary-default: var(--lp-accent) !important;
+
+  /* ---- toolbars + toolbox: the paper, hairline-separated */
+  --toolbar-background-color: var(--lp-base) !important;
+  --toolbar-text-color: var(--lp-text) !important;
+  --lwt-accent-color: var(--lp-base) !important;
+  --lwt-text-color: var(--lp-text) !important;
+  --chrome-content-separator-color: var(--lp-rule) !important;
+  --toolbarseparator-color: var(--lp-rule) !important;
+  --toolbarbutton-icon-fill: var(--lp-text) !important;
+  --toolbarbutton-icon-fill-opacity: 1 !important;
+  --toolbarbutton-icon-fill-attention: var(--lp-accent) !important;
+  --toolbarbutton-background-color-hover: var(--lp-hover) !important;
+  --toolbarbutton-background-color-active: var(--lp-active) !important;
+  --toolbarbutton-hover-bordercolor: transparent !important;
+  --toolbarbutton-active-bordercolor: transparent !important;
+  --toolbarbutton-checked-background: var(--lp-surface1) !important;
+  --toolbar-button-hover-background-color: var(--lp-hover) !important;
+  --toolbar-button-hover-border-color: transparent !important;
+  --toolbar-button-active-background-color: var(--lp-active) !important;
+  --toolbar-button-active-border-color: transparent !important;
+  --toolbar-button-hover-checked-color: var(--lp-surface1) !important;
+
+  /* ---- tabs: flat strip, the selected tab carries the accent rule (.tab-line) */
+  --tabs-toolbar-background-color: transparent !important;
+  --tabs-toolbar-box-shadow: none !important;
+  --lwt-tabs-border-color: var(--lp-rule) !important;
+  --tabline-color: var(--lp-accent) !important;
+  --lwt-tab-line-color: var(--lp-accent) !important;
+  --lwt-selected-tab-background-color: transparent !important;
+
+  /* ---- fields, search, focus: hairline at rest, accent when focused */
+  --toolbar-field-color: var(--lp-text) !important;
+  --toolbar-field-background-color: var(--lp-mantle) !important;
+  --toolbar-field-border-color: var(--lp-rule) !important;
+  --toolbar-field-focus-border-color: var(--lp-accent) !important;
+  --toolbar-field-highlight: var(--lp-surface1) !important;
+  --toolbar-field-highlight-color: var(--lp-text) !important;
+  --search-bar-color: var(--lp-text) !important;
+  --search-bar-background: var(--lp-mantle) !important;
+  --search-bar-focus-background: var(--lp-mantle) !important;
+  --search-bar-border-color: var(--lp-rule) !important;
+  --input-border-color: var(--lp-rule) !important;
+  --focus-outline-color: var(--lp-accent) !important;
+
+  /* ---- selection: a paper shade with ink, not an accent fill */
+  --selected-item-color: var(--lp-surface1) !important;
+  --selected-item-text-color: var(--lp-text) !important;
+  --sidebar-highlight-background-color: var(--lp-surface1) !important;
+  --sidebar-highlight-text-color: var(--lp-text) !important;
+  --treeitem-background-selected: var(--lp-surface0) !important;
+  --treeitem-background-hover: var(--lp-hover) !important;
+  --treeitem-background-active: var(--lp-surface1) !important;
+  --treeitem-text-active: var(--lp-text) !important;
+  --listbox-selected-bg: var(--lp-surface0) !important;
+  --listbox-focused-selected-bg: var(--lp-surface1) !important;
+  --listbox-selected-color: var(--lp-text) !important;
+  --autocomplete-popup-highlight-background: var(--lp-surface1) !important;
+  --autocomplete-popup-highlight-color: var(--lp-text) !important;
+  --item-focus-selected-border-color: var(--lp-accent) !important;
+
+  /* ---- where the accent IS a fill: the primary button, the unread-new badge */
+  --button-primary-background-color: var(--lp-accent) !important;
+  --button-primary-hover-background-color: var(--lp-accent-dim) !important;
+  --button-primary-active-background-color: var(--lp-accent-dim) !important;
+  --button-primary-text-color: var(--lp-accent-fg) !important;
+  --button-primary-border-color: var(--lp-accent-dim) !important;
+  --button-primary-shadow: none !important;
+  --button-primary-hover-shadow: none !important;
+  --folderpane-unread-new-count-background: var(--lp-accent) !important;
+  --folderpane-unread-count-background: var(--lp-overlay) !important;
+  --folderpane-total-count-background: var(--lp-surface1) !important;
+  --folderpane-total-count-text: var(--lp-text) !important;
+  --new-folder-color: var(--lp-accent) !important;
+  --primary: var(--lp-accent) !important;
+
+  /* ---- buttons, panels, menus */
+  --button-background-color: var(--lp-surface0) !important;
+  --button-hover-background-color: var(--lp-surface1) !important;
+  --button-active-background-color: var(--lp-surface1) !important;
+  --button-border-color: var(--lp-rule) !important;
+  --button-text-color: var(--lp-text) !important;
+  --button-border-radius: 3px !important;
+  --border-radius-medium: 3px !important;
+  --border-radius-large: 3px !important;
+  --input-text-border-radius: 3px !important;
+  --input-search-border-radius: 3px !important;
+  --panel-background-color: var(--lp-raised) !important;
+  --panel-text-color: var(--lp-text) !important;
+  --panel-border-color: var(--lp-rule) !important;
+  --panel-border-radius: 3px !important;
+  --panel-separator-color: var(--lp-rule) !important;
+  --arrowpanel-background: var(--lp-raised) !important;
+  --arrowpanel-color: var(--lp-text) !important;
+  --arrowpanel-border-color: var(--lp-rule) !important;
+  --arrowpanel-border-radius: 3px !important;
+  --link-color: var(--lp-blue) !important;
+  --link-color-hover: var(--lp-blue) !important;
+  --link-color-active: var(--lp-blue) !important;
+  --link-color-visited: var(--lp-blue) !important;
+
+  /* ---- sidebars + the spaces rail: the active space is accent ink, not fill */
+  --sidebar-background-color: var(--lp-mantle) !important;
+  --sidebar-text-color: var(--lp-text) !important;
+  --sidebar-border-color: var(--lp-rule) !important;
+  --spaces-bg-color: var(--lp-crust) !important;
+  --spaces-bg-image: none !important;
+  --spaces-button-active-bg-color: var(--lp-surface1) !important;
+  --spaces-button-active-text-color: var(--lp-accent) !important;
+}
+
+/* The toolbox on Linux is painted in GTK's -moz-headerbar: make it the page. */
+#navigation-toolbox,
+#compose-toolbox,
+#mail-toolbox,
+.mail-toolbox,
+#tabs-toolbar,
+#toolbar-menubar {
+  background-color: var(--lp-base) !important;
+  background-image: none !important;
+  color: var(--lp-text) !important;
+}
+
+/* Tabs: 3 px corners, no drop shadow, the selected tab is flat paper + rule. */
+.tabmail-tab {
+  border-radius: 3px 3px 0 0 !important;
+  box-shadow: none !important;
+}
+.tabmail-tab .tab-background[selected] {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.tab-line {
+  border-radius: 0 !important;
+}
+
+/* Hairlines where the panes meet. */
+#tabs-toolbar {
+  box-shadow: inset 0 -1px 0 0 var(--lp-rule) !important;
+}
+#spacesToolbar {
+  border-inline-end: 1px solid var(--lp-rule) !important;
+}
+
+/* Window controls: Hyprland draws no server-side decorations and has its own
+ * binds, so the GTK CSD buttons in the tab strip are only glyph soup. Linux
+ * only: on Windows the same box holds minimise, maximise and close, the only
+ * window controls there are (the sheet is shared, install/windows/). */
+@media (-moz-platform: linux) {
+  .titlebar-buttonbox-container {
+    display: none !important;
+  }
+}

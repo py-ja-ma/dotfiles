@@ -1,0 +1,11 @@
+/* Soft Color — swaync palette (imported by swaync/style.css) */
+@define-color base     #2b304d;
+@define-color mantle   #22253c;
+@define-color crust    #191c2d;
+@define-color text     #fdf0ed;
+@define-color subtext  #beb8c2;
+@define-color surface0 #3a4061;
+@define-color surface1 #444b6e;
+@define-color blue     #8ba6ff;
+@define-color red      #ff7a85;
+@define-color accent   #ff9a8b;   /* the ONE accent ink (Letterpress) */

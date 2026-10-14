@@ -1,0 +1,6 @@
+jagex-launcher — how to re-pin
+  1. New version: the AUR diff (dram pkgs update) shows the pkgver bump; the URL pattern stays
+     https://rs-launcher-updates.runescape.com/production/linux/x64/releases/<ver>/jagex-launcher-beta-linux-x86_64.AppImage
+  2. `updpkgsums` downloads it from Jagex's CDN and writes the sha256. There is no vendor-published hash;
+     compare against the AUR's sum in the diff — they must agree (same CDN file).
+  3. Keep our unsquashfs prepare() — the AUR one executes the AppImage.

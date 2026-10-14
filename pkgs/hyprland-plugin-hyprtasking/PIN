@@ -1,0 +1,6 @@
+hyprland-plugin-hyprtasking — how to re-pin (after a hyprland package bump, or to take a fix)
+  1. https://raw.githubusercontent.com/raybbian/hyprtasking/main/hyprpm.toml → commit_pins: the row whose
+     first column is the new Hyprland commit (git -C /usr/src/hyprland? no: `hyprctl version` prints it)
+     gives the hyprtasking commit known to build against it. Newer main may also work (we run ahead now).
+  2. _commit = that sha; pkgver = the Hyprland version; depends=('hyprland=<that version>'); pkgrel=1.
+  3. dram pkgs build hyprland-plugin-hyprtasking; after install, `hyprctl plugin list` must show it.

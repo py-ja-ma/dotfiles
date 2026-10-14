@@ -1,0 +1,38 @@
+# role: sysadmin — the homelab/network kit. The pure-CLI k8s/IaC tools come
+# from nixpkgs (modules/dev.nix, ADR 0003). Containers: rootless Podman (the dev role);
+# Docker is the opt-in docker role (decisions/0015-containers-podman.md).
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "sysadmin" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+
+sshs
+# the pure-CLI k8s/IaC kit comes from nixpkgs (modules/dev.nix, ADR 0003)
+nmap
+wireshark-qt
+# wireshark-cli: tshark, dumpcap, editcap, mergecap - the GUI's own dependency, declared so a
+# WSL clone, which skips the GUI (packages/wsl-skip.tsv), keeps the capture tools; Windows'
+# Wireshark has no Npcap (decisions/log.md#d110), but its sshdump can capture in the clone
+wireshark-cli
+tcpdump
+mtr
+iperf3
+bind
+# freeipmi: BMC/IPMI tools (ipmi-sensors, ipmi-power, ipmi-chassis); replaced ipmitool
+# 2026-10-10 (decisions/0013: Origin)
+freeipmi
+arp-scan
+ethtool
+# VMs on /data/vm: QEMU/KVM with UEFI Secure Boot firmware (OVMF) and a software TPM 2.0
+# (swtpm) — what Windows 11 needs; tests/windows-vm.sh tries an install there first
+# (docs/platforms/windows/README.md). mtools fills and reads FAT images without root.
+qemu-base
+edk2-ovmf
+swtpm
+mtools
+# virt-manager on top of the VM kit: libvirt (system/virt-setup.sh enables its socket and
+# puts the main user in `libvirt`), dnsmasq for its NAT network, qemu-desktop for the
+# display modules (SPICE, virtio-gpu) a desktop VM needs (2026-10-12; docs/toolchain/development/README.md)
+virt-manager
+libvirt
+dnsmasq
+qemu-desktop

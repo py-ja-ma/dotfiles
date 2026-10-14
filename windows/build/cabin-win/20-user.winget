@@ -1,0 +1,183 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+#
+# windows/build/cabin-win/20-user.winget - rendered by bin/render-windows.sh from
+# windows/hosts/cabin-win.nix and what it names; edit those, never this (decisions/0020).
+# Phase 20, user, pj's settings; scope user: pj's own context (HKCU is pj's; never run it as SYSTEM).
+# dram.ps1 (or converge.ps1) applies the documents in manifest.json's order, from build\:
+#   winget configure -f C:\ProgramData\dram\build\20-user.winget --accept-configuration-agreements --disable-interactivity
+properties:
+  configurationVersion: "0.2.0"
+  resources:
+    # --- base (windows/roles/base.nix, packages/winget/base.txt) ---
+    - resource: "PSDscResources/Registry"
+      id: "keyboard-toggle"
+      directives:
+        description: "Left Alt+Shift switches the input language (Win+Space does too)"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Keyboard Layout\\Toggle"
+        ValueName: "Language Hotkey"
+        ValueType: "String"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "keyboard-toggle-layout"
+      directives:
+        description: "no hotkey between layouts of one language"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Keyboard Layout\\Toggle"
+        ValueName: "Layout Hotkey"
+        ValueType: "String"
+        ValueData: "3"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "keyboard-toggle-legacy"
+      directives:
+        description: "Left Alt+Shift (the older value of the same switch)"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Keyboard Layout\\Toggle"
+        ValueName: "Hotkey"
+        ValueType: "String"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Script"
+      id: "keyboard-us-ru"
+      directives:
+        description: "English (US) first, so Windows stays in English, then Russian; no language pack"
+        allowPrerelease: true
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\keyboard-us-ru.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\keyboard-us-ru.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\keyboard-us-ru.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Registry"
+      id: "no-sticky-keys-prompt"
+      directives:
+        description: "five Shift presses no longer ask about Sticky Keys (a string, as Windows stores it; from the next sign-in)"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Control Panel\\Accessibility\\StickyKeys"
+        ValueName: "Flags"
+        ValueType: "String"
+        ValueData: "506"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "powershell-5-profile-policy"
+      directives:
+        description: "Windows PowerShell 5.1 runs local profiles (RemoteSigned; PowerShell 7 already does)"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Software\\Microsoft\\PowerShell\\1\\ShellIds\\Microsoft.PowerShell"
+        ValueName: "ExecutionPolicy"
+        ValueType: "String"
+        ValueData: "RemoteSigned"
+        Force: true
+    - resource: "PSDscResources/Script"
+      id: "privacy-user"
+      directives:
+        description: "no advertising ID, tailored experiences, web search, suggestions or silently installed apps; no online speech recognition, inking and typing data, typing insights, feedback prompts or app-launch tracking"
+        allowPrerelease: true
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\privacy-user.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\privacy-user.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\privacy-user.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Registry"
+      id: "starship-config"
+      directives:
+        description: "starship reads Arch's starship.toml, staged byte for byte by apply-windows.sh"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Environment"
+        ValueName: "STARSHIP_CONFIG"
+        ValueType: "String"
+        ValueData: "C:\\ProgramData\\dram\\starship.toml"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "terminal-default-console"
+      directives:
+        description: "Windows Terminal hosts every console app (the console half)"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Console\\%%Startup"
+        ValueName: "DelegationConsole"
+        ValueType: "String"
+        ValueData: "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "terminal-default-terminal"
+      directives:
+        description: "Windows Terminal hosts every console app (the terminal half)"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Console\\%%Startup"
+        ValueName: "DelegationTerminal"
+        ValueType: "String"
+        ValueData: "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "windows-ai-user"
+      directives:
+        description: "no Click to Do for this user either (the policy's per-user half)"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Windows\\WindowsAI"
+        ValueName: "DisableClickToDo"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    # --- desktop (windows/roles/desktop.nix, packages/winget/desktop.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "conhost-letterpress"
+      directives:
+        description: "the classic console (anything outside Windows Terminal) in the scheme's colours, from letterpress/conhost.json"
+        allowPrerelease: true
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\conhost-letterpress.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\conhost-letterpress.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\conhost-letterpress.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "explorer-quiet"
+      directives:
+        description: "Explorer compact, its pane open to the current folder, no Gallery, no sync-provider ads; End task on the taskbar's menu (for a hung game)"
+        allowPrerelease: true
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\explorer-quiet.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\explorer-quiet.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\explorer-quiet.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "letterpress-look"
+      directives:
+        description: "dark, matte, the accent from letterpress/accent.json on title bars, a quiet left taskbar and Start, extensions shown, mouse without acceleration"
+        allowPrerelease: true
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\letterpress-look.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\letterpress-look.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\letterpress-look.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "letterpress-wallpaper"
+      directives:
+        description: "the Letterpress art (rEFInd's background) on the desktop"
+        allowPrerelease: true
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\letterpress-wallpaper.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\letterpress-wallpaper.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\letterpress-wallpaper.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "pointer-adwaita"
+      directives:
+        description: "the user's Adwaita pointer scheme from those files, chosen (Windows Black's cursors for the four roles Adwaita has none for), and a 2 px text caret"
+        allowPrerelease: true
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\pointer-adwaita.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\pointer-adwaita.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\pointer-adwaita.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "sounds-off"
+      directives:
+        description: "the No Sounds scheme: every event silent (a feature update that adds events is caught here)"
+        allowPrerelease: true
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\sounds-off.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\sounds-off.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\sounds-off.ps1'))) -Mode Set"

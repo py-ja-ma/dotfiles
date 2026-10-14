@@ -1,0 +1,11 @@
+/* Nord — swaync palette (imported by swaync/style.css) */
+@define-color base     #2e3440;
+@define-color mantle   #292e39;
+@define-color crust    #242933;
+@define-color text     #eceff4;
+@define-color subtext  #d8dee9;
+@define-color surface0 #3b4252;
+@define-color surface1 #434c5e;
+@define-color blue     #88c0d0;
+@define-color red      #bf616a;
+@define-color accent   #88c0d0;   /* the ONE accent ink (Letterpress) */

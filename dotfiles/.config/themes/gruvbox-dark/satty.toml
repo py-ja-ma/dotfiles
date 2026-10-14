@@ -1,0 +1,4 @@
+# Gruvbox Dark — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#83a598", "#fb4934", "#b8bb26", "#fabd2f", "#d3869b"]

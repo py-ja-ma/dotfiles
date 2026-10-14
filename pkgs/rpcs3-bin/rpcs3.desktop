@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=RPCS3
+GenericName=PlayStation 3 Emulator
+Comment=Sony PlayStation 3 emulator
+Exec=rpcs3 %f
+Icon=rpcs3
+Terminal=false
+Categories=Game;Emulator;
+Keywords=PS3;Playstation;

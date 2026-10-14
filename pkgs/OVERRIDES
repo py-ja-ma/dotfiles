@@ -1,0 +1,5 @@
+# Package names allowed to SHADOW an official-repo package (one per line, no
+# inline comments). [dram] is included above [core], so a name listed here
+# replaces Arch's own build on every host. `dram pkgs check` refuses any
+# vendored name that exists in core/extra/multilib unless it is listed here.
+# Empty on purpose. Think twice; write the reason in pkgs/<name>/REVIEW.md.

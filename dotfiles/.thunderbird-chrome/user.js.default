@@ -1,0 +1,38 @@
+// Thunderbird user.js — the Letterpress seed (dotfiles/.librewolf/README.md).
+// dram-theme copies this file to <profile>/user.js only when the profile has
+// none (the profile is machine state, never tracked). Thunderbird
+// has no autoconfig in this dram, so this is the one place its prefs come from.
+//
+// GOTCHA: Thunderbird re-applies user.js on EVERY start, on top of prefs.js —
+// anything listed here cannot be changed from Settings (it reverts next start).
+// To change one of these on a host, edit ~/.thunderbird/<profile>/user.js or
+// delete the line there; to change the seed for every host, edit this file.
+//
+// Why these and only these: userChrome needs the toolkit switch; the fonts
+// mirror dotfiles/.librewolf/librewolf.overrides.cfg (Literata text, Monaspace
+// code, sans-serif left alone); the UI font size and density are
+// the Letterpress chrome (Literata 13, compact — the same as LibreWolf's
+// browser.uidensity=1). Pane layout (mail.pane_config.dynamic, 2 = vertical is
+// the default) and list style (mail.threadpane.listview, 0 cards / 1 table)
+// are left to the profile.
+
+// chrome/userChrome.css is loaded only with this on (toolkit default: false)
+user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
+
+// UI font size in px, applied as an inline style on the chrome root (0 = the
+// GTK font-name size). userChrome.css sets Literata; this sets 13.
+user_pref("mail.uifontsize", 13);
+// 0 = compact, 1 = normal, 2 = touch
+user_pref("mail.uidensity", 0);
+
+// ---- message fonts (docs/design/typography/README.md): serif everywhere for the
+// text the mail body does not name; code in Monaspace Xenon. Cyrillic too.
+user_pref("font.default.x-western", "serif");
+user_pref("font.name.serif.x-western", "Literata");
+user_pref("font.name.monospace.x-western", "Monaspace Xenon");
+user_pref("font.default.x-cyrillic", "serif");
+user_pref("font.name.serif.x-cyrillic", "Literata");
+user_pref("font.name.monospace.x-cyrillic", "Monaspace Xenon");
+user_pref("font.size.variable.x-western", 16);
+user_pref("font.size.monospace.x-western", 13);
+user_pref("font.minimum-size.x-western", 11);

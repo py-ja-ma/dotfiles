@@ -1,0 +1,6 @@
+/* Catppuccin Latte — swayosd palette (imported by swayosd/style.css) */
+@define-color osd-bg       #eff1f5;
+@define-color osd-border   #1e66f5;
+@define-color osd-fg       #4c4f69;
+@define-color osd-progress #1e66f5;
+@define-color osd-trough   #ccd0da;

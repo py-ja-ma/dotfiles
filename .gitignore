@@ -1,0 +1,76 @@
+# never commit secrets or machine-local credentials
+*.key
+*.pem
+id_*
+!id_*.pub
+.ssh/config.d/
+# sops: only ciphertext (secrets/*.yaml) is tracked; anything decrypted by hand
+# or any API token file stays out. The old `*secret*` / `*token*` globs also hid
+# modules/secrets.nix, the secrets page and secrets/README.md
+# (docs/security/identity/secrets.md).
+secrets/**/*.plain
+*.plain.yaml
+*.token
+*.gnupg/
+
+# transient
+*.tar.gz
+# Home Manager's `-b bak` / HOME_MANAGER_BACKUP_EXT=bak and the system scripts'
+# .bak-<timestamp> copies, if either ever lands inside the repo
+*.bak
+*.bak-*
+*.log
+.DS_Store
+result
+result-*
+
+# logs / generated
+dotfiles/.config/hypr/*.log
+# nix build artifacts
+# runtime theme state written by dram-theme on every switch (not source):
+# ~/.config/gtk-{3,4}.0 are symlinks into this repo, and dram-theme links the
+# user stylesheets there at themes/current/gtk3.css and gtk.css (assets and
+# gtk-dark.css are leftovers of the per-theme /usr/share/themes era, < 2026-10-06).
+dotfiles/.config/gtk-3.0/gtk.css
+dotfiles/.config/gtk-4.0/gtk.css
+dotfiles/.config/gtk-4.0/assets
+dotfiles/.config/gtk-4.0/gtk-dark.css
+# machine state: dram-theme rewrites these in place on every theme switch, so
+# tracking them makes `git status` permanently dirty. The committed *.default
+# templates hold the canonical content; dram-theme seeds the live file from its
+# template if absent (see the seed-if-absent guards in .local/bin/dram-theme).
+dotfiles/.config/cava/config
+dotfiles/.config/VSCodium/User/settings.json
+# Letterpress theme contract (docs/design/themes/README.md): dram-theme rewrites the GTK
+# theme/dark/cursor/font keys and the satty palette line in these live files;
+# the tracked *.default templates seed them.
+dotfiles/.config/gtk-3.0/settings.ini
+dotfiles/.config/gtk-4.0/settings.ini
+dotfiles/.config/satty/config.toml
+# the theme pointer dram-theme relinks on every switch
+dotfiles/.config/themes/current
+# never commit secrets
+dotfiles/.ssh/config.d/*.conf
+# python bytecode cache
+__pycache__/
+*.pyc
+
+# pkgs/: makepkg working dirs, downloaded sources and built packages — never the
+# PKGBUILDs, .SRCINFO, UPSTREAM, REVIEW.md, PIN, keys or vendored aux files
+pkgs/*/src/
+pkgs/*/pkg/
+pkgs/*/*.pkg.tar.*
+pkgs/*/*.deb
+pkgs/*/*.AppImage
+pkgs/*/*.zip
+pkgs/*/*.tar.zst
+pkgs/*/*.tar.xz
+pkgs/*/*.sig
+pkgs/*/PKGBUILD.aur
+pkgs/*/*.aur
+pkgs/*/*.rej
+pkgs/*/*.orig
+
+# git-hooks.nix writes this (a symlink into the store) when `nix develop` installs the hook
+.pre-commit-config.yaml
+

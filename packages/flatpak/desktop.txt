@@ -1,0 +1,7 @@
+# Flatpak apps for the desktop role (docs/toolchain/packaging/flatpak.md): vendor binaries that cannot be built
+# and need no theming. One Flathub id per line, own-line comments only. Installed by
+# system/flatpak-setup.sh for every host whose roles include "desktop"; every id needs a
+# packages/register.tsv row and an override in dotfiles/.local/share/flatpak/overrides/.
+dev.vencord.Vesktop
+org.localsend.localsend_app
+com.github.tchx84.Flatseal

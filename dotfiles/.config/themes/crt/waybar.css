@@ -1,0 +1,22 @@
+/* CRT — waybar palette (imported by waybar/style.css) */
+@define-color base     #050a0a;
+@define-color mantle   #040808;
+@define-color crust    #030606;
+@define-color text     #aaffff;
+@define-color subtext  #74bcbc;
+@define-color overlay  #3d7979;
+@define-color surface0 #0b3333;
+@define-color surface1 #134747;
+@define-color blue     #22dddd;
+@define-color lavender #77b2ee;
+@define-color sapphire #3ceeee;
+@define-color sky      #55ffff;
+@define-color teal     #55ffdb;
+@define-color green    #55ff99;
+@define-color yellow   #ffdd55;
+@define-color peach    #ff995e;
+@define-color maroon   #b9404c;
+@define-color red      #ff5566;
+@define-color mauve    #cc88ff;
+@define-color pink     #d6a0ff;
+@define-color accent   #22dddd;   /* the ONE accent ink (Letterpress) */

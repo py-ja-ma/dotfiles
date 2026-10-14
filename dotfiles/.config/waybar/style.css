@@ -1,0 +1,283 @@
+@import url("../themes/current/waybar.css");  /* resolved against ~/.config/waybar/ (the symlink): works only when loaded through ~/.config */
+
+/* Two derived inks, from the theme's @text: the hairline and the faded caption.
+   No hex anywhere below — every colour is a theme @name from the @import. */
+@define-color rule  alpha(@text, 0.18);
+@define-color faint alpha(@text, 0.55);
+
+/* ==========================================================================
+   Waybar — the MASTHEAD (Letterpress, README.md here → Captions and spacing)
+   --------------------------------------------------------------------------
+   The bar is the running head of a printed page: no islands, no pills, no
+   blur, no icons. A transparent strip closed by ONE hairline. Type does the
+   work:
+     * Fraunces            — display: the nameplate, "№ 4", the clock.
+     * Literata            — the upright text: captions in small caps (it has
+                             Cyrillic small caps; EB Garamond 08 does not —
+                             pango-view shows "сеть EN" there), lining tabular
+                             figures, the ¶, tooltips.
+     * EB Garamond Italic  — the italic voice: window title, date, now playing.
+     * Monaspace Xenon     — only the calendar grid (modules.jsonc).
+   Two inks: @text is the body ink; @accent appears ONLY as the workspace
+   numeral and the hover rule under a clickable module. Everything else that
+   is coloured is an ALERT (@yellow attention, @red wrong, @green charging).
+
+   SPACING — CSS owns every gap; both bars set `spacing: 0`:
+     * every module:  margin 0 7px (14 px rail to rail), padding 0 6px (the
+       room the hover rule spans); the transparent border-bottom reserves the
+       1 px the hover rule uses, so nothing shifts on hover.
+     * clock + date read as one unit: the inner margins drop, one 10 px gap.
+     * sections are separated by a short vertical tick (20 px of hairline) on
+       the first module of each: date, ¶, layout, readouts, tools, volume.
+       The tick is a 1 px background gradient, not a border, so the module's
+       box — and therefore its hover rule — stays level with its neighbours.
+     * the figures get a min-width so a column never breathes as digits change.
+   The laptop bar (window#waybar.laptop, config.jsonc "name") is 2 px smaller
+   throughout and 36 px tall; its ticks are 16 px.
+   ========================================================================== */
+
+* {
+  font-family: "Literata", "EB Garamond", serif;
+  font-size: 16px;
+  min-height: 0;
+}
+window#waybar.laptop * { font-size: 14px; }
+
+window#waybar {
+  background: transparent;
+  color: @text;
+  border-bottom: 1px solid @rule;
+}
+
+/* no islands: the three module groups are plain, unboxed runs of type */
+.modules-left,
+.modules-center,
+.modules-right {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0 6px;
+}
+
+/* --------------------------------------------------------------------------
+   SHARED RHYTHM — every module is a run of type sitting on the masthead rule.
+   -------------------------------------------------------------------------- */
+#custom-nameplate, #workspaces, #window,
+#clock, #custom-date, #custom-notification,
+#mpris, #privacy, #language,
+#cpu, #memory, #custom-cputemp,
+#network, #bluetooth, #idle_inhibitor, #power-profiles-daemon, #custom-usb,
+#backlight, #pulseaudio, #battery, #custom-updates {
+  color: @text;
+  background-color: transparent;
+  margin: 0 7px;
+  padding: 0 6px;
+  border-radius: 0;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+/* the two groups are transparent wrappers: their children carry the rhythm */
+#readouts, #tools {
+  background-color: transparent;
+  margin: 0;
+  padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+   HOVER = a rule in the accent ink under the module, never a fill. Only on
+   things that DO something when clicked; passive readouts stay still.
+   -------------------------------------------------------------------------- */
+#custom-nameplate:hover, #clock:hover, #custom-date:hover, #custom-notification:hover,
+#mpris:hover, #language:hover,
+#network:hover, #bluetooth:hover, #idle_inhibitor:hover, #custom-usb:hover,
+#backlight:hover, #pulseaudio:hover, #custom-updates:hover {
+  border-bottom-color: @accent;
+  background-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   SECTION TICKS — a short hairline before the first module of each section.
+   -------------------------------------------------------------------------- */
+#custom-date, #custom-notification, #language, #readouts, #tools, #pulseaudio {
+  background-image: linear-gradient(@rule, @rule);
+  background-size: 1px 20px;
+  background-repeat: no-repeat;
+  background-position: left center;
+  padding-left: 12px;
+}
+window#waybar.laptop #custom-date, window#waybar.laptop #custom-notification,
+window#waybar.laptop #language, window#waybar.laptop #tools,
+window#waybar.laptop #backlight {
+  background-image: linear-gradient(@rule, @rule);
+  background-size: 1px 16px;
+  background-repeat: no-repeat;
+  background-position: left center;
+  padding-left: 12px;
+}
+/* on the laptop the device section opens with brightness, not volume */
+window#waybar.laptop #pulseaudio {
+  background-image: none;
+  padding-left: 6px;
+}
+/* the groups carry the tick; their first child keeps its own 7 + 6 */
+#readouts, #tools { padding-left: 0; margin-left: 7px; }
+
+/* --------------------------------------------------------------------------
+   LEFT — nameplate, "№ 4", the window title.
+   -------------------------------------------------------------------------- */
+#custom-nameplate {
+  font-family: "Fraunces", "EB Garamond", serif;
+  font-weight: 500;
+  font-size: 17px;
+  margin-left: 6px;
+}
+
+/* The workspace numeral: "№ 4" in Fraunces. This is the ONE steady place the
+   accent ink sits. The button is reset to bare type: no fill, no frame, no
+   shadow, no minimum size. */
+#workspaces { padding: 0; }
+#workspaces button {
+  font-family: "Fraunces", "EB Garamond", serif;
+  font-weight: 500;
+  font-size: 18px;
+  color: @accent;
+  background: none;
+  background-color: transparent;
+  background-image: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: none;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  transition: none;
+}
+#workspaces button:hover, #workspaces button.active, #workspaces button.focused,
+#workspaces button.visible, #workspaces button.urgent {
+  background: none;
+  background-color: transparent;
+  box-shadow: none;
+  border: none;
+  color: @accent;
+}
+/* Only the active numeral shows. The module's own `active-only` cannot do it:
+   hyprland.lua makes 1–9 persistent and waybar 0.15 never hides a persistent
+   button, so the others are collapsed here to an invisible 1 px of type (the
+   size must land on the button's inner label; on the button it is ignored). */
+#workspaces button:not(.active) {
+  opacity: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+#workspaces button:not(.active) label {
+  font-size: 1px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+window#waybar.laptop #workspaces button { font-size: 16px; }
+
+/* Window title: words, so Garamond italic in the quiet ink. The module
+   escapes markup and ellipsizes (max-length) so the clock never shifts. */
+#window {
+  font-family: "EB Garamond", serif;
+  font-style: italic;
+  font-size: 17px;
+  color: @subtext;
+}
+window#waybar.laptop #window { font-size: 15px; }
+#window.empty { margin: 0; padding: 0; }
+
+/* --------------------------------------------------------------------------
+   CENTRE — the clock is the headline, the date its dateline: one unit, no
+   margins between, a 10 px gap (5 + 5) with the date's tick in the middle.
+   -------------------------------------------------------------------------- */
+#clock {
+  font-family: "Fraunces", "EB Garamond", serif;
+  font-weight: 600;
+  font-size: 21px;
+  margin-right: 0;
+  padding-right: 5px;
+}
+window#waybar.laptop #clock { font-size: 19px; }
+#custom-date {
+  font-family: "EB Garamond", serif;
+  font-style: italic;
+  font-size: 17px;
+  color: @subtext;
+  margin-left: 0;
+  padding-left: 6px;
+}
+window#waybar.laptop #custom-date { font-size: 15px; padding-left: 6px; }
+
+/* Notification mark: ¶, one cell; the state is colour alone. */
+#custom-notification { color: @faint; }
+#custom-notification.notification,
+#custom-notification.dnd-notification,
+#custom-notification.inhibited-notification,
+#custom-notification.dnd-inhibited-notification {
+  color: @yellow;
+}
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification,
+#custom-notification.dnd-inhibited-none,
+#custom-notification.dnd-inhibited-notification {
+  opacity: 0.4;
+}
+
+/* --------------------------------------------------------------------------
+   RIGHT — now playing, recording marks, layout, readouts, tools, device.
+   -------------------------------------------------------------------------- */
+#mpris {
+  font-family: "EB Garamond", serif;
+  font-style: italic;
+  color: @subtext;
+}
+#mpris.paused { opacity: 0.55; }
+
+#privacy { padding: 0; }
+#privacy-item { color: @red; padding: 0 4px; }
+
+/* digits change width; the columns must not */
+#cpu, #memory, #custom-cputemp, #pulseaudio, #battery { min-width: 64px; }
+
+/* --------------------------------------------------------------------------
+   ALERTS — the ONLY place colour (other than the accent) appears.
+   -------------------------------------------------------------------------- */
+#custom-cputemp.critical { color: @red; }
+#custom-cputemp.hidden   { padding: 0; min-width: 0; }
+#pulseaudio.muted      { color: @red; }
+#network.disconnected  { color: @red; }
+#idle_inhibitor.activated { color: @yellow; }
+
+/* balanced shows no word: collapse the box so the tools run has no hole */
+#power-profiles-daemon.balanced { margin: 0; padding: 0; min-width: 0; }
+
+/* Battery. Order matters: .charging is last so a charging-but-low cell reads
+   green (recovering), and the blink below only fires while NOT charging. */
+#battery.warning  { color: @yellow; }
+#battery.critical { color: @red; }
+#battery.charging { color: @green; }
+
+@keyframes blink { to { color: @red; border-bottom-color: @red; } }
+#battery.critical:not(.charging) {
+  animation: blink 1s linear infinite alternate;
+}
+
+/* --------------------------------------------------------------------------
+   TOOLTIPS — a small card of paper with a hairline, words in Literata.
+   -------------------------------------------------------------------------- */
+tooltip {
+  background: @base;
+  border: 1px solid @rule;
+  border-radius: 3px;
+}
+tooltip label {
+  color: @text;
+  font-family: "Literata";
+  font-size: 14px;
+  padding: 4px;
+}

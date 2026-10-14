@@ -1,0 +1,6 @@
+# pam-u2f credentials on my YubiKeys (decisions/0019, docs/security/identity/yubikeys.md).
+# One line per key: `<label>:<KeyHandle>,<UserKey>,<CoseType>,<Options>`, the part of
+# `pamu2fcfg` output after the user name. Origin and appid are pam://dram on every
+# host, so one credential per key works fleet-wide.
+# system/yubikey-setup.sh writes /etc/dram/u2f_mappings from it for the host's login.
+# Added: `dram yubikey enroll <label>` prints the line. Revoked: delete the line.

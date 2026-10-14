@@ -1,0 +1,59 @@
+# CI: the same two gates a host runs — `nix flake check` (every host's
+# activationPackage + the lint hooks, evaluated for every system) and
+# `bin/check.sh` (nix-free invariants). No builds are pushed anywhere; eval +
+# check only. Actions are pinned to a commit (tag in the comment) so a moved
+# tag cannot change what runs here.
+name: check
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1" # weekly, Monday 06:17 UTC — catches input drift, not just our pushes
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nix:
+    name: nix flake check (all systems, no build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: DeterminateSystems/determinate-nix-action@d0c908e6cbe9f89f36ed8205a3ab6f092636916a # v3.23.1
+      - name: flake.lock health (stale inputs, non-upstream nixpkgs)
+        uses: DeterminateSystems/flake-checker-action@786422608c7bded2bbc9741ad9f91356842bf520 # v14
+        with:
+          fail-mode: false
+      # --all-systems: checks.<system> exists for x86_64-linux (the hosts) and
+      # aarch64-darwin (the Mac); --no-build: instantiate every derivation
+      # (home-<host>, pre-commit) without building 2 GB of Home Manager closures.
+      - name: nix flake check --all-systems --no-build
+        run: nix flake check --all-systems --no-build -L
+
+  shell:
+    name: bin/check.sh (shellcheck + shfmt)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # check.sh §8 reads `git log -- flake.lock`
+      - name: install shellcheck + shfmt
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y -q shellcheck
+          # shfmt: pinned static binary (apt's is old and lags the -bn/-ci behaviour);
+          # -f so a 404 page cannot become the binary, sha256 from the release's
+          # sha256sums.txt (docs/security/software-supply/README.md: pinned URL + checksum)
+          sudo curl -fsSL -o /usr/local/bin/shfmt \
+            https://github.com/mvdan/sh/releases/download/v3.11.0/shfmt_v3.11.0_linux_amd64
+          echo "1904ec6bac715c1d05cd7f6612eec8f67a625c3749cb327e5bfb4127d09035ff  /usr/local/bin/shfmt" | sha256sum -c
+          sudo chmod +x /usr/local/bin/shfmt
+          shellcheck --version | head -2
+          shfmt --version
+      - name: bin/check.sh
+        run: bash bin/check.sh

@@ -1,0 +1,11 @@
+# gsimplecal — the click-to-popup calendar (waybar clock / date click).
+# Launched through ~/.local/bin/gsimplecal-dram.sh, which is what themes it:
+# gsimplecal has no stylesheet option (dotfiles/.config/gsimplecal/README.md), so the
+# wrapper hands this process a private XDG_CONFIG_HOME with gtk.css as the
+# GTK user stylesheet, and this file linked beside it.
+clock_format = %H:%M:%S
+show_calendar = 1
+show_clock = 0
+mark_today = 1
+close_on_unfocus = 1
+external_viewer =

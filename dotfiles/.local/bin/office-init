@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# usage: office-init [--dry-run]
+#
+# The office role's first-run (docs/toolchain/profiles/office.md): creates ~/documents/vault (the Markdown
+# vault) and ~/documents/finance (the hledger journal) from templates/office/ as git
+# repositories, only when they do not exist yet, and prints the Taskwarrior git-sync step.
+# Never overwrites anything.
+#
+#   -n, --dry-run   print what would be created
+#   -h, --help      this text
+#
+# env: DRAM_REPO (default ~/git/dotfiles)
+# exit: 0 ok · 1 a step failed · 2 bad usage
+# see: docs/toolchain/profiles/office.md
+
+DRY=0
+case "${1:-}" in
+  "") ;;
+  -n | --dry-run) DRY=1 ;;
+  -h | --help)
+    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+  *)
+    sed -n '2s/^# \{0,1\}//p' "$0" >&2
+    exit 2
+    ;;
+esac
+set -uo pipefail
+REPO="${DRAM_REPO:-$HOME/git/dotfiles}"
+for pair in "vault:$HOME/documents/vault" "finance:$HOME/documents/finance"; do
+  name="${pair%%:*}" dest="${pair#*:}"
+  if [ -e "$dest" ]; then
+    echo "[ok] $dest exists — left alone"
+    continue
+  fi
+  if [ "$DRY" -eq 1 ]; then
+    echo "  [dry-run] cp -R $REPO/templates/office/$name $dest && git init"
+    continue
+  fi
+  mkdir -p "$(dirname "$dest")" && cp -R "$REPO/templates/office/$name" "$dest" || exit 1
+  git -C "$dest" init -q && git -C "$dest" add -A && git -C "$dest" commit -qm "start $name from dotfiles templates" || exit 1
+  echo "[ok] $dest created (git); add a remote: git -C $dest remote add origin pj@lodge:git/$name.git"
+done
+cat <<'T'
+
+Taskwarrior 3 (once per machine): point its git sync at a bare repo on lodge until the
+NAS — the exact settings are in `man task-sync` (Taskwarrior 3.5+); set
+sync.encryption_secret to a long secret kept in Proton Pass, then `task sync`.
+T

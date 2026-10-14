@@ -1,0 +1,28 @@
+# shellcheck disable=SC2034,SC2154,SC2164,SC2206
+# [dram] from AUR pkgbase hyprland-plugins (x70b1's template, see UPSTREAM) reduced to the one plugin
+# loaded here; review in REVIEW.md. Rebuild + bump `depends` whenever the hyprland package changes (docs/toolchain/packaging/README.md §9).
+# Maintainer: x70b1
+pkgname=hyprland-plugin-hyprfocus
+pkgver=0.56.2
+pkgrel=3.1
+pkgdesc='A Hyprland plugin that adds a flashfocus'
+arch=('x86_64')
+url='https://github.com/hyprwm/hyprland-plugins'
+license=('BSD')
+# exact match: a plugin is ABI-bound to the Hyprland build it was compiled against
+depends=('hyprland=0.56.2')
+makedepends=('git' 'hyprland')
+_commit=7644cecdb947060682891a0db2a0cdc5c0b9e704 # 2026-07-15 "borders/bars/focus: chase hyprland (#687)"
+source=("hyprland-plugins::git+https://github.com/hyprwm/hyprland-plugins.git#commit=$_commit")
+sha256sums=('SKIP') # git checkout pinned by commit above
+
+build() {
+  cd "$srcdir/hyprland-plugins"
+  make -C hyprfocus all
+}
+
+package() {
+  cd "$srcdir/hyprland-plugins"
+  install -Dm755 hyprfocus/hyprfocus.so "$pkgdir/usr/lib/hyprland/libhyprfocus.so"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

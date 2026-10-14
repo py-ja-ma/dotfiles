@@ -1,0 +1,610 @@
+# The software register: one verdict per name this repo installs, against the three rules of
+# decisions/0013-software-rules-and-waivers.md (FOSS, Origin, Community). bin/check-register.py
+# checks it (bin/check.sh §15); docs/security/software-supply/register.md says how to read a row,
+# how to add one, and lists the waivers and the Origin rulings.
+# Names: the pacman lists, the [dram] install set, Flatpak app IDs, Nix home.packages and
+# programs, and Windows' packages/winget/*.txt (winget:<id>, msstore:<id>, manual:<name>).
+# Four TAB-separated columns: name, verdict, until (a waiver's re-check date, else -), note.
+# A note gives the evidence: the license; who leads the project and where, as published; how
+# many of the four Community criteria it meets (in Arch's repos or verified on Flathub; two or
+# more maintainers or a steward; a release in the last 12 months; an answered tracker); and any
+# ruling, with its date and its decision ID (decisions/log.md).
+# Verdicts: pass, pass-flag (Origin unclear, accepted by a ruling), waiver (signed, with a
+# re-check date), swap (decided to go: the note says to what), pending (awaiting a ruling),
+# fail (forbidden; listed to block it).
+# Adding a package = its manifest line + its row here, in the same commit.
+
+# --- declared ---------------------------------------------------------------
+7zip	fail	-	swapped out 2026-10-10 (D7): Origin: its sole author is documented as Russian (Novosibirsk); libarchive and file-roller read 7z instead; re-adding needs a new decision
+aardvark-dns	pass	-	containers org; lead Luap99 (Germany)
+adw-gtk-theme	pass	-	LGPL-2.1-only; lassekongo83 (Sweden); Community 3 of 4 (extra, v6.5 2026-04, an answered tracker)
+adwaita-cursors	pass	-	CC-BY-SA-3.0 OR LGPL-3.0; GNOME Foundation (US); Community 4 of 4; replaced Bibata 2026-10-10 (D30); adwaita-icon-theme 52 (about 2027-03) moves this Xcursor set to a legacy package (5fad489e): check Hyprland's pointer then
+adwaita-icon-theme	pass	-	CC-BY-SA-3.0 OR LGPL-3.0; GNOME Foundation (US); Community 4 of 4; replaced Papirus 2026-10-10 (D7)
+age	pass	-	BSD-3-Clause; Filippo Valsorda (Rome, Italy); Community 4 of 4
+age-plugin-yubikey	pass-flag	-	ruled 2026-10-11 (D38): accepted with the Origin flag; MIT OR Apache-2.0; sole maintainer str4d (Jack Grigg, Zcash libraries) publishes no location, no controlling organisation; v0.5.1 2026-04-08; extra; Community 2 of 4; firmware 5.7+ needs ykman's TDES management key first
+amd-ucode	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: CPU microcode
+angr	pass	-	BSD-2-Clause; the angr community, led from Arizona State University (Tempe, AZ, US); uv tool, user layer
+anki	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; AGPL-3.0-or-later; steward AnkiHub LLC (no state or country published), its top two committers publish no location; extra and Flathub verified
+ansible	pass	-	GPL-3.0-or-later; Red Hat (US); Community 4 of 4
+app.xemu.xemu	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); Origin unclear; Flathub verified xemu.app
+arch-audit	pass	-	GPL-3.0; the Arch Linux project (gitlab.archlinux.org); Community 2 of 4 (in Arch's repos, a steward)
+arch-install-scripts	pass	-	the Arch Linux project (arch-chroot, pacstrap)
+archlinux-repro	pass	-	the Arch Linux project (devtools team, Germany); Community 2 of 4 (in Arch's repos, a steward)
+ardour	pass	-	GPL-2.0-or-later; Paul Davis (US) leads, Robin Gareus (Berlin) second; extra; 9.8 2026-09
+arduino-cli	pass	-	GPL-3.0; Arduino, leads in Milan and Turin (Italy); extra
+ares-emu	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); Origin unclear (the leads publish no location, the fourth committer is in the UK); ISC; extra
+arp-scan	pass	-	GPL-3.0-or-later; Roy Hills (London, UK), sole maintainer; Community weak: in extra and a quiet tracker, last tag 2022-12; re-check
+asciinema	pass	-	GPL-3.0-or-later; Marcin Kulik (Poland); extra
+atuin	pass	-	MIT; Atuin (Ellie Huxtable, San Francisco, US); Community 4 of 4
+avr-gcc	pass	-	GCC, GNU/FSF (US)
+avr-libc	pass	-	nongnu avr-libc (GNU Savannah)
+avrdude	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; the avrdudes org; its leaders' locations were not checked
+awww	pass	-	GPL-3.0-only; Leonardo Gibrowski Faé (Codeberg profile: Brazil); extra; v0.12.1 2026-04
+base	pass	-	the Arch Linux project (volunteers, devtools team in Germany); Community 2 of 4 (in Arch's repos, a steward)
+base-devel	pass	-	the Arch Linux project (volunteers, devtools team in Germany); Community 2 of 4 (in Arch's repos, a steward)
+bash	pass	-	GPL-3.0-or-later; the GNU project (Free Software Foundation, US); core; Community 4 of 4
+bash-completion	pass	-	GPL-2.0; the bash-completion project; Community 3 of 4
+bash-preexec	pass	-	MIT; leaders akinomyoga (Japan) and rcaloras (Brooklyn, US); release 0.7.0 2026-08-24; atuin's hook since ble.sh left (2026-10-10)
+bat	pass	-	Apache-2.0 / MIT; David Peter, sharkdp (Stuttgart, Germany); Community 4 of 4
+bibata-cursor-theme	fail	-	swapped out 2026-10-10 (D30): Community fail; the Adwaita cursors instead; re-adding needs a new decision
+biber	pass	-	TeX Live ecosystem (TUG, US)
+bind	pass	-	MPL-2.0; Internet Systems Consortium (US non-profit); Community 4 of 4
+binwalk	pass	-	MIT; ReFirm Labs (Fulton, MD, US); Community 3 of 4 (no release since 2024-10)
+blesh	fail	-	swapped out 2026-10-10 (D30): Community fail; dropped; re-adding needs a new decision
+blueman	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-3.0-or-later; top committer infirit publishes no location, second maintainer cschramm is in Munich; extra; two active maintainers; no release since 2025-07
+bluez	pass	-	GPL-2.0-only; the BlueZ project (Intel and Google engineers); Community 4 of 4
+bluez-utils	pass	-	GPL-2.0-only; the BlueZ project (Intel and Google engineers); Community 4 of 4
+borg	pass	-	BSD; the BorgBackup org (Germany); release 1.4.5 2026-07
+borgmatic	pass	-	GPL-3.0-or-later; Dan Helfman (Seattle, US); release 2.1.10 2026-10
+btrfs-progs	pass	-	GPL-2.0; kernel.org btrfs, maintainer David Sterba (SUSE, Czechia); pacstrapped by install/arch-install.sh
+brightnessctl	pass	-	MIT; Hummer12007 (Kyiv, Ukraine), one maintainer; Community 2 of 4 (extra, an answered tracker); last release 0.5.1 in 2020
+btop	pass	-	Apache-2.0; aristocratos (Sweden); Community 3 of 4
+buildah	pass	-	containers org (Red Hat, US), as Podman
+cava	pass	-	MIT; karlstav (Oslo, Norway); Community 3 of 4 (1.0.0 2026-06)
+ccid	pass	-	LGPL-2.1-or-later; Ludovic Rousseau (France), 129 of 139 commits; 6 releases in 12 months, 1.8.4 2026-09-20; extra; Community 3 of 4; its udev rule gives the non-root pcscd the USB device
+chromium	pass	-	BSD-3-Clause; Google (US); Community 4 of 4
+clang	pass	-	LLVM Foundation (US)
+cryptsetup	pass	-	GPL-2.0; gitlab.com/cryptsetup, maintainer Milan Broz (Red Hat, Czechia); a systemd dependency; pacstrapped for LUKS2
+cliphist	pass	-	GPL-3.0; sentriz (Republic of Ireland); Community 3 of 4
+cmake	pass	-	Kitware (US)
+com.github.Rosalie241.RMG	pass	-	Rosalie241 (Netherlands); Flathub verified
+com.github.tchx84.Flatseal	pass	-	GPL-3.0-or-later; Martin Abente Lahaye (Paraguay); Flathub verified; Community 3 of 4
+com.steamgriddb.steam-rom-manager	pass	-	GPL-3.0; the SteamGridDB org, lead cbartondock (Mountain View, CA, US); Flathub verified steamgriddb.com
+coreutils	pass	-	GNU coreutils, Free Software Foundation (US) steward; ${pkgs.coreutils} in modules/desktop.nix
+cuda	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: proprietary compute stack; ml-cuda role, opt-in
+cudnn	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: proprietary; ml-cuda role, opt-in
+dancing-script	pass	-	OFL-1.1; Pablo Impallari (Rosario, Argentina); in nixpkgs and Google Fonts; Community weak (font data)
+ddrescue	pass	-	GNU project (FSF steward); extra
+delta	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; its lead publishes no location; extra
+dev.vencord.Vesktop	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-3.0-or-later; the Vencord org's lead Vendicated publishes no location (others in England and Vienna); Flathub verified (vencord.dev); Community 4 of 4; the Discord service itself is waived (D6)
+devtools	pass	-	the Arch Linux project (devtools team, Germany); Community 2 of 4 (in Arch's repos, a steward)
+diffoscope	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-3.0-or-later; lead Chris Lamb publishes no location; the Reproducible Builds project, fiscal host Software Freedom Conservancy (US); extra; releases 331 to 333 in 2026-09/10
+diffutils	pass	-	GNU project (FSF steward); core; cmp/diff for the repo's scripts, declared 2026-10-12 so a WSL clone has them (a metal host had them through mkinitcpio)
+direnv	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; the direnv org (zimbatm, numtide) publishes no location; Community 4 of 4
+distrobox	pass	-	GPL-3.0; Luca Di Maio and team (Italy, SUSE employees); extra
+dkms	pass	-	GPL-2.0-or-later; the dkms project (Dell origin), committers in Switzerland; Community 4 of 4 (v3.4.4 2026-10-05)
+docker	pass	-	Apache-2.0; Docker Inc. (US) and the Moby project; Community 4 of 4
+docker-buildx	pass	-	Apache-2.0; Docker Inc. (US; crazy-max in France); Community 4 of 4
+docker-compose	pass	-	Apache-2.0; Docker Inc. (US; ndeloof in Rennes, France); Community 4 of 4
+dolphin-emu	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); Origin unclear (the second leader is in Sweden)
+dolphin-emu-tool	pass-flag	-	Dolphin (as dolphin-emu); ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); Origin unclear
+dram-case-display	pass	-	own code (pkgs/dram-case-display, D123): the Antec Flux Pro's temperature panel; k10temp + NVML (libnvidia-ml.so.1, under the nvidia-utils waiver: no new waiver) through usbfs
+dram-gaming-mode	pass	-	own code (pkgs/dram-gaming-mode, decisions/0012): ly session switching, the Hyprland Gaming Mode session
+drawio-desktop	pass	-	Apache-2.0; JGraph, leads in Northampton (UK) and Zürich; extra
+duf	fail	-	swapped out 2026-10-11: Community: no commits in 12 months; df -h and dust instead
+dust	pass	-	Apache-2.0; bootandy (London, UK); Community 3 of 4
+eb-garamond	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; OFL-1.1; the maintainers of octaviopardo/EBGaramond12 publish no location; font data
+efibootmgr	pass	-	GPL; Red Hat and GNU; Community 3 of 4
+egl-wayland	pass	-	MIT; NVIDIA (Santa Clara, US); Community 4 of 4
+ethtool	pass	-	GPL-2.0-or-later; kernel.org (Michal Kubecek); Community 3 of 4
+eza	pass	-	EUPL-1.2; eza-community (cafkafk, Denmark); Community 4 of 4
+fastfetch	fail	-	swapped out 2026-10-10 (D7): Origin: its lead maintainer lists the PRC and made about 98% of the year's commits; dropped; re-adding needs a new decision
+fd	pass	-	MIT / Apache-2.0; David Peter, sharkdp (Stuttgart, Germany); Community 4 of 4
+ffmpegthumbnailer	pass	-	GPL-2.0-or-later; dirkvdb (Belgium); Community 3 of 4
+file-roller	pass	-	GPL-2.0-or-later; GNOME Foundation (US); Community 4 of 4; libarchive's GUI, replaced xarchiver and 7zip/unrar/unzip 2026-10-10 (D7)
+flashrom	pass	-	GPL-2.0-or-later; a volunteer project, its top two committers documented in Morocco and Spain; extra
+flatpak	pass	-	LGPL-2.1-or-later; freedesktop.org (Alexander Larsson, Red Hat, Sweden); Community 4 of 4
+fraunces	pass	-	OFL-1.1; Undercase Type, leaders in Brooklyn and Boulder (US); font data
+freeipmi	pass	-	GPL-3.0-or-later; the GNU project, maintainer Albert Chu at LLNL (US); Community 3 of 4; replaced ipmitool 2026-10-10 (D7)
+frida-tools	pass	-	wxWindows Library Licence 3.1; Ole André Vadla Ravnås (Stavanger, Norway; NowSecure); uv tool, user layer
+fzf	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; sole lead junegunn publishes no location; Community 3 of 4
+game-devices-udev	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; fabiscafe (Arch staff), Codeberg; MIT; tag 1.1, signed
+gamemode	pass	-	BSD-3-Clause; Feral Interactive (UK); Community 3 of 4 (no release since 1.8.2, 2024-08)
+gamescope	pass	-	BSD-2-Clause and BSD-3-Clause; Valve (US), a lead documented in the UK; extra; Community 4 of 4
+gamescope-session	pass	-	MIT; the Open Gaming Collective's fork, leads KyleGospo (US) and justradical (Norway); Community borderline (no tags, AUR only): accepted with decisions/0012 (D19); vendored at a pinned commit, the diff read on every bump; re-check 2027-04
+gamescope-session-steam	pass	-	MIT; the Open Gaming Collective's fork, lead KyleGospo (US); Community borderline as gamescope-session; vendored and pinned; the root polkit helpers removed (pkgs/gamescope-session-steam/REVIEW.md); re-check 2027-04
+gdb	pass	-	GPL-3.0-or-later; the GNU project (Red Hat engineers); Community 4 of 4
+ggml-vulkan	pass	-	llama.cpp / ggml (as llama-cpp)
+ghidra	pass	-	Apache-2.0; the NSA (US); Community 4 of 4 (12.1.4 2026-09-21)
+ghidra-allegrex	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; kotcrab; Apache-2.0; v21.3 built for Ghidra 12.1 (PSP / Allegrex)
+ghidra-emotionengine-reloaded	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; chaoticgd; Apache-2.0; v2.1.38 built for Ghidra 12.1.2 (PS2 / Emotion Engine)
+ghidra-gamecube-loader	pass	-	Apache-2.0; Cuyler36, owner profile "United States"; release 1.3.1 for Ghidra 12.1 (Community marginal: one owner)
+gimp	pass	-	GPL-3.0-or-later; GNOME-hosted, top committer in Brazil; extra; 3.2.6 2026-09
+git	pass	-	GPL-2.0-only; the Git project, a Software Freedom Conservancy member (US); Community 4 of 4
+git-lfs	pass	-	GitHub (US)
+github-cli	pass	-	GitHub (US); leads NL/Canada
+gnome-keyring	pass	-	GPL-2.0-or-later; GNOME Foundation (US); Community 3 of 4
+gnuplot	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; a long-running community project; its leaders' locations were not checked
+go	pass	-	the Go project, Google (US)
+gpu-screen-recorder	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-3.0-only; single author dec05eba publishes no name or location; extra and Flathub verified; 6.1.3 2026-09
+gpu-screen-recorder-ui	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; as gpu-screen-recorder (the same author)
+grim	pass	-	MIT; emersion (France) and the Sway org; Community 4 of 4
+gsimplecal	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; BSD-3-Clause; sole maintainer dmedvinsky publishes no location; Community 3 of 4
+gst-plugin-pipewire	pass	-	MIT; PipeWire (freedesktop.org, Red Hat steward); Community 4 of 4
+gtkwave	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-2.0-or-later and MIT; no maintainer or org published, low activity; extra
+gvfs	pass	-	LGPL-2.0; GNOME Foundation (US); Community 4 of 4
+gvfs-mtp	pass	-	LGPL-2.0; GNOME Foundation (US); Community 4 of 4
+gvfs-smb	pass	-	LGPL-2.0; GNOME Foundation (US); Community 4 of 4
+hledger	pass	-	GPL-3.0-or-later; Simon Michael (Hawaii, US); extra; 1.52.4 2026-09; 199 contributors
+hledger-ui	pass	-	hledger (as hledger)
+hledger-web	pass	-	hledger (as hledger)
+home-manager	pass	-	MIT; nix-community (rycee, Europe; khaneliman, Wisconsin, US); not in Arch; Community 3 of 4
+hunspell-en_us	pass	-	SCOWL / hunspell dictionaries
+hyperfine	pass	-	sharkdp (Stuttgart, Germany)
+hypridle	pass	-	BSD-3-Clause; Hypr Development, lead Vaxry (Poland, by his own account); Community 4 of 4; sponsor the Omacom Foundation (named US funders, HQ unpublished)
+hyprland	pass	-	BSD-3-Clause; Hypr Development, lead Vaxry (Poland, by his own account); Community 4 of 4; sponsor the Omacom Foundation (named US funders, HQ unpublished)
+hyprland-plugin-hyprfocus	pass	-	BSD-3-Clause; hyprwm/hyprland-plugins (Hypr Development, as Hyprland); Community 3 of 4 (not in Arch: vendored in [dram])
+hyprland-plugin-hyprtasking	pass	-	BSD-3-Clause; raybbian (Atlanta, US); Community 2 of 4 (no tags; vendored in [dram])
+hyprlock	pass	-	BSD-3-Clause; Hypr Development, lead Vaxry (Poland, by his own account); Community 4 of 4; sponsor the Omacom Foundation (named US funders, HQ unpublished)
+hyprpicker	pass	-	BSD-3-Clause; Hypr Development, lead Vaxry (Poland, by his own account); Community 4 of 4; sponsor the Omacom Foundation (named US funders, HQ unpublished)
+hyprpolkitagent	pass	-	BSD-3-Clause; Hypr Development, lead Vaxry (Poland, by his own account); Community 4 of 4; sponsor the Omacom Foundation (named US funders, HQ unpublished)
+hyprsunset	pass	-	BSD-3-Clause; Hypr Development, lead Vaxry (Poland, by his own account); Community 4 of 4; sponsor the Omacom Foundation (named US funders, HQ unpublished)
+img2pdf	pass	-	josch (Debian developer, Germany)
+imhex-bin	pass	-	GPL-2.0; WerWolv (Switzerland); Flathub verified; Community 4 of 4 (v1.38.1 2025-12)
+imv	pass	-	MIT; eXeC64 (London, UK), now on sourcehut; Community 3 of 4
+info.cemu.Cemu	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); Origin unclear (the second committer is in the Netherlands); Flathub verified; no release since 2025-02 (re-check 2027-04)
+inkscape	pass	-	GPL-3.0-or-later; a Software Freedom Conservancy member project (US); extra; 1.4.4 2026-05; its leaders were not enumerated
+intel-media-driver	pass	-	BSD-3-Clause and MIT; Intel (US), the controlling company; none of its leaders documented in Russia or China; Community 4 of 4
+intel-ucode	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: CPU microcode
+iperf3	pass	-	BSD-3-Clause; ESnet (Lawrence Berkeley National Laboratory, US); Community 4 of 4
+ipmitool	fail	-	swapped out 2026-10-10 (D7): Origin: its active maintainer lists Moscow; freeipmi instead; re-adding needs a new decision
+iverilog	pass	-	GPL; Icarus Verilog (steveicarus), top committer in San Francisco (US); extra
+iwd	pass	-	LGPL-2.1-or-later; kernel.org (Intel origin), Denis Kenzior (US); Community 4 of 4
+iwgtk	fail	-	swapped out 2026-10-10 (D30): Community fail; impala, then NetworkManager (2026-10-11); re-adding needs a new decision
+jadx	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; Apache-2.0; skylot publishes no name or location; extra
+jagex-launcher	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: proprietary AppImage (Old School RuneScape)
+jdk21-openjdk	pass	-	GPL-2.0 with the Classpath exception; OpenJDK (Oracle, US); Community 4 of 4
+jq	pass	-	MIT; the jqlang org, four active maintainers (itchyny in Kyoto, Japan); Community 4 of 4
+just	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; casey publishes no location
+k9s	pass	-	Apache-2.0; derailed (Colorado, US); Community 4 of 4
+kdenlive	pass	-	GPL-3.0-or-later; KDE e.V. (Berlin, Germany) steward; its lead publishes no location; extra; 26.08 2026-08
+kicad	pass-flag	-	ruled 2026-10-12 (D139): accepted with the Origin flag, re-check 2027-10-12; GPL-3.0-or-later; the KiCad project (Linux Foundation host, leader Wayne Stambaugh; leads in Long Beach, Ireland, Medford MA); one lead developer, Aleksandr Shvartzkop (GitLab: Moscow, Russia), made 100+ of the commits since 2025-10-12; LibrePCB is the swap if the flag is withdrawn
+kicad-library	pass-flag	-	KiCad (as kicad, D139)
+kicad-library-3d	pass-flag	-	KiCad (as kicad, D139)
+kind	pass	-	Apache-2.0; Kubernetes SIGs (CNCF, US); Community 4 of 4
+kitty	pass	-	GPL-3.0; Kovid Goyal (Mumbai, India); Community 4 of 4
+krita	pass	-	GPL-3.0-or-later; the Krita Foundation (Deventer, Netherlands) steward; its lead publishes no location; extra
+kubectl	pass	-	Apache-2.0; Kubernetes (CNCF, US); Community 4 of 4
+kubectx	pass	-	Apache-2.0; ahmetb (Seattle, US); Community 4 of 4
+kubernetes-helm	pass	-	Apache-2.0; Helm (CNCF, US); Community 4 of 4
+lazydocker	pass	-	MIT; Jesse Duffield (Australia); Community 3 of 4
+lazygit	pass	-	MIT; Jesse Duffield (Melbourne) and Stefan Haller (Berlin); Community 4 of 4
+less	pass	-	GPL-3.0-or-later OR the less license; Mark Nudelman (US); Community 3 of 4
+lib32-gamemode	pass	-	BSD-3-Clause; Feral Interactive (UK); Community 3 of 4 (no release since 1.8.2, 2024-08)
+lib32-mangohud	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; as mangohud (the same project)
+lib32-mesa	pass	-	MIT AND BSD-3-Clause AND SGI-B-2.0; Mesa (freedesktop.org, many vendors); Community 4 of 4
+lib32-nvidia-utils	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: proprietary driver userspace
+lib32-vulkan-intel	pass	-	MIT AND BSD-3-Clause AND SGI-B-2.0; Mesa (freedesktop.org, many vendors); Community 4 of 4
+lib32-vulkan-radeon	pass	-	MIT AND BSD-3-Clause AND SGI-B-2.0; Mesa (freedesktop.org, many vendors); Community 4 of 4
+libcdio	pass	-	GNU project (FSF steward); extra
+libfido2	pass	-	BSD-2-Clause; Yubico AB (Stockholm); leaders LDVG (Sweden), dacav (a Yubico address, no public location), martelletto; 1.17.0 2026-04-15; extra; Community 4 of 4; ssh-sk-helper, pam-u2f and the LUKS FIDO2 unlock load it
+libnotify	pass	-	LGPL-2.1-or-later; GNOME Foundation (US), lead Marco Trevisan (Italy, Canonical); release 0.8.8 2026-01
+libpulse	pass	-	LGPL-2.1-or-later; PulseAudio (freedesktop.org); Community 2 of 4
+libqalculate	pass	-	GPL-2.0; Qalculate! (Hanna Knutsson, Gothenburg, Sweden); Community 4 of 4
+libreoffice-still	pass-flag	-	ruled 2026-10-12 (D139): accepted with the Origin flag, re-check 2027-10-12; MPL-2.0; The Document Foundation (Germany); core committer Mike Kaganski (Collabora; GitHub: Khabarovsk, then Moscow, Russia) made 528 commits since 2025-10-12 and sits on neither the foundation's board nor its engineering steering committee; no equal swap exists
+libretro-beetle-pce-fast	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-2.0
+libretro-beetle-psx-hw	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-2.0; replaces DuckStation
+libretro-beetle-supergrafx	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-2.0
+libretro-blastem	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-3.0; replaces Genesis Plus GX
+libretro-bsnes	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-3.0
+libretro-core-info	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33)
+libretro-flycast	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-2.0 (Flycast is also in the group ruling)
+libretro-gambatte	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-2.0
+libretro-kronos	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-2.0
+libretro-mesen	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-3.0
+libretro-mesen-s	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-3.0
+libretro-mupen64plus-next	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-2.0
+libretro-nestopia	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-2.0
+libretro-sameboy	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); MIT
+libretro-shaders-slang	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33)
+libretro-yabause	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33); GPL-2.0
+librewolf	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MPL-2.0; a community project with no legal entity, lead any1here publishes no location; built on Firefox (Mozilla, US); Community 4 of 4
+libva-nvidia-driver	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; lead elFarto publishes no location (a second committer is in Osaka); Community 4 of 4
+linux	pass	-	GPL-2.0-only; the Linux kernel (kernel.org, Linux Foundation, US); Community 4 of 4
+linux-firmware	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: firmware blobs
+linux-headers	pass	-	GPL-2.0-only; the Linux kernel (kernel.org, Linux Foundation, US); Community 4 of 4
+linux-lts	pass	-	GPL-2.0-only; the Linux kernel (kernel.org, Linux Foundation, US); Community 4 of 4
+linux-lts-headers	pass	-	GPL-2.0-only; the Linux kernel (kernel.org, Linux Foundation, US); Community 4 of 4
+literata	pass	-	OFL-1.1; TypeTogether for Google Fonts (US); in nixpkgs; Community weak (font data; last release 3.103, 2023-05)
+llama-cpp	pass	-	MIT; the ggml org (leads in Sofia, France and Paris; now with Hugging Face); extra; Community 4 of 4
+lvm2	pass	-	GPL-2.0 and LGPL-2.1; Red Hat (US); Community 4 of 4
+ly	pass	-	WTFPL, which the FSF lists as free (D14); fairyglade, lead AnErrupTion (France); Community 4 of 4
+mame	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); GPL-2.0-or-later; Origin unclear (the second committer is in Finland, the others publish no location); extra; Community 4 of 4
+mame-tools	pass-flag	-	MAME (as mame); chdman
+man-db	pass	-	GPL-2.0-or-later; savannah.nongnu.org, maintainer Colin Watson (UK); pacstrapped by install/arch-install.sh
+man-pages	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; mixed free licenses; the Linux man-pages project (kernel.org), maintainer Alejandro Colomar publishes no location; core; two maintainers
+mangohud	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; lead flightlessmango and the next two committers publish no location; Community 4 of 4
+marksman	pass	-	MIT; Artem Pyanykh (London, UK); extra
+mediainfo	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; BSD-2-Clause; MediaArea (its leads publish no location); extra
+mesa	pass	-	MIT AND BSD-3-Clause AND SGI-B-2.0; Mesa (freedesktop.org, many vendors); Community 4 of 4
+mgba-qt	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); Origin unclear (single author endrift publishes no location); MPL-2.0; extra; no release since 2025-03 (re-check 2027-04)
+minicom	pass	-	GPL-2.0-or-later; the Debian minicom team (salsa.debian.org); extra; Community 3 of 4; replaced picocom (D30); ruled 2026-10-11: accepted
+mission-center	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-3.0-or-later; the mission-center-devs group names no maintainer or country; Flathub verified; v1.2.0 2026-07
+mkcert	pass	-	BSD; Filippo Valsorda (Rome, Italy); Community 2 of 4 (one maintainer, last release 2022-04)
+mpv	pass	-	GPL-2.0-or-later AND LGPL-2.1-or-later; mpv-player (leads in Poland and Italy); Community 4 of 4
+mtr	pass	-	GPL-2.0; traviscross/mtr (Delft, Netherlands; UK); Community 3 of 4
+nano	pass	-	GPL-3.0-or-later; the GNU project; Community 3 of 4
+nccl	pass	-	NVIDIA (US); BSD-3-Clause
+neovim	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; Apache-2.0 and the Vim license; a community project, top committer zeertzjq publishes no location (justinmk in Berlin); extra; Community 4 of 4
+net.kuribo64.melonDS	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); GPL-3.0; Origin unclear (committers in Denmark, the UK and Germany; the lead publishes none); Flathub verified kuribo64.net
+net.pcsx2.PCSX2	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); GPL-3.0; Origin unclear (one leader in Virginia, US, the rest publish none); Flathub verified pcsx2.net
+net.shadps4.shadPS4	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); GPL-2.0; Origin unclear (the third committer is in Hungary, the others publish none); Flathub verified shadps4.net
+networkmanager	pass	-	freedesktop.org project, Red Hat-led maintainers (US/EU); extra; release 1.58.1 2026-08
+nftables	pass	-	GPL-2.0; netfilter.org (core team in Germany); Community 4 of 4
+ngspice	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; BSD-3-Clause; a community project, its current leaders publish no location; extra
+ninja	pass	-	ninja-build; Google origin, maintainer jhasse (Germany)
+nm-connection-editor	pass	-	GNOME project (network-manager-applet repo); extra; no release since 2024-01; Community 2 of 4 (extra, the GNOME steward)
+nmap	waiver	2027-10-10	waiver signed 2026-10-10 (D6, D14): FOSS: the NPSL is neither OSI-approved nor FSF-free; no equal alternative
+nodejs-lts-krypton	pass	-	Node.js, OpenJS Foundation (US)
+noto-fonts	pass	-	OFL-1.1; Google's Noto project (US); Community 3 of 4
+noto-fonts-emoji	pass	-	OFL-1.1; Google's Noto project (US); Community 3 of 4
+npm	pass	-	npm, GitHub (US)
+ntfs-3g	pass	-	GPL-2.0-or-later; Tuxera and the ntfs-3g community (lead in Helsinki, Finland); Community 4 of 4
+ntfsprogs	pass	-	GPL-2.0-or-later; Tuxera and the ntfs-3g community (lead in Helsinki, Finland); Community 4 of 4
+ntsync-autoload	pass	-	Arch packaging project (a modules-load file for the in-kernel ntsync driver); steam optional dependency
+nvidia-container-toolkit	pass	-	NVIDIA (US); Apache-2.0 (the driver itself is waived separately)
+nvidia-open	pass	-	MIT and GPL-2.0; NVIDIA's open kernel modules (US); prebuilt for linux (D18); the userspace stays waived
+nvidia-open-lts	pass	-	as nvidia-open, for linux-lts (cabin)
+nvidia-settings	pass	-	GPL-2.0-only; NVIDIA (US); Community 4 of 4
+nvidia-utils	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: proprietary driver userspace
+nvtop	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; Syllo publishes no location, the second committer is in Brisbane
+nwg-drawer	pass	-	MIT; nwg-piotr (Poland); Community 3 of 4
+obs-studio	pass	-	GPL-2.0-only; Wizards of OBS LLC; leaders in Canada, the US and Germany; no Russian or Chinese sponsor; extra; 32.2.2 2026-08
+obsidian	fail	-	swapped out 2026-10-11 (D5): proprietary; a git Markdown vault + Zettlr replace it
+octave	pass	-	GPL-3.0-or-later; the GNU project (John W. Eaton; a lead in Germany); extra
+opencode	pass	-	MIT; Anomaly Innovations Inc. (San Francisco, US); leads in Austin, San Francisco and Brisbane; extra
+openfpgaloader	pass	-	Apache-2.0; Gwenhael Goavec-Merou, trabucayre (France); extra
+openocd	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-2.0-or-later; a community project on Gerrit, its two top committers publish no location (the third is in Czechia); extra
+openssh	pass	-	BSD/ISC/MIT; the OpenBSD project (leads in Melbourne and Sydney, Australia); core; Community 4 of 4
+opentofu	pass	-	MPL-2.0; OpenTofu (Linux Foundation, US); Community 4 of 4
+org.azahar_emu.Azahar	pass	-	GPL-3.0; committers documented in the UK, Spain and California; Flathub verified azahar-emu.org
+org.localsend.localsend_app	pass	-	Apache-2.0; Tien Do Nam (Berlin, Germany); Flathub verified; Community 4 of 4
+otf-font-awesome	pass	-	OFL / MIT / CC-BY; Fonticons, Inc. (US); Community 3 of 4
+otf-monaspace	pass	-	OFL-1.1; GitHub Next (US); Community 3 of 4
+pacman-contrib	pass	-	the Arch Linux project (devtools team, Germany); Community 2 of 4 (in Arch's repos, a steward)
+pam-u2f	pass	-	BSD-2-Clause; Yubico AB (Sweden); maintainers LDVG (Sweden), dacav; weak: no release since 1.4.0 2025-03-25, last maintainer reply 2026-04-28; Community 3 of 4 (extra, a steward, an answered tracker); re-check monthly
+papirus-folders	fail	-	swapped out 2026-10-10 (D7): Origin and Community fail; dropped; re-adding needs a new decision
+papirus-icon-theme	fail	-	swapped out 2026-10-10 (D7): Origin: its top committers list Russia; the Adwaita icons instead; re-adding needs a new decision
+paru	fail	-	swapped out 2026-10-10 (D30): Community fail; off the hosts; re-adding needs a new decision
+passt	pass	-	Red Hat (Stefano Brivio); Podman's rootless network
+pavucontrol	pass	-	GPL-2.0-or-later; PulseAudio (freedesktop.org); Community 2 of 4
+pciutils	pass	-	GPL-2.0; Martin Mares (Prague, Czechia); core; release v3.15.0 2026-04
+pcsclite	pass	-	BSD-3-Clause (GPL-3.0-or-later spy and tests); Ludovic Rousseau (France), 90 of 96 commits; 5 releases in 12 months, 2.5.2 2026-09-19; extra; Community 3 of 4
+pdfarranger	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-3.0; volunteers with no org, lead committer kbengs publishes no location; extra and Flathub verified
+perf	pass	-	the Linux kernel tree
+picocom	fail	-	swapped out 2026-10-10 (D30): Community fail; minicom instead; re-adding needs a new decision
+pipewire	pass	-	MIT and LGPL-2.1-or-later; PipeWire (freedesktop.org, Red Hat steward); Community 4 of 4
+pipewire-alsa	pass	-	MIT and LGPL-2.1-or-later; PipeWire (freedesktop.org, Red Hat steward); Community 4 of 4
+pipewire-jack	pass	-	MIT and LGPL-2.1-or-later; PipeWire (freedesktop.org, Red Hat steward); Community 4 of 4
+pipewire-pulse	pass	-	MIT and LGPL-2.1-or-later; PipeWire (freedesktop.org, Red Hat steward); Community 4 of 4
+platformio-core	pass	-	Apache-2.0; PlatformIO Labs (Ukraine), lead Ivan Kravets (Ukraine); extra
+playerctl	waiver	2027-04-11	waiver signed 2026-10-11: Community: no release since 2021; small and stable, no maintained MPRIS command-line tool yet
+plymouth	pass	-	GPL-2.0-or-later; freedesktop.org (Red Hat origin); Community 2 of 4
+pnpm	pass	-	MIT; Zoltan Kochan (Budapest); no legal steward named, no Russian or Chinese sponsor; one contributor in China made 1.3% of the commits; extra; release 2026-10-10
+podman	pass	-	Apache-2.0; the containers org (Red Hat, US; CNCF-hosted), leads in Germany and Brno; extra
+podman-compose	pass	-	containers org; lead p12tic (Lithuania)
+poppler-glib	pass	-	GPL-2.0/3.0, LGPL and MIT; poppler (freedesktop.org); Community 4 of 4
+ppsspp	pass	-	GPL-2.0-or-later; Henrik Rydgård (Stockholm, Sweden), 90% of the commits; extra and Flathub verified
+ppsspp-assets	pass	-	PPSSPP (as ppsspp)
+pre-commit	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; asottile publishes no location, the second committer is in San Francisco
+prjtrellis	pass	-	YosysHQ (as yosys)
+proton-pass-bin	pass	-	GPL-3.0-or-later (app) and MIT (Electron), a repack of the official .deb; Proton AG (Switzerland); Community 2 of 4 (not in Arch or verified on Flathub: vendored in [dram])
+proton-pass-cli	pass	-	GPL-3.0; Proton AG (Switzerland), built from a git tag; Community 2 of 4 (vendored in [dram])
+protonmail-bridge	pass	-	GPL-3.0-only, built from source; Proton AG (Geneva, Switzerland; owned by the non-profit Proton Foundation); Community 4 of 4; the Proton mail service itself is proprietary and paid, a service dependency, not a package
+pulseview	pass	-	sigrok (as sigrok-cli)
+pwndbg	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; the pwndbg org, its top three committers publish no location; extra; Community 4 of 4
+python	pass	-	PSF-2.0; Python Software Foundation (US); leaders in Ukraine, France and Ireland; core
+python-capstone	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; BSD-3-Clause; the capstone-engine org, lead Rot127 publishes no location; extra
+python-pwntools	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; the Gallopsled org, lead peace-maker publishes no location (the second is in Wrocław, Poland); extra
+python-unicorn	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; unicorn (as unicorn)
+qemu-system-ppc	pass	-	GPL-2.0 and others; QEMU, a Software Freedom Conservancy member project (US); extra
+qemu-user	pass	-	GPL-2.0 and others; QEMU, a Software Freedom Conservancy member project (US); extra
+qpdf	pass	-	Jay Berkenbilt (US)
+qt5-wayland	pass	-	GPL / LGPL with the Qt exception; The Qt Company (Finland) and KDE; Community 4 of 4
+qt6-wayland	pass	-	GPL / LGPL with the Qt exception; The Qt Company (Finland) and KDE; Community 4 of 4
+qt6ct	fail	-	swapped out 2026-10-10 (D7): Origin: its sole maintainer lists Russia; Qt themed by other means; re-adding needs a new decision
+qutebrowser	pass	-	GPL-3.0; Florian Bruhin (Winterthur, Switzerland); Community 4 of 4
+radare2	pass	-	LGPL-3.0 / GPL-3.0; radareorg, author pancake (Barcelona, Spain; NowSecure); extra; replaced rizin and cutter (D21)
+rebuild-detector	pass	-	the Arch Linux project; Community 2 of 4 (in Arch's repos, a steward)
+redumper	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-3.0-only; superg (NVIDIA) and the Redump community, no published location; b760 2026-10
+reflector	pass	-	the Arch Linux project; Community 2 of 4 (in Arch's repos, a steward)
+retroarch	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); GPL-3.0-only; Origin unclear (the libretro org names no entity; the fourth contributor is in Finland)
+retroarch-assets-ozone	pass-flag	-	libretro family: a free license per libretro's core-info files; covered by the RetroArch group ruling 2026-10-10 (D33)
+ripgrep	pass	-	MIT OR Unlicense; Andrew Gallant, BurntSushi (Marlborough, MA, US); Community 3 of 4
+rofi	pass	-	MIT; lbonn (Berlin) and sardemff7 (Toulouse); Community 4 of 4
+rofi-calc	pass	-	svenstaro (Hamburg, Germany; an Arch developer); MIT; v2.5.1 2026-02
+rofimoji	pass	-	MIT; fdw (Germany); Community 4 of 4
+rpcs3-bin	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); Origin unclear (the second committer is in Munich, the others publish none); GPL-2.0; the pinned official AppImage
+rsync	pass	-	GPL-3.0-or-later; the Samba team; Community 4 of 4
+rtkit	pass	-	MIT and LGPL-2.1-or-later; freedesktop.org (Red Hat steward); Community 4 of 4
+rustup	pass	-	MIT / Apache-2.0; the Rust project (rust-lang org; Rust Foundation, US), leaders in Paris and Bilthoven (NL); a third committer in Beijing made 6% of the commits
+sane	pass	-	the SANE project (sane-backends, GitLab)
+satty	pass	-	MPL-2.0; Satty-org (Germany); Community 4 of 4
+sbctl	pass	-	MIT; Foxboron (Oslo, Norway); 0.18; extra
+scummvm	pass	-	GPL-3.0; leaders documented in Greece, the US and Australia (3 of the top 4); extra and Flathub verified; Community 4 of 4
+shellcheck	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; koalaman publishes no location
+shfmt	pass	-	mvdan (London)
+sigrok-cli	pass	-	GPL-3.0; sigrok, participants documented in Germany and the UK; releases from 2020-21, extra (re-check 2027-04)
+sigrok-firmware-fx2lafw	pass	-	sigrok (as sigrok-cli); FX2 logic-analyser firmware
+simple-scan	pass	-	GNOME project
+skopeo	pass	-	containers org (Red Hat, US), as Podman
+slurp	pass	-	MIT; emersion (France) and the Sway org; Community 4 of 4
+smartmontools	pass	-	GPL-2.0-or-later; smartmontools.org community; Community 4 of 4
+snapper	pass	-	GPL-2.0; openSUSE/SUSE, 12-month leader aschnell (Germany, SUSE); v0.13.2 2026-09-07
+socat	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-2.0; Gerhard Rieger (dest-unreach.org) publishes no country; Community 2 of 4
+sof-firmware	pass	-	BSD-3-Clause AND ISC; Sound Open Firmware (Intel, a Linux Foundation project, US); leads in Montréal and Dunfermline; one minor contributor lists Shanghai, not a lead; Community 4 of 4
+sops	pass	-	MPL-2.0; getsops (CNCF; felixfontein, Switzerland); Community 4 of 4
+spotify-launcher	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: the launcher is free software, the Spotify client is not
+sshs	pass	-	MIT; quantumsheep (France); Community 3 of 4
+starship	pass	-	ISC; the starship org (matchai, Tokyo); Community 4 of 4
+steam	waiver	2027-10-10	waiver signed 2026-10-10 (D6): FOSS: proprietary client; Gaming Mode needs it
+step-cli	pass	-	Apache-2.0; Smallstep (US); Community 4 of 4
+strace	pass-flag	-	ruled 2026-10-10 (D13): accepted with the Origin flag; the maintainer's 2026 bio drops the older Moscow employer
+sudo	pass	-	ISC-style; Todd C. Miller (Boulder, CO, US); Community 4 of 4
+swaybg	pass	-	MIT; emersion (France) and the Sway org; Community 4 of 4
+swaync	pass	-	GPL-3.0; Erik Reider (Sweden), most commits his; Community 3 of 4
+swayosd	pass	-	GPL-3.0; Erik Reider (Sweden), most commits his; Community 3 of 4
+talosctl	pass	-	MPL-2.0; Sidero Labs (US; lead in Austin, TX); Community 4 of 4
+task	pass	-	MIT; Taskwarrior (Gothenburg Bit Factory), leaders in upstate New York and Toronto; extra; v3.5.0 2026-08
+taskwarrior-tui	pass	-	MIT; kdheepak (Canada), single author; extra; v0.27.0 2026-04
+tcpdump	pass	-	BSD-3-Clause; the tcpdump group (a lead in the UK); Community 3 of 4
+tealdeer	pass	-	MIT / Apache-2.0; tealdeer-rs (dbrgn, Switzerland); Community 4 of 4
+tesseract	pass	-	Apache-2.0; the tesseract-ocr org, lead stweil (Mannheim, Germany)
+tesseract-data-eng	pass	-	Apache-2.0; the tesseract-ocr org (Mannheim, Germany); Community 2 of 4
+texlive-basic	pass	-	TeX Live, TeX Users Group (US)
+texlive-bibtexextra	pass	-	TeX Live, TeX Users Group (US)
+texlive-binextra	pass	-	TeX Live, TeX Users Group (US)
+texlive-fontsextra	pass	-	TeX Live, TeX Users Group (US)
+texlive-latex	pass	-	TeX Live, TeX Users Group (US)
+texlive-latexextra	pass	-	TeX Live, TeX Users Group (US)
+texlive-latexrecommended	pass	-	TeX Live, TeX Users Group (US)
+texlive-mathscience	pass	-	TeX Live, TeX Users Group (US)
+texlive-pictures	pass	-	TeX Live, TeX Users Group (US)
+texlive-plaingeneric	pass	-	TeX Live, TeX Users Group (US)
+texlive-publishers	pass	-	TeX Live, TeX Users Group (US)
+thunar	pass	-	GPL-2.0-or-later / LGPL; the Xfce project; Community 4 of 4
+thunar-archive-plugin	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-2.0-or-later; ib and colossus73 publish no location; Community 4 of 4
+thunar-volman	pass	-	GPL-2.0-or-later / LGPL; the Xfce project; Community 4 of 4
+thunderbird	pass	-	MPL-2.0; Mozilla / MZLA (US); Community 4 of 4
+timew	pass	-	MIT; Timewarrior (Gothenburg Bit Factory), lead lauft (Munich); extra; v1.10.0 2026-08
+tmux	pass	-	tmux; ThomasAdam (England), nicm
+tpm2-tss	pass	-	BSD-2-Clause; tpm2-software, leaders JuergenReppSIT (Darmstadt) and moritzbuhl (Munich, Infineon)
+ttf-jetbrains-mono-nerd	pass	-	OFL-1.1; Nerd Fonts (Seattle, US) patching JetBrains Mono (JetBrains, Amsterdam HQ); Community 3 of 4
+ttf-nerd-fonts-symbols	pass	-	MIT; Nerd Fonts (Seattle, US); Community 3 of 4
+ttf-nerd-fonts-symbols-mono	pass	-	MIT; Nerd Fonts (Seattle, US); Community 3 of 4
+tumbler	pass	-	GPL-2.0-or-later / LGPL; the Xfce project; Community 4 of 4
+tuned	pass	-	GPL-2.0-or-later; Red Hat (US; committers in Brno and Prague); Community 4 of 4
+tuned-ppd	pass	-	GPL-2.0-or-later; Red Hat (US; committers in Brno and Prague); Community 4 of 4
+typst	pass	-	Apache-2.0; Typst GmbH (Berlin); extra
+udiskie	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; coldfix publishes no location; Community 3 of 4
+uefitool-ng	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; LongSoft (Nikolaj Schlej, no published location); BSD-2-Clause; A75 2026-07
+unicorn	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-2.0; the unicorn-engine org (one committer in Singapore), nearly dormant; extra
+unrar	fail	-	swapped out 2026-10-10 (D7): FOSS: the RARLAB license; libarchive instead; re-adding needs a new decision
+unzip	waiver	2027-10-12	waiver to 2027-10-12, ruled 2026-10-12: only as winetricks' hard dependency (the Wine role), never declared on its own; swapped out 2026-10-10 (D30): Community and license fail, libarchive instead; re-adding it in its own right needs a new decision
+uv	pass	-	MIT / Apache-2.0; Astral (US; leads in Minneapolis, Brooklyn and Munich); OpenAI announced its acquisition 2026-03 (re-check 2027-03)
+v4l-utils	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; LGPL-2.1-or-later / GPL-2.0; the LinuxTV project (Hans Verkuil, Oslo; Quentin Schulz, Austria); extra
+v4l2loopback-dkms	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-2.0; lead umlaeute publishes no location (the second maintainer is in Australia); extra; two active maintainers
+valgrind	pass	-	Valgrind developers (Julian Seward, UK); GNU GPL
+verilator	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; LGPL-3.0 / Artistic-2.0; Veripool (Wilson Snyder), its top two committers publish no location; CHIPS Alliance guidance; extra
+vim	pass	-	the Vim license, which the FSF lists as free (D14); the Vim project; Community 4 of 4
+visual-studio-code-bin	fail	-	swapped out 2026-10-10 (D4): FOSS: Microsoft's build; VSCodium instead; re-adding needs a new decision
+vit	pass	-	MIT; the vit-project org, lead in Lynn, MA (US); extra
+vita3k-bin	pass	-	GPL-2.0; committers documented in Japan and France (3 of the top 4); the CI build pinned by sha256
+vscodium-bin	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; lead daiyam (73% of the year's commits) publishes no location; VSCodium replaced Microsoft's VS Code (D4)
+vulkan-intel	pass	-	MIT AND BSD-3-Clause AND SGI-B-2.0; Mesa (freedesktop.org, many vendors); Community 4 of 4
+vulkan-radeon	pass	-	MIT AND BSD-3-Clause AND SGI-B-2.0; Mesa (freedesktop.org, many vendors); Community 4 of 4
+waybar	pass	-	MIT; Alexays (Nantes, France); Community 4 of 4
+wget	pass	-	GPL-3.0-or-later; the GNU project; Community 4 of 4
+wireguard-tools	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-2.0; Jason A. Donenfeld (zx2c4) publishes no location, Edge Security LLC lists the US and France; Community 3 of 4
+wireplumber	pass	-	MIT; WirePlumber (freedesktop.org, Red Hat steward); Community 4 of 4
+wireshark-cli	pass	-	Wireshark (as wireshark-qt): tshark, dumpcap; declared 2026-10-12 so a WSL clone keeps them (a metal host has them as wireshark-qt's dependency)
+wireshark-qt	pass	-	GPL-2.0-only; the Wireshark Foundation (US non-profit); Community 4 of 4
+wl-clip-persist	pass	-	MIT; Linus789 (Germany); Community 2 of 4 (release 2025-09)
+wl-clipboard	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-3.0-or-later; Sergey Bugaev (bugaevc) publishes no location; Community 2 of 4
+wlogout	fail	-	swapped out 2026-10-10 (D30): Community fail; a rofi power menu instead; re-adding needs a new decision
+wlr-randr	pass	-	MIT; emersion (France) and the Sway org; Community 4 of 4
+woff2-font-awesome	pass	-	OFL / MIT / CC-BY; Fonticons, Inc. (US); Community 3 of 4
+wsl2-ssh-agent	pass	-	MIT; Yusuke Endoh (Japan), one maintainer; v0.9.7 2025-11-26; nixpkgs (pkgs/by-name/ws), the WSL clone's bridge to Windows' agent (modules/dev.nix); never the AUR package (its maintainer lists China)
+wtype	pass	-	MIT; atx (Prague, Czechia); Community 2 of 4 (last release 2022)
+xdg-desktop-portal-gtk	pass	-	MIT / LGPL; freedesktop.org (Red Hat); Community 4 of 4
+xdg-desktop-portal-hyprland	pass	-	BSD-3-Clause; Hypr Development, lead Vaxry (Poland, by his own account); Community 4 of 4; sponsor the Omacom Foundation (named US funders, HQ unpublished)
+xdg-utils	pass	-	MIT; freedesktop.org (Red Hat); Community 4 of 4
+xdvdfs	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; antangelo (no published location), the maintained one of extract-xiso and xdvdfs; MIT; 0.8.3
+xenia-canary-bin	pass-flag	-	ruled 2026-10-10 (D13): emulator group accepted (decisions/0016); Origin unclear (the top committer publishes no location; the next three are in Poland, London and California); BSD-3-Clause; the experimental Linux build
+xournalpp	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL-2.0-or-later; a community org, top committer bhennion publishes no location (the second is in Switzerland); extra and Flathub verified
+xpadneo-dkms	pass	-	kakra (Germany) leads 143 of 147 commits; releases 2026-04 to 07; AUR only, vendored
+yara	pass	-	BSD-3-Clause; VirusTotal (Google), lead plusvic (Bilbao, Spain); extra
+yate	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; GPL; Null Team (yate.ro names no country); extra 6.4.1
+yazi	pass-flag	-	ruled 2026-10-10 (D13): accepted with the Origin flag; its lead publishes no location
+yosys	pass	-	ISC; YosysHQ GmbH (Vienna, Austria); extra
+yq-go	pass	-	MIT; Mike Farah (Melbourne, Australia); Community 3 of 4
+yubikey-manager	pass	-	BSD-2-Clause; Yubico AB (Sweden); leaders dainnilsson (Stockholm), fdennis (Sweden); 5.9.2 2026-06-30; extra; Community 4 of 4; python-pskc (transitive, Origin unclear) not scored
+yubikey-touch-detector	pass	-	ISC; Max Baz (Copenhagen, Denmark), 10 of 12 commits; 1.15.0 2026-09-20; extra; Community 3 of 4
+zathura	pass	-	Zlib; pwmt (Vienna and Graz, Austria); Community 4 of 4
+zathura-pdf-mupdf	pass	-	Zlib; pwmt (Vienna and Graz, Austria); Community 4 of 4
+zettlr	pass	-	GPL-3.0; the Zettlr org (Germany), lead Hendrik Erz (Sweden); extra; v4.8.0 2026-09
+zk	pass	-	GPL-3.0; the zk-org community (leads in Melbourne/Berlin and the Netherlands); extra
+zoxide	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; ajeetdsouza publishes no location; Community 3 of 4
+zram-generator	pass	-	MIT; the systemd project; Community 3 of 4
+
+# --- Windows: packages/winget/*.txt (winget:<id>, msstore:<id>, manual:<name>) -------
+# A note that starts "= <name> (Arch)" twins that Arch row: the same verdict and until,
+# kept so by bin/check-register.py. FOSS for the closed Windows apps rests on the waiver
+# for Windows 11 and the closed software tested inside it (signed 2026-10-11, re-check
+# 2027-10-11), where D121 confirms it (open).
+manual:adwaita-cursors	pass	-	= adwaita-cursors (Arch): the same pointer in GNOME's own Windows build (.cur/.ani from adwaita-icon-theme 51.0, the last tag that ships them), pinned by sha256 in install/windows/cursors.pin; common.winget's cursors-machine and pointer-adwaita units; LGPL-3.0 or CC-BY-SA-3.0 US
+manual:battle.net	waiver	2027-10-12	waiver signed 2026-10-12 (D98): FOSS: proprietary launcher; Blizzard (Microsoft), Origin passes; cabin-win; cabin.winget's battle-net unit runs winget's Blizzard.BattleNet with an install location
+manual:evga-precision-x1	fail	-	removed from Windows 2026-10-12: FOSS: proprietary; a kernel driver at every boot that may block Memory Integrity; debloat.ps1 removes it and its driver; re-adding needs a new decision
+manual:jagex-launcher	waiver	2027-10-10	= jagex-launcher (Arch): extended to Windows 2026-10-12 (D102); the signed installer from jagex.com (cabin.winget's jagex-launcher unit)
+manual:librehardwaremonitor-lib	pass	-	D123: MPL-2.0; the LibreHardwareMonitor project; 0.9.6's library from the release zip, pinned by SHA-256, read by case-display.ps1
+manual:marvel-rivals	waiver	2027-10-12	waiver signed 2026-10-12 (D138, as League's D92): Origin: NetEase Games (China; the game is developed in Guangzhou) and FOSS; the game and its own anti-cheat ("NetEase Game Security", its Steam page); cabin-win only, through Steam
+manual:nixos-wsl	fail	-	ruled 2026-10-12 (D139): struck; the Arch clone (decisions/0021) covers WSL; Apache-2.0, nix-community; Origin flag: K900, the second human committer of the last 12 months, lists Moscow (nzbr, Dortmund, leads); an option for the later one-flake work (decisions/0018), never installed
+manual:nvidia-app	waiver	2027-10-10	= nvidia-utils (Arch): the NVIDIA App, by hand; extended to Windows 2026-10-12 (D102); the driver comes from Windows Update
+manual:obs-backgroundremoval	pass	-	D93, D122: GPL-3.0; royshil (US), umireon (Tokyo) 184 of 222 commits; 1.4.1 pinned by SHA-256 (winget's 1.1.13 is stale)
+manual:open-remote-ssh	pass-flag	-	ruled 2026-10-11 (D13): accepted with the Origin flag; MIT; jeanp413 publishes no location; from Open VSX; VSCodium's way into the WSL clone (D55; not Open Remote - WSL, stale with an open shell-injection report); cabin.winget's vscodium-open-remote-ssh unit; Arch installs it through modules/dev.nix (codiumRemoteSsh)
+manual:riot-client	waiver	2027-10-12	waiver signed 2026-10-12 (D92): Origin: Riot Games is wholly Tencent's (since 2015-12-16), and FOSS; the Riot Client, League and the Vanguard kernel driver; cabin-win only, by hand; On-Demand when eligible
+manual:ubisoft-connect	pass-flag	-	ruled 2026-10-12 (D96): accepted with the Origin flag: Tencent's minority stakes, the Guillemot family controls; FOSS: proprietary, under the Windows 11 waiver (D121, open); its own Ubisoft-signed installer
+manual:wch-ch34x-driver	fail	-	D142 (2026-10-12): WCH's CH340/CH341/CH9102 Windows driver (Nanjing Qinheng, China), which Windows Update installs when such a board is plugged in; cabin.winget denies its device ids; on Arch the kernel's ch341 serves them
+msstore:9NCBCSZSJRSB	waiver	2027-10-10	= spotify-launcher (Arch): the Spotify client itself (the Store build); extended to Windows 2026-10-12 (D102)
+winget:AdrienAllard.FileConverter	fail	-	dropped from Windows 2026-10-12 (D106): Community: one maintainer, a tracker barely answered; HandBrake, PowerToys' Image Resizer and the clone's tools instead; re-adding needs a new decision
+winget:Anki.Anki	pass-flag	-	= anki (Arch)
+winget:AntibodySoftware.WizTree	fail	-	swapped out on Windows 2026-10-12 (D61): FOSS: proprietary; WinDirStat instead; re-adding needs a new decision
+winget:ArduinoSA.CLI	pass	-	= arduino-cli (Arch)
+winget:AutoHotkey.AutoHotkey	fail	-	removed from cabin-win 2026-10-12 (D136): anti-cheat, not the three rules (it passes them: GPL-2.0; AutoHotkey Foundation LLC, Indiana, US): ARC Raiders' anti-cheat FAQ counts "AutoHotkey active" as a detection, and no binds script ever used it; debloat.ps1 uninstalls it; re-adding needs a new decision
+winget:calibre.calibre	pass	-	GPL-3.0; Kovid Goyal (Mumbai, India), 2,151 of 2,761 commits
+winget:dorssel.usbipd-win	pending	-	D118 (open): GPL-3.0; Frans van Dorsselaer (Netherlands); Community 1 to 2 of 4 (last release 2025-10-11): a waiver to 2027-10-12 if usbip is used
+winget:ElectronicArts.EADesktop	waiver	2027-10-12	waiver signed 2026-10-12 (D97): FOSS: proprietary (the EA app and EA Javelin); Origin passes (PIF, Silver Lake, Affinity since 2026-08-04); cabin-win
+winget:EpicGames.EpicGamesLauncher	pass-flag	-	ruled 2026-10-12 (D94): accepted with the Origin flag: Tencent holds about 28 %, without control (Tim Sweeney holds the majority); FOSS: proprietary, under the Windows 11 waiver (D121, open); Heroic optional
+winget:Git.Git	fail	-	not installed (2026-10-12, D58, D108): Origin flag: Git for Windows carries mingw-w64, whose committer of record is documented in China; git lives only in the WSL clone; re-adding needs a new decision
+winget:glzr-io.glazewm	pending	-	held 2026-10-12 (D131): GPL-3.0; glzr.io (Singapore; lead lars-berger publishes no location); 3.10.1 2026-03-21; security: its IPC on 127.0.0.1:6123 takes commands, shell-exec among them, from any WebSocket client with no Origin check; not installed until upstream's fix lands (glzr-io/glazewm#1443, open), then a test beside the anti-cheats; the masthead is built without it
+winget:glzr-io.zebar	pass	-	ruled 2026-10-12 (the masthead, D130): GPL-3.0; glzr.io (Glzr Software Pte. Ltd.), an org documented in Singapore; Community 2 of 4 (v3.3.1 2026-03-16, a steward org); reviewed: WebView2 widgets, nothing injected; its asset server (127.0.0.1:6124) serves only token-gated widget files; its tray is a spy window of Shell_TrayWnd's class (test it beside anti-cheat); the network only from its own settings window's marketplace (api.glzr.io), when opened; pinned 3.3.1 (common.winget)
+winget:GNU.Octave	pass	-	= octave (Arch)
+winget:HulubuluSoftware.AdvancedRenamer	fail	-	swapped out on Windows 2026-10-12 (D61): FOSS: proprietary; PowerToys' PowerRename instead; re-adding needs a new decision
+winget:HypixelStudios.Hytale	waiver	2027-10-12	waiver signed 2026-10-12 (D99): FOSS: proprietary launcher; Origin passes (Hypixel Studios, Canada, its own again since 2025-11-17); cabin-win
+winget:JGraph.Draw	pass	-	= drawio-desktop (Arch)
+winget:KiCad.KiCad	pass-flag	-	ruled 2026-10-12 (D139): accepted with the Origin flag, re-check 2027-10-12, as kicad (Arch), before college.txt was installed (cabin.winget's kicad unit)
+winget:LibreWolf.LibreWolf	pass-flag	-	= librewolf (Arch)
+winget:LocalSend.LocalSend	pass	-	= org.localsend.localsend_app (Arch): the Flatpak there
+winget:Microsoft.PowerShell	pass	-	MIT; Microsoft (US); PowerShell 7
+winget:Microsoft.PowerToys	pass	-	MIT; Microsoft (US); PowerRename replaced Advanced Renamer (D61)
+winget:Mozilla.Thunderbird	pass	-	= thunderbird (Arch)
+winget:Mumble.Mumble.Client	pass	-	D45, D122: BSD-3-Clause; davidebeatrici (Italy); the chat role, every build
+winget:namazso.PawnIO	pass-flag	-	ruled 2026-10-12 (D124): accepted with the flag: the kernel driver LibreHardwareMonitor needs for the CPU temperature; FOSS unclear (GPL-2.0-or-later source, a signed build without a license file); Origin unclear (maintainer: "Europe"); Community 1 to 2 of 4
+winget:NexusMods.Vortex	pass	-	D122: GPL-3.0; Black Tree Gaming (Exeter) under a Danish owner; leads in Germany, Moldova and the UK
+winget:nomacs.nomacs	pass	-	GPL-3.0; publisher TU Wien; replaced JPEGView (D61)
+winget:Notepad++.Notepad++	pass	-	GPL-3.0; Don Ho (Paris); the 2025 update hijack was fixed in 8.8.9 and 8.9.2
+winget:Nvidia.GeForceNow	fail	-	dropped 2026-10-12 (D100): FOSS: proprietary, and no need: the 3080 Ti plays locally; debloat.ps1 removes it; re-adding needs a new decision
+winget:OBSProject.OBSStudio	pass	-	= obs-studio (Arch): its virtual camera replaced XSplit VCam (D93)
+winget:OpenVPNTechnologies.OpenVPN	pass	-	GPL-2.0; OpenVPN Inc.'s community client (openvpn-gui); leads in Karlsruhe, Canada, Munich and Oulu; replaced OpenVPN Connect (D61)
+winget:OpenVPNTechnologies.OpenVPNConnect	fail	-	swapped out on Windows 2026-10-12 (D61): FOSS: proprietary; OpenVPNTechnologies.OpenVPN (the community client) instead; re-adding needs a new decision
+winget:PDFArranger.PDFArranger	pass-flag	-	= pdfarranger (Arch)
+winget:PrismLauncher.PrismLauncher	pass	-	= prismlauncher (Arch)
+winget:Proton.ProtonMailBridge	pass	-	= protonmail-bridge (Arch)
+winget:Proton.ProtonPass	pass	-	= proton-pass-bin (Arch)
+winget:Proton.ProtonPass.CLI	pass	-	= proton-pass-cli (Arch)
+winget:PuTTY.PuTTY	pass	-	MIT; Simon Tatham and others (UK); serial consoles
+winget:Qalculate.Qalculate	pass	-	= libqalculate (Arch): Qalculate! (Hanna Knutsson, Gothenburg)
+winget:qBittorrent.qBittorrent	fail	-	swapped out on Windows 2026-10-12 (D104): Origin unclear: a lead with no location and only a yandex.ru address; Transmission instead; re-adding needs a new decision
+winget:QPDF.QPDF	pass	-	= qpdf (Arch)
+winget:Rufus.Rufus	pass	-	GPL-3.0; Pete Batard (Ireland)
+winget:RuneLite.RuneLite	pass-flag	-	ruled 2026-10-12 (D103): accepted with the Origin flag; BSD-2-Clause; leads Adam- and abextm publish no location
+winget:simonmichael.hledger	pass	-	= hledger (Arch)
+winget:SplitmediaLabs.VCam	fail	-	swapped out on Windows 2026-10-12 (D93): Origin: SplitmediaLabs Limited, Hong Kong, and FOSS; OBS's virtual camera and obs-backgroundremoval instead; re-adding needs a new decision
+winget:squidowl.halloy	pass	-	D45, D122: GPL-3.0; leads in Denmark, Genoa, Seattle and Vancouver (the top committer publishes no location); the chat role, every build
+winget:Starship.Starship	pass	-	= starship (Arch): the prompt (common.winget)
+winget:SumatraPDF.SumatraPDF	pass	-	GPL-3.0; Krzysztof Kowalczyk, kjk (Kraków, Poland)
+winget:sylikc.JPEGView	fail	-	swapped out on Windows 2026-10-12 (D61): Community: no commit since 2024-08, no release since 2023-10; nomacs instead; re-adding needs a new decision
+winget:TeamSpeakSystems.TeamSpeakClient	waiver	2027-10-12	waiver signed 2026-10-12 (D46): FOSS: proprietary client; TeamSpeak Systems (Chula Vista, US; Krün, Germany); the chat role, every build
+winget:TheDocumentFoundation.LibreOffice	pass-flag	-	ruled 2026-10-12 (D139): accepted with the Origin flag, re-check 2027-10-12, as libreoffice-still (Arch); winget has one channel (the newer line); ruled before office.txt was installed (cabin.winget's libreoffice unit)
+winget:Transmission.Transmission	pass-flag	-	ruled 2026-10-12 (D104): accepted with the Origin flag; GPL-2.0/3.0; top committer tearfur publishes no location (ckerr: New Orleans); replaced qBittorrent
+winget:Typst.Typst	pass	-	= typst (Arch)
+winget:Valve.Steam	waiver	2027-10-10	= steam (Arch): extended to Windows 2026-10-12 (D102); never starts at sign-in (D51)
+winget:Vencord.Vesktop	pass-flag	-	= dev.vencord.Vesktop (Arch): the Flatpak there; the Discord service is waived (D6)
+winget:VideoLAN.VLC	pass-flag	-	ruled 2026-10-12 (D105): accepted with the Origin flag; GPL-2.0-or-later; VideoLAN (France); one 12-month lead lists Hong Kong (the SageMath precedent)
+winget:VSCodium.VSCodium	pass-flag	-	= vscodium-bin (Arch): with Open Remote - SSH into the clone (D55)
+winget:WinDirStat.WinDirStat	pass	-	GPL-3.0; Bryan Berns (Clifton Park, NY) and harryytm (Southampton, UK); replaced WizTree (D61)
+winget:WinsiderSS.SystemInformer	pass	-	MIT; Winsider Seminars & Solutions (Canada), lead dmex (Australia); for Sysinternals' Process Explorer and TCPView (D111)
+winget:WireGuard.WireGuard	pass-flag	-	= wireguard-tools (Arch)
+winget:WiresharkFoundation.Wireshark	pass	-	= wireshark-qt (Arch): without Npcap (D110)
+winget:x64dbg.x64dbg	pass	-	GPL-3.0; leads 3rdit (England) and Duncan Ogilvie (Poland)
+winget:Xournal++.Xournal++	pass-flag	-	= xournalpp (Arch)
+winget:Yubico.YubiKeyManagerCLI	pass	-	= yubikey-manager (Arch): ykman
+winget:Zettlr.Zettlr	pass	-	= zettlr (Arch): the git Markdown vault (Obsidian's swap, D5)
+
+# --- forbidden: never install (verdict fail) ------------------------------
+affine-bin	fail	-	Origin: its top committer lists Guangzhou; the operating company is in Hangzhou, funded by Chinese venture firms
+audacity	fail	-	Origin: Muse Group, a Russian-founded owner; Ardour instead
+bigpemu-bin	fail	-	FOSS: proprietary freeware, binary only
+duckstation-git	fail	-	FOSS: CC BY-NC-ND 4.0 for source and binaries; libretro-beetle-psx-hw instead
+duckstation-qt-bin	fail	-	FOSS: CC BY-NC-ND 4.0 for source and binaries; libretro-beetle-psx-hw instead
+fastfetch-git	fail	-	Origin: same upstream as fastfetch
+hexchat	fail	-	Community: archived 2024, last release 2024-02, AUR only (D61); IRC is Halloy and WeeChat
+libretro-genesis-plus-gx	fail	-	FOSS: non-commercial license; Arch's metadata mislabels it BSD-3; libretro-blastem and ares instead
+libretro-picodrive	fail	-	FOSS: non-commercial license; Arch's metadata mislabels it BSD-3; ares for the 32X instead
+libretro-snes9x	fail	-	FOSS: non-commercial license; libretro-bsnes instead
+logseq-desktop-bin	fail	-	Origin unclear, leaning fail (no first-party location; one third party puts the CEO in Hangzhou); maintenance-only, the DB version in beta; not ruled in
+lsp-plugins	fail	-	Origin: its sole lead self-reported St Petersburg, Russia, and announces releases in Russian
+manual:delta-force	fail	-	Origin: TiMi Studio Group, a Tencent subsidiary (Shenzhen) (D61); it was in the old drive's Downloads
+manual:explorerblurmica	fail	-	Origin: Maplespe's, as winget:Maplespe.DWMBlurGlass (Bilibili, winmoes.com with a Henan ICP filing); glass in Explorer, against the house look; not in winget
+manual:iunity	fail	-	FOSS: Antec's proprietary iUnity (a driver, a firmware updater, a service; Origin passes: Taipei) -> case-display.ps1 (D123); debloat.ps1 removes it
+manual:jwno	fail	-	Origin: its author (agent-kilo) lists Guangzhou; MIT; not in winget; GlazeWM is the tiling candidate
+manual:millennium	fail	-	security and terms: inline hooks in steam.exe and libcef next to EAC and Vanguard (its maintainer: EAC watches the Steam client for hooks); the Steam Subscriber Agreement section 4.B; Steam stays unthemed
+manual:npcap	fail	-	FOSS: its own EULA, which the nmap waiver does not cover; not installed (2026-10-12, D110): capture with etwdump, pktmon, sshdump, or on Arch
+manual:scoop	fail	-	Origin: lead committers based in China (D61); winget is the engine
+manual:sfp	fail	-	security: restarts Steam with an open CEF debugger (-devtools-port 8080) any local process can drive, which Steam-hijacking malware abused in 2026-05
+manual:spicetify	fail	-	terms and fit: Spotify's guidelines forbid modifying the client (a suspension clause); it wants the spotify.com build, not the Store build cabin-win runs; its top committer publishes no location
+manual:ultrauxthemepatcher	fail	-	FOSS and security: proprietary freeware that patches uxtheme.dll (D61)
+msstore:9MTFTXSJ9M7F	fail	-	RoundedTB: Community: archived 2023-10-16, last release 3.1 on 2021-11-14
+msstore:9P1741LKHQS9	fail	-	FancyWM: FOSS: PolyForm Perimeter 1.0.1, not OSI
+onlyoffice-bin	fail	-	Origin: Russian origins and a Shanghai office (HQ Riga under a Singapore holding; reported Russian development); LibreOffice instead
+rizin	fail	-	Origin: a code owner lists Shanghai; replaced by radare2 (D21)
+rz-cutter	fail	-	Origin: release manager lists Shanghai; replaced by radare2 (D21)
+showmethekey	fail	-	Origin: its author lists Beijing (his profile and his own site)
+snes9x	fail	-	FOSS: non-commercial license; libretro-bsnes instead
+snes9x-gtk	fail	-	FOSS: non-commercial license; libretro-bsnes instead
+srain	fail	-	Origin: its author lists China (github.com/SilverRainZ), AUR only (D61)
+winget:7zip.7zip	fail	-	= 7zip (Arch): Explorer reads 7z, rar and tar through libarchive
+winget:AIMP.AIMP	fail	-	Origin and FOSS: Artem Izmaylov, a Russian developer (Wikipedia); proprietary; VLC plays music
+winget:Audacity.Audacity	fail	-	= audacity (Arch): Muse Group
+winget:ChuyuTeam.DISM++	fail	-	Origin: the Chuyu Team org and its top contributor list Beijing
+winget:DEVCOM.JetBrainsMonoNerdFont	fail	-	Community: a stale third-party repackage; install/windows/fonts.pin pins Nerd Fonts upstream (D61)
+winget:Flow-Launcher.Flow-Launcher	fail	-	Origin: its 12-month commit leader (Jack251970) lists China on GitHub; PowerToys' Command Palette launches
+winget:Foxit.FoxitReader	fail	-	Origin and FOSS: Fujian Foxit Software Development Joint Stock Co., Fuzhou (SSE 688095); proprietary; SumatraPDF reads PDFs
+winget:Giorgiotani.Peazip	fail	-	Origin and FOSS: bundles 7-Zip's (author documented as Russian) and unRAR's binaries (D61)
+winget:GlavSoft.TightVNC	fail	-	Origin: GlavSoft started at Tomsk Polytechnic University, Russia (D61); RDP over WireGuard instead
+winget:Guru3D.Afterburner	fail	-	Origin: its developer, Alexey Nicolaychuk, is based in Russia (D61); PresentMon or Steam's overlay instead
+winget:Guru3D.RTSS	fail	-	Origin: as Guru3D.Afterburner (D61)
+winget:HexChat.HexChat	fail	-	= hexchat (Arch)
+winget:Insecure.Nmap	fail	-	FOSS: the Windows installer bundles Npcap, whose own EULA the nmap waiver does not cover (D110); nmap runs in the WSL clone, raw scans from Arch
+winget:LGUG2Z.komorebi	fail	-	FOSS: the Komorebi License 2.0.0 (a PolyForm Strict fork: source-available, personal and non-commercial use only) is not OSI; MIT until 2024-04; its bar too; FancyZones snaps windows
+winget:LGUG2Z.whkd	fail	-	FOSS: komorebi's hotkey daemon, under the same Komorebi License
+winget:M2Team.NanaZip	fail	-	Origin: its lead (MouriNaruto) is a Tencent employee in China by his own résumé (D61)
+winget:Maplespe.DWMBlurGlass	fail	-	Origin: distributed through Bilibili and winmoes.com (a Henan ICP filing); security: patches DWM (MinHook, Microsoft's symbols); glass, against the house look
+winget:memstechtips.Winhance	fail	-	FOSS: PolyForm Shield 1.0.0, a non-compete license, not OSI; a tweak suite besides, whose runs no converge test sees
+winget:MPC-BE.MPC-BE	fail	-	Origin: its maintainer (Aleksoid1978) lists the Russian Federation on GitHub; VLC is the player
+winget:namazso.SecureUXTheme	fail	-	security and Community: loads into winlogon through IFEO VerifierDlls (D61)
+winget:Nilesoft.Shell	fail	-	Community and security: dormant (winget's 1.9.18 of 2024-11 is the last build), hooks Explorer and any third-party process that loads it, reported broken on 26300
+winget:Obsidian.Obsidian	fail	-	= obsidian (Arch): proprietary; Zettlr and the git vault on Windows too
+winget:ONLYOFFICE.DesktopEditors	fail	-	= onlyoffice-bin (Arch); LibreOffice for documents
+winget:Open-Shell.Open-Shell-Menu	fail	-	loads into Explorer and the file dialogs (D87's class); a Windows 7 menu, foreign to Letterpress; Origin unclear (lead ge0rdi, no location)
+winget:Postman.Postman	fail	-	FOSS: proprietary; thermos swaps it for Bruno or Hoppscotch when it is rebuilt
+winget:RamenSoftware.Windhawk	fail	-	D133 (2026-10-12, D87 sharpened): its engine injects into every process by default (a remote thread and a CreateProcessInternalW hook); Vanguard reports critical errors until it is disabled (#926), Vanguard's own vgc.exe left off its exclusions until the 2.0 alpha, an unproven League ban (#495); Origin unclear (m417z, no published location); re-adding needs a ruling and an inclusion-only trial
+winget:rocksdanister.LivelyWallpaper	fail	-	Community 1 of 4 (one committer, no release since 2025-09-18); a still wallpaper needs no engine
+winget:Seelen.SeelenUI	fail	-	injects sluhk.dll into Explorer through SetWindowsHookEx (D87's class); EAC games refused to start beside it (#1191); a whole replacement shell
+winget:Spicetify.Spicetify	fail	-	as manual:spicetify: Spotify's guidelines, the Store build
+winget:StartIsBack.StartAllBack	fail	-	FOSS and Origin: proprietary, strong Russian ties (signed by Stanislav Zinukhov, sold in rubles) (D61)
+winget:TeamSophia.SophiaScript	fail	-	Origin: the team is documented in Russia (its Habr post of 2022-08-19; Russia-only features); a tweak suite that switches off what anti-cheats and the converge rely on
+winget:valinet.ExplorerPatcher	fail	-	Community and security: unsigned, flagged by Defender in 2024 and 2026; patches Explorer and its hosts through the DLL search order, optionally every Open/Save dialog; BattlEye blocked its DLL (2023-25); breaks on updates (#5182, 2026-09); two maintainers now, Satrio leading (D61)
+winget:Ventoy.Ventoy	fail	-	Origin: its author (ventoy, longpanda) lists China and Shanghai on GitHub; Rufus writes boot sticks
+winget:winaero.tweaker	fail	-	FOSS and Origin: closed freeware; Wikipedia (uncited) calls its author a Russian software developer, in Penza
+wps-office	fail	-	Origin: Kingsoft, China
+snap-pac	fail	-	Community: no release since 2021; replaced 2026-10-11 by system/hooks/*dram-snap*, which also number the boot entries: two would double every snapshot
+dosfstools	pass	-	GPL-3.0; dosfstools on GitHub (Andreas Bombe, Pali Rohár; Germany/Slovakia); core; mkfs.fat/fsck.fat for the ESP
+edk2-ovmf	pass	-	BSD-2-Clause-Patent; TianoCore edk2 (Intel, Arm, Red Hat, Microsoft maintainers); extra; UEFI + Secure Boot firmware for VMs
+mtools	pass	-	GPL-3.0; GNU mtools (Alain Knaff, Luxembourg); extra; FAT images without root (tests/windows-vm.sh)
+qemu-base	pass	-	GPL-2.0 and others; QEMU, a Software Freedom Conservancy member project (US); extra; the headless x86 system emulator for VMs on /data/vm
+swtpm	pass	-	BSD-3-Clause; Stefan Berger (IBM, US); extra; the software TPM 2.0 Windows 11 VMs need
+refind	pass	-	GPL-3.0 (+ BSD, CC-BY-SA icons); Roderick W. Smith (US); extra 0.14.2; the themed boot menu in front of the UKIs, signed by sbctl
+alsa-utils	pass	-	GPL-2.0; the ALSA project; extra; alsamixer/amixer/aplay
+cups	pass	-	Apache-2.0; OpenPrinting (Linux Foundation); extra; printing, driverless IPP Everywhere
+cups-pk-helper	pass	-	GPL-2.0; OpenPrinting; extra; polkit helper for printer settings
+dnsmasq	pass	-	GPL-2.0; Simon Kelley (UK); extra; DHCP/DNS for libvirt's NAT network
+libvirt	pass	-	LGPL-2.1; the libvirt project (Red Hat-led); extra; virt-manager's backend
+prismlauncher	pass	-	GPL-3.0; the Prism Launcher community; extra; Minecraft instances
+qemu-desktop	pass	-	GPL-2.0 and others; QEMU, a Software Freedom Conservancy member project (US); extra; the display and audio modules for desktop VMs
+system-config-printer	pass	-	GPL-2.0; OpenPrinting (Red Hat origin); extra; the printer settings GUI
+virt-manager	pass	-	GPL-2.0; the virt-manager project (Red Hat-led); extra; a GUI for VMs
+wine	pass	-	LGPL-2.1; WineHQ (CodeWeavers, US); multilib; Windows programs outside Steam
+wine-gecko	pass	-	MPL-2.0; WineHQ; multilib; HTML rendering for Wine
+wine-mono	pass	-	MIT/various; WineHQ; extra; .NET for Wine
+winetricks	pass	-	LGPL-2.1; the winetricks community; multilib; Wine helper for runtimes

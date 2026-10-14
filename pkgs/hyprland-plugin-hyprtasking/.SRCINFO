@@ -1,0 +1,16 @@
+pkgbase = hyprland-plugin-hyprtasking
+	pkgdesc = A Hyprland plugin that adds a workspace overview (grid of every workspace, drag windows between them)
+	pkgver = 0.56.2
+	pkgrel = 1
+	url = https://github.com/raybbian/hyprtasking
+	arch = x86_64
+	license = BSD-3-Clause
+	makedepends = git
+	makedepends = meson
+	makedepends = hyprland
+	depends = hyprland=0.56.2
+	options = !lto
+	source = hyprtasking::git+https://github.com/raybbian/hyprtasking#commit=4d3c39511c3f38966abf1ec4393f5a7220ffb1a3
+	sha256sums = SKIP
+
+pkgname = hyprland-plugin-hyprtasking

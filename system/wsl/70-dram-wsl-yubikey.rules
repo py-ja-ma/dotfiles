@@ -1,0 +1,5 @@
+# written by dotfiles/system/wsl-setup.sh - do not hand-edit (system/wsl/README.md)
+# A YubiKey (Yubico, vendor 1050) attached to the WSL clone with `usbipd attach --wsl`: its
+# FIDO hidraw node for the wheel group (the login), since a WSL login has no seat for
+# libfido2's uaccess rule to hand it over. Inert while the key stays with Windows.
+ACTION=="add|change", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1050", MODE="0660", GROUP="wheel"

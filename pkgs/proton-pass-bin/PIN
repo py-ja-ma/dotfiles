@@ -1,0 +1,6 @@
+proton-pass-bin — how to re-pin
+  1. curl -s https://proton.me/download/PassDesktop/linux/x64/version.json | jq '.Releases[] | select(.CategoryName=="Stable") | {Version, ReleaseDate, RolloutPercentage, deb: .File[0]}'
+  2. pkgver = the newest Stable Version you accept (RolloutPercentage < 1 means Proton is still staging it).
+  3. source = that entry's File[0].Url; sha512sums = its Sha512CheckSum. Paste BOTH by hand — then
+     `updpkgsums` must print the same sha512 from the download, or stop.
+  4. Keep the `chmod u-s chrome-sandbox` line.

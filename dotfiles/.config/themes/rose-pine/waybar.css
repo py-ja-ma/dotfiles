@@ -1,0 +1,22 @@
+/* Rosé Pine — waybar palette (imported by waybar/style.css) */
+@define-color base     #191724;
+@define-color mantle   #1f1d2e;
+@define-color crust    #16141f;
+@define-color text     #e0def4;
+@define-color subtext  #908caa;
+@define-color overlay  #6e6a86;
+@define-color surface0 #26233a;
+@define-color surface1 #403d52;
+@define-color blue     #9ccfd8;
+@define-color lavender #c4a7e7;
+@define-color sapphire #31748f;
+@define-color sky      #9ccfd8;
+@define-color teal     #9ccfd8;
+@define-color green    #9ccfd8;
+@define-color yellow   #f6c177;
+@define-color peach    #f6c177;
+@define-color maroon   #b4637a;
+@define-color red      #eb6f92;
+@define-color mauve    #c4a7e7;
+@define-color pink     #ebbcba;
+@define-color accent   #c4a7e7;   /* the ONE accent ink (Letterpress) */

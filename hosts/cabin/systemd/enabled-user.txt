@@ -1,0 +1,12 @@
+dram-theme-auto.service
+dram-theme-auto.timer
+llama-server.service
+p11-kit-server.socket
+pipewire-pulse.socket
+pipewire.socket
+protonmail-bridge.service
+set-SSH_AUTH_SOCK.service
+ssh-agent.service
+wireplumber.service
+xdg-user-dirs.service
+yubikey-touch-detector.service

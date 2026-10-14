@@ -1,0 +1,22 @@
+# install/windows/fonts.pin - the house fonts on Windows, for every account (C:\Windows\Fonts +
+# HKLM, the desktop role's fonts-machine unit); docs/design/typography/README.md.
+#
+# <id> <url> <sha256> <member...>
+#   install/windows/apply-windows.sh downloads each URL once into ~/.cache/dram/fonts, refuses
+#   it unless its sha256 is the one here, and keeps only the members: bsdtar patterns for an
+#   archive (paths flattened; --exclude=PATTERN drops matches), or =NAME for a font fetched as
+#   itself. Bump: the new URL and its sha256 (a release's own checksum, or shasum -a 256 on a
+#   download you trust), then apply-windows.sh; a font dropped here leaves Windows too.
+#
+# Monaspace 1.400 (OFL-1.1; Cyrillic since 1.400): Xenon and Radon, the seven weights upright
+# and italic, no SemiWide/Wide cuts. Nerd Fonts 3.5.1 (OFL-1.1 fonts, MIT patcher): the
+# .tar.xz holds the same files as the 134 MB .zip, in 7 MB; JetBrainsMono NF and NF Mono (not
+# NL, not Propo) and the symbols-only pair kitty and Windows Terminal fall back to. Literata
+# 3.103 (OFL-1.1): the two variable files. EB Garamond (OFL-1.1): google/fonts has no
+# releases, so a commit is pinned (f8c1d3d, 2026-06-17, "bump version to 1.003").
+monaspace          https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-static-v1.400.zip  ab66d71be751495f679727332a3345597943bd4d7beebca03f5cde04bf994de7  --exclude=*Wide* *MonaspaceXenon-*.otf *MonaspaceRadon-*.otf
+jetbrains-mono-nf  https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/JetBrainsMono.tar.xz  04d5e8f903693f9dd13e16f867e994834e681eb3c72c0d337a770dcda09010cf  JetBrainsMonoNerdFont-*.ttf JetBrainsMonoNerdFontMono-*.ttf
+nerd-symbols       https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/NerdFontsSymbolsOnly.tar.xz  01172f37db8543edb102e5cb5c64101c9f4686630804d49b419aa07b23a69996  SymbolsNerdFont-Regular.ttf SymbolsNerdFontMono-Regular.ttf
+literata           https://github.com/googlefonts/literata/releases/download/3.103/3.103.zip  f7fb973cafb26cf785cbebaeaf51c18f87c15a3bcf4d82a7d4857564db5b056d  */variable/*.ttf
+eb-garamond        https://raw.githubusercontent.com/google/fonts/f8c1d3d6cc75e30d77130bdcbfbff27e3b6233fe/ofl/ebgaramond/EBGaramond%5Bwght%5D.ttf  ef9512f92f6d579e5dc75af59a5a4b1b8b47d2eda89e00b954d44520e5369027  =EBGaramond[wght].ttf
+eb-garamond-italic https://raw.githubusercontent.com/google/fonts/f8c1d3d6cc75e30d77130bdcbfbff27e3b6233fe/ofl/ebgaramond/EBGaramond-Italic%5Bwght%5D.ttf  bba2c4499c93c9612b90b9825d32b07da52fce2fe57562a1eb6b833553f93c4e  =EBGaramond-Italic[wght].ttf

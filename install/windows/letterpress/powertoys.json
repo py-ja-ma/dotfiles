@@ -1,0 +1,32 @@
+{
+  "FancyZones": {
+    "fancyzones_systemTheme": false,
+    "fancyzones_zoneColor": "#1C140F",
+    "fancyzones_zoneBorderColor": "#C0442B",
+    "fancyzones_zoneHighlightColor": "#3A2A22",
+    "fancyzones_zoneNumberColor": "#E6D6CB",
+    "fancyzones_highlight_opacity": 50
+  },
+  "AlwaysOnTop": {
+    "frame-enabled": true,
+    "frame-thickness": 2,
+    "frame-color": "#C0442B",
+    "frame-accent-color": false,
+    "frame-opacity": 100
+  },
+  "FindMyMouse": {
+    "background_color": "#801C140F",
+    "spotlight_color": "#80E6D6CB"
+  },
+  "MouseHighlighter": {
+    "left_button_click_color": "#A6C0442B",
+    "right_button_click_color": "#A66E8A8F"
+  },
+  "MousePointerCrosshairs": {
+    "crosshairs_color": "#C0442B",
+    "crosshairs_border_color": "#1C140F"
+  },
+  "Measure Tool": {
+    "MeasureCrossColor": "#C0442B"
+  }
+}

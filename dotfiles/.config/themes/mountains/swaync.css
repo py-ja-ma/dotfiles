@@ -1,0 +1,11 @@
+/* Mountains — swaync palette (imported by swaync/style.css) */
+@define-color base     #1a1814;
+@define-color mantle   #141310;
+@define-color crust    #0f0e0c;
+@define-color text     #e8e9e1;
+@define-color subtext  #abaaa3;
+@define-color surface0 #2a2621;
+@define-color surface1 #34302a;
+@define-color blue     #6f8a94;
+@define-color red      #b06a5a;
+@define-color accent   #7c907a;   /* the ONE accent ink (Letterpress) */

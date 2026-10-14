@@ -1,0 +1,6 @@
+dram-gaming-mode — how to bump (own code; the sources are the files in this directory)
+  1. Edit the files here; keep shellcheck clean (bin/check.sh lints pkgs/dram-gaming-mode/*
+     scripts) and run tests/gaming-switch.sh.
+  2. pkgver = the date of the change (YYYY.MM.DD), pkgrel 1 (2, 3 … the same day).
+  3. updpkgsums, makepkg --printsrcinfo > .SRCINFO, update pkgs/manifest.txt, and set
+     UPSTREAM to `own:dram-gaming-mode <commit the change was written on> <date>`.

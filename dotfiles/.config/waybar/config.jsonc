@@ -1,0 +1,45 @@
+// Two bars, keyed by output:
+//   * "external" -> every external monitor (output "!eDP-1"): the full masthead.
+//   * "laptop"   -> the built-in panel (eDP-1, 1280 logical px): the compact one —
+//                   no nameplate, no mpris, no readouts, no updates badge, no
+//                   bluetooth; backlight added; 2 px smaller type (style.css
+//                   keys on the bar name: window#waybar.laptop).
+// Letterpress masthead (dotfiles/.config/waybar/README.md → Captions and spacing): a strip flush
+// with the top edge (no margins), closed by one hairline in style.css.
+// Left: nameplate · "№ n" · window title; centre: clock · date · ¶;
+// right: mpris · privacy · layout · readouts | tools | volume · battery · updates.
+// "spacing" is 0 on both bars: style.css owns every gap.
+// modules/laptop.nix strips the exact substring `, "battery"` from this file —
+// keep it spelled that way.
+[
+  {
+    "name": "external",
+    "output": "!eDP-1",
+    "layer": "top",
+    "position": "top",
+    "height": 44,
+    "spacing": 0,
+    "margin-top": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "include": ["~/.config/waybar/modules.jsonc"],
+    "modules-left": ["custom/nameplate", "hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["clock", "custom/date", "custom/notification"],
+    "modules-right": ["mpris", "privacy", "hyprland/language", "group/readouts", "group/tools", "pulseaudio", "battery", "custom/updates"]
+  },
+  {
+    "name": "laptop",
+    "output": "eDP-1",
+    "layer": "top",
+    "position": "top",
+    "height": 36,
+    "spacing": 0,
+    "margin-top": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "include": ["~/.config/waybar/modules.jsonc"],
+    "modules-left": ["hyprland/workspaces", "hyprland/window#compact"],
+    "modules-center": ["clock", "custom/date#compact", "custom/notification"],
+    "modules-right": ["privacy", "hyprland/language", "group/tools#laptop", "backlight", "pulseaudio", "battery"]
+  }
+]

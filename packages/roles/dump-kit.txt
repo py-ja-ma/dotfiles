@@ -1,0 +1,20 @@
+# role: dump-kit — reading my own discs and images (decisions/0016; the per-console
+# routes are in docs/toolchain/profiles/emulation.md).
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "dump-kit" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+# Left out: maxcso (no release since 2021; chdman covers PSP).
+
+# Redump-grade CD/DVD dumper (raw sectors, PS2 CDs, Kreon/OmniDrive Xbox drives; [dram])
+redumper
+# Xbox XISO pack/unpack for xemu ([dram])
+xdvdfs
+
+# image a scratched disc block by block, retrying bad sectors (GNU)
+ddrescue
+# CD inspection and reading (cd-info, cd-read; GNU)
+libcdio
+# chdman: ISO/BIN/CUE -> CHD for PS1/PS2/PSP/Dreamcast/Saturn (MAME)
+mame-tools
+# dolphin-tool: GameCube/Wii ISO -> RVZ, verify against Redump hashes (Dolphin)
+dolphin-emu-tool

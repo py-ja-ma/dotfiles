@@ -1,0 +1,15 @@
+# Installed by system/snapshots-setup.sh (decisions/0011). Replaces snap-pac.
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = dram: snapper pre snapshot of /
+Depends = snapper
+When = PreTransaction
+Exec = /usr/local/lib/dram/dram-snapshot pre
+NeedsTargets
+AbortOnFail

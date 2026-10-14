@@ -1,0 +1,14 @@
+pkgbase = hyprland-plugin-hyprfocus
+	pkgdesc = A Hyprland plugin that adds a flashfocus
+	pkgver = 0.56.2
+	pkgrel = 3.1
+	url = https://github.com/hyprwm/hyprland-plugins
+	arch = x86_64
+	license = BSD
+	makedepends = git
+	makedepends = hyprland
+	depends = hyprland=0.56.2
+	source = hyprland-plugins::git+https://github.com/hyprwm/hyprland-plugins.git#commit=7644cecdb947060682891a0db2a0cdc5c0b9e704
+	sha256sums = SKIP
+
+pkgname = hyprland-plugin-hyprfocus

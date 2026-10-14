@@ -1,0 +1,389 @@
+#!/usr/bin/env bash
+# usage: dram-theme [name|--list|--ids]
+#
+# Switches the whole desktop between colour themes. ~/.config/themes/<name>/
+# holds per-app adapter files (waybar.css, kitty.conf, rofi.rasi, ...); apps
+# include the stable path ~/.config/themes/current/..., and this repoints that
+# one symlink, patches the few apps without include support (sed) and fires the
+# reloads. Nothing leaves $HOME (the boot chain and ly are untouched). A name
+# is the bar name (MENU_NAME in meta.sh) or the directory id; without one, the
+# rofi picker (SUPER+T). `dram theme` is the same command.
+#
+#   --list        bar name and id of every theme
+#   --ids         directory ids only (completion)
+#   -h, --help    this text
+#
+# exit: 0 ok (or picker cancelled) · 1 no such theme or a step failed · 2 bad usage
+# see: docs/design/themes/switcher.md
+
+set -euo pipefail
+
+THEMES_DIR="$HOME/.config/themes"
+CUR="$THEMES_DIR/current"
+
+# -L: ~/.config/themes is itself a home-manager symlink into the repo
+list_themes() { find -L "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d ! -name current -printf '%f\n' | sort; }
+# Themes are shown by their MENU_NAME (meta.sh) — a drink from the bar, never
+# the upstream palette name. The directory name stays the stable id used by
+# symlinks, scripts and dram-theme-auto; both forms are accepted on the CLI.
+menu_name() {
+  local n
+  n="$(sed -n 's/^MENU_NAME="\([^"]*\)".*/\1/p' "$THEMES_DIR/$1/meta.sh" 2>/dev/null | head -1)"
+  printf '%s\n' "${n:-$1}"
+}
+resolve_theme() { # alias or dir -> dir; exit 1 when it names no theme
+  # Only names list_themes knows: `current` (would make the symlink point at itself
+  # and Hyprland fail to start), `.`, `..` and anything with a slash are refused.
+  local want="$1" d
+  case "$want" in "" | current | . | .. | */*) return 1 ;; esac
+  while read -r d; do
+    [ "$d" = "$want" ] && {
+      printf '%s\n' "$d"
+      return 0
+    }
+    [ "$(menu_name "$d" | tr '[:upper:]' '[:lower:]')" = "$(printf '%s' "$want" | tr '[:upper:]' '[:lower:]')" ] && {
+      printf '%s\n' "$d"
+      return 0
+    }
+  done < <(list_themes)
+  return 1
+}
+
+case "${1:-}" in
+  --list)
+    while read -r d; do printf '%-20s %s\n' "$(menu_name "$d")" "$d"; done < <(list_themes)
+    exit 0
+    ;;
+  --ids)
+    list_themes
+    exit 0
+    ;;
+  "")
+    active="$(basename "$(readlink -f "$CUR" 2>/dev/null || true)")"
+    # rofi is the standard picker. On ESC/cancel rofi exits nonzero; the `|| true`
+    # keeps `set -e` from aborting so cancel is a clean no-op (name stays empty).
+    # (No wofi fallback: it used to fire on rofi's ESC exit and pop a 2nd menu.)
+    name="$(while read -r d; do menu_name "$d"; done < <(list_themes) | sort | rofi -dmenu -i -p "the bar (now: $(menu_name "${active:-none}"))")" || true
+    [ -n "${name:-}" ] || exit 0
+    ;;
+  -h | --help)
+    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+  -*)
+    sed -n '2s/^# \{0,1\}//p' "$0" >&2
+    exit 2
+    ;;
+  *) name="$1" ;;
+esac
+
+resolved="$(resolve_theme "$name")" || {
+  echo "no such theme: $name (try --list)" >&2
+  exit 1
+}
+name="$resolved"
+THEME="$THEMES_DIR/$name"
+MENU="$(menu_name "$name")"
+
+# One switch at a time: dram-theme-auto (10-min timer) and a hand-run switch
+# both kill and restart waybar; two at once could leave two bars.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/dram-theme.lock"
+flock -w 30 9 || {
+  echo "another dram-theme is still running" >&2
+  exit 1
+}
+
+# 1) meta: things that aren't file includes — read BEFORE the symlink moves, so a
+#    theme whose meta.sh does not parse cannot leave a half-applied switch
+GTK_THEME_NAME="adw-gtk3-dark" COLOR_SCHEME="prefer-dark" BAT_THEME="ansi"
+YAZI_FLAVOR="" VSCODIUM_THEME=""
+if [ -f "$THEME/meta.sh" ]; then
+  bash -n "$THEME/meta.sh" || {
+    echo "$THEME/meta.sh does not parse — theme not switched" >&2
+    exit 1
+  }
+  # shellcheck disable=SC1091
+  . "$THEME/meta.sh"
+fi
+
+# 2) the one symlink everything includes through
+ln -sfn "$THEME" "$CUR"
+
+# ---- GTK ---------------------------------------------------------------------
+# ONE GTK theme for every dram theme: adw-gtk3 (pacman adw-gtk-theme) —
+# adw-gtk3-dark on dark themes, adw-gtk3 on light (meta.sh GTK_THEME_NAME).
+# The colours come from two user stylesheets generated per theme by
+# bin/gen-gtk-css.py from waybar.css + palette.lua (docs/design/themes/generators.md → GTK):
+#   ~/.config/gtk-3.0/gtk.css -> themes/current/gtk3.css  (@define-color, adw-gtk3)
+#   ~/.config/gtk-4.0/gtk.css -> themes/current/gtk.css   (:root vars, libadwaita)
+# The links point at the STABLE current/ path, so they are right after the one
+# symlink above; `ln -sfn` every time self-heals a fresh host. GTK reads its
+# user stylesheet at startup only: GTK apps already open keep the previous
+# colours until restarted (the toast says so). The assets/gtk-dark.css links
+# are leftovers of the per-theme /usr/share/themes/<T>/gtk-4.0 era (< 2026-10-06).
+if [ -d "/usr/share/themes/$GTK_THEME_NAME" ] || [ -d "$HOME/.local/share/themes/$GTK_THEME_NAME" ]; then
+  gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME_NAME" 2>/dev/null || true
+fi
+gsettings set org.gnome.desktop.interface color-scheme "$COLOR_SCHEME" 2>/dev/null || true
+# UI fonts (docs/design/typography/README.md): on Wayland GTK3/GTK4/libadwaita read
+# the UI font from gsettings via the settings portal, NOT from settings.ini
+# (rewritten below only to stay in sync). Chromium/Electron, VS Code's
+# workbench and the LibreWolf/Thunderbird chrome follow this same value.
+gsettings set org.gnome.desktop.interface font-name 'Literata 11' 2>/dev/null || true
+gsettings set org.gnome.desktop.interface document-font-name 'Literata 12' 2>/dev/null || true
+gsettings set org.gnome.desktop.interface monospace-font-name 'Monaspace Xenon 11' 2>/dev/null || true
+mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
+for stale in "$HOME/.config/gtk-4.0/assets" "$HOME/.config/gtk-4.0/gtk-dark.css"; do
+  [ -L "$stale" ] && rm -f "$stale"
+done
+ln -sfn "$CUR/gtk3.css" "$HOME/.config/gtk-3.0/gtk.css"
+ln -sfn "$CUR/gtk.css" "$HOME/.config/gtk-4.0/gtk.css"
+# ---- end GTK -----------------------------------------------------------------
+
+# Icons + cursor: GNOME's Adwaita set for every theme (2026-10-10; Papirus failed the
+# Origin rule and Bibata the Community rule, decisions/0013). Adwaita's icons are
+# drawn to read on light and dark, and its one cursor (dark pointer, light outline)
+# does too, so nothing varies per theme any more; papirus-folders' per-theme folder
+# accents (and their sudo opt-in) are gone with it. gsettings covers GTK + XWayland;
+# `hyprctl setcursor` re-themes the compositor and server-side-cursor apps live. The
+# HYPRCURSOR_THEME/XCURSOR_THEME defaults in modules/desktop.nix apply at login.
+ICON_THEME="Adwaita"
+gsettings set org.gnome.desktop.interface icon-theme "$ICON_THEME" 2>/dev/null || true
+CURSOR_THEME="Adwaita"
+if [ -d "/usr/share/icons/$CURSOR_THEME/cursors" ]; then
+  gsettings set org.gnome.desktop.interface cursor-theme "$CURSOR_THEME" 2>/dev/null || true
+  gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || true
+  hyprctl setcursor "$CURSOR_THEME" 24 >/dev/null 2>&1 || true
+fi
+
+# bat: config is a plain local file; theme name from meta
+mkdir -p "$HOME/.config/bat"
+printf -- '--theme="%s"\n' "$BAT_THEME" >"$HOME/.config/bat/config"
+
+# btop: color_theme is a NAME resolved against btop's own themes dirs (btop >= 1.4
+# matches ~/.config/btop/themes/*.theme by stem; an absolute path outside them
+# silently falls back to Default), so the dram's file is linked in as "dram".
+# btop.conf is machine state (btop rewrites it on exit): seed it from the tracked
+# btop.conf.default, then pin color_theme and the square corners. SIGUSR2 below reloads.
+BTOP_CONF="$HOME/.config/btop/btop.conf"
+mkdir -p "$HOME/.config/btop/themes"
+ln -sfn "$CUR/btop.theme" "$HOME/.config/btop/themes/dram.theme"
+[ -e "$BTOP_CONF" ] || cp "$HOME/.config/btop/btop.conf.default" "$BTOP_CONF" 2>/dev/null || true
+# pin each design key: rewrite the line if btop wrote one, append it otherwise
+# (a btop.conf seeded without the key keeps btop's default — theme_background
+# defaults to true, which paints the terminal grain over).
+if [ -f "$BTOP_CONF" ] || : >"$BTOP_CONF"; then
+  for kv in 'color_theme = "dram"' 'rounded_corners = false' 'theme_background = false'; do
+    k="${kv%% =*}"
+    if grep -q "^$k *=" "$BTOP_CONF"; then
+      sed -i "s|^$k *=.*|$kv|" "$BTOP_CONF"
+    else printf '%s\n' "$kv" >>"$BTOP_CONF"; fi
+  done
+fi
+
+# Seed machine-state files from their committed templates if absent. These are
+# gitignored (dram-theme rewrites them in place, which would dirty git forever),
+# so a fresh clone has only the *.default; copy it into place on first run.
+# (VS Code's settings.json is a per-file symlink into the repo and is seeded at
+# the repo path by modules/theme.nix — a cp through the dangling link fails.)
+[ -e "$HOME/.config/cava/config" ] \
+  || cp "$HOME/.config/cava/config.default" "$HOME/.config/cava/config" 2>/dev/null || true
+
+# cava: no include support -> splice the theme's color lines into its config
+CAVA_CONF="$HOME/.config/cava/config"
+if [ -f "$CAVA_CONF" ] && [ -f "$THEME/cava.theme" ]; then
+  python3 - "$CAVA_CONF" "$THEME/cava.theme" <<'PY' || echo "cava: colour splice failed (config left as is)" >&2
+import re, sys
+conf, theme = sys.argv[1], sys.argv[2]
+s = open(conf).read()
+block = open(theme).read().strip().split("\n")
+body = "\n".join(l for l in block if not l.startswith("#"))
+s = re.sub(r'(\[color\]\n).*?(\n\[)', r'\1' + body + r'\2', s, count=1, flags=re.S)
+open(conf, "w").write(s)
+PY
+fi
+
+# cava: bar_width is design (thin bars), not machine state — pin it like btop's keys.
+[ -f "$CAVA_CONF" ] && sed -i -e 's|^bar_width *=.*|bar_width = 1|' "$CAVA_CONF"
+
+# yazi: flavor selector. The flavor is ours, generated into the linked
+# ~/.config/yazi/flavors/letterpress-<theme>.yazi (bin/gen-yazi-flavors.py).
+# yazi chooses `dark`/`light` by sniffing the terminal background and the dram
+# theme owns that background, so both lines get the same flavor.
+YAZI_THEME="$HOME/.config/yazi/theme.toml"
+# A theme.toml seeded before the Letterpress flavors (e.g. by `ya pkg`) may lack
+# one of the two lines; sed only rewrites lines that exist, so add the missing
+# one under [flavor] first, then set both.
+yazi_pin_flavor() {
+  local f="$1" v="$2" k
+  grep -q '^\[flavor\]' "$f" || printf '\n[flavor]\n' >>"$f"
+  for k in dark light; do
+    grep -q "^$k = " "$f" || sed -i "/^\[flavor\]/a $k = \"$v\"" "$f"
+  done
+  sed -i -e "s|^dark = \".*\"|dark = \"$v\"|" -e "s|^light = \".*\"|light = \"$v\"|" "$f"
+}
+if [ -n "$YAZI_FLAVOR" ] && [ -f "$YAZI_THEME" ]; then
+  yazi_pin_flavor "$YAZI_THEME" "$YAZI_FLAVOR"
+fi
+
+# VS Code: keep the editor color theme in lockstep with the dram. VSCODIUM_THEME
+# is "Letterpress — <MENU_NAME>", one of the 17 themes the local extension
+# pj.letterpress-themes contributes (bin/gen-vscode-themes.py; linked at
+# ~/.vscode/extensions by desktop.nix). settings.json is JSONC (it has //
+# comments) so we CANNOT json-parse it — patch the single "workbench.colorTheme"
+# line with a regex, inserting it after the opening brace if absent; the label
+# goes through json.dumps (the em dash is plain UTF-8, nothing to escape). A
+# running window hot-reloads settings.json, so this applies live; no reload
+# signal is needed. Guarded so a missing file never breaks a theme switch.
+# The extension itself must be REGISTERED in ~/.vscode/extensions/extensions.json
+# (VS Code ignores an unlisted folder): codium-themes-install does that,
+# idempotently, every switch — a window already open sees it after a reload.
+VSCODIUM_SETTINGS="$HOME/.config/VSCodium/User/settings.json"
+if [ -n "$VSCODIUM_THEME" ] && [ -f "$VSCODIUM_SETTINGS" ]; then
+  python3 - "$VSCODIUM_SETTINGS" "$VSCODIUM_THEME" <<'PY' || true
+import json, re, sys
+path, theme = sys.argv[1], sys.argv[2]
+s = open(path, encoding="utf-8").read()
+val = json.dumps(theme, ensure_ascii=False)  # safely quote/escape the label
+pat = re.compile(r'("workbench\.colorTheme"\s*:\s*)"(?:[^"\\]|\\.)*"')
+if pat.search(s):
+    s = pat.sub(lambda m: m.group(1) + val, s, count=1)
+else:
+    s = re.sub(r'\{', lambda m: '{\n  "workbench.colorTheme": ' + val + ',', s, count=1)
+# The house fonts are part of the design, not personal state: pin the font keys
+# to whatever the tracked settings.json.default says (a file seeded before the
+# Letterpress fonts would otherwise keep JetBrainsMono forever). Values are
+# copied verbatim (JSON string tokens), other keys are left alone.
+import os
+default = path + ".default"
+if os.path.exists(default):
+    d = open(default, encoding="utf-8").read()
+    for key in ("editor.fontFamily", "terminal.integrated.fontFamily", "editor.fontLigatures"):
+        kp = re.compile(r'("' + re.escape(key) + r'"\s*:\s*)("(?:[^"\\]|\\.)*"|true|false)')
+        m = kp.search(d)
+        if not m:
+            continue
+        if kp.search(s):
+            s = kp.sub(lambda mm, v=m.group(2): mm.group(1) + v, s, count=1)
+        else:
+            s = re.sub(r'\{', lambda mm, k=key, v=m.group(2): '{\n  "' + k + '": ' + v + ',', s, count=1)
+open(path, "w", encoding="utf-8").write(s)
+PY
+fi
+command -v codium-themes-install >/dev/null 2>&1 && codium-themes-install >/dev/null 2>&1 || true
+
+# --- machine-state files (docs/design/themes/switcher.md) ---------------------
+# GTK settings.ini (gtk-3.0 + gtk-4.0): the live files are gitignored machine
+# state seeded from the tracked settings.ini.default (same pattern as cava).
+# Rewrite the theme name, prefer-dark (from COLOR_SCHEME), the cursor theme
+# (CURSOR_THEME, Adwaita for every theme, set above) and the UI font in place.
+GTK_DARK=1
+[ "$COLOR_SCHEME" = "prefer-light" ] && GTK_DARK=0
+for GTK_DIR in "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"; do
+  GTK_INI="$GTK_DIR/settings.ini"
+  [ -e "$GTK_INI" ] || cp "$GTK_INI.default" "$GTK_INI" 2>/dev/null || continue
+  sed -i "s|^gtk-theme-name=.*|gtk-theme-name=$GTK_THEME_NAME|" "$GTK_INI"
+  sed -i "s|^gtk-application-prefer-dark-theme=.*|gtk-application-prefer-dark-theme=$GTK_DARK|" "$GTK_INI"
+  sed -i "s|^gtk-icon-theme-name=.*|gtk-icon-theme-name=$ICON_THEME|" "$GTK_INI"
+  sed -i "s|^gtk-font-name=.*|gtk-font-name=Literata 11|" "$GTK_INI"
+  sed -i "s|^gtk-cursor-theme-name=.*|gtk-cursor-theme-name=$CURSOR_THEME|" "$GTK_INI"
+done
+
+# Qt: no per-theme step. Qt apps use Qt's own gtk3 platform theme
+# (QT_QPA_PLATFORMTHEME=gtk3 in hyprland.lua), so they follow the GTK theme above;
+# qt6ct and its per-theme qt6ct.colors left 2026-10-10 (decisions/0013: Origin).
+
+# satty: no include support and no palette flag, so the live config.toml is a
+# gitignored machine-state file seeded from config.toml.default; only its
+# one-line `palette = [...]` is replaced, with the line from the theme's
+# satty.toml.
+SATTY_CONF="$HOME/.config/satty/config.toml"
+[ -e "$SATTY_CONF" ] || cp "$SATTY_CONF.default" "$SATTY_CONF" 2>/dev/null || true
+if [ -f "$SATTY_CONF" ] && [ -f "$THEME/satty.toml" ]; then
+  SATTY_PAL="$(grep -m1 '^palette = ' "$THEME/satty.toml" || true)"
+  [ -n "$SATTY_PAL" ] && sed -i "s|^palette = .*|$SATTY_PAL|" "$SATTY_CONF"
+fi
+
+# yazi: the live theme.toml is seeded from the tracked theme.toml.default
+# (the flavor sed above needs the file to exist on a fresh host), then the
+# flavor is applied again so the first run lands too.
+if [ ! -e "$YAZI_THEME" ] && cp "$YAZI_THEME.default" "$YAZI_THEME" 2>/dev/null && [ -n "$YAZI_FLAVOR" ]; then
+  yazi_pin_flavor "$YAZI_THEME" "$YAZI_FLAVOR"
+fi
+
+# ---- browser + mail chrome (dotfiles/.librewolf/README.md) -------------------
+# LibreWolf and Thunderbird read chrome/userChrome.css from the PROFILE dir
+# (~/.librewolf/<random>.default-default/, ~/.thunderbird/<random>.default-*/),
+# which is machine state, so each profile gets two links: the tracked static
+# sheet (~/.librewolf/chrome/userChrome.css, ~/.thunderbird-chrome/userChrome.css,
+# both linked by modules/desktop.nix) and the per-theme colours at the STABLE
+# current/ path (themes/current/browser.css, generated by bin/gen-browser-css.py).
+# Profiles come from profiles.ini (Path=) plus the *.default* glob as a net;
+# `ln -sfn` every time is idempotent and picks up a profile created after the
+# last switch. userChrome.css is only read with
+# toolkit.legacyUserProfileCustomizations.stylesheets=true: librewolf.overrides.cfg
+# sets it for LibreWolf; Thunderbird has no autoconfig here, so its tracked
+# user.js.default (fonts, UI size, density, the switch) is copied into a profile
+# ONLY when it has no user.js. Both apps read the sheets at startup: restart.
+profile_dirs() { # $1 = app dir -> every profile dir, one per line
+  local dir="$1" p
+  [ -d "$dir" ] || return 0
+  {
+    [ -f "$dir/profiles.ini" ] && sed -n 's/^Path=//p' "$dir/profiles.ini" | while read -r p; do
+      case "$p" in /*) printf '%s\n' "$p" ;; *) printf '%s\n' "$dir/$p" ;; esac
+    done
+    for p in "$dir"/*.default*/; do
+      [ -d "$p" ] || continue
+      printf '%s\n' "${p%/}"
+    done
+  } 2>/dev/null | sort -u
+}
+link_chrome() { # $1 = profile dir, $2 = the tracked userChrome.css
+  if [ ! -d "$1" ] || [ ! -e "$2" ]; then return 0; fi
+  mkdir -p "$1/chrome"
+  ln -sfn "$2" "$1/chrome/userChrome.css"
+  ln -sfn "$CUR/browser.css" "$1/chrome/letterpress-colors.css"
+}
+while read -r p; do
+  link_chrome "$p" "$HOME/.librewolf/chrome/userChrome.css"
+done < <(profile_dirs "$HOME/.librewolf")
+while read -r p; do
+  link_chrome "$p" "$HOME/.thunderbird-chrome/userChrome.css"
+  if [ -d "$p" ] && [ ! -e "$p/user.js" ]; then
+    cp "$HOME/.thunderbird-chrome/user.js.default" "$p/user.js" 2>/dev/null || true
+  fi
+done < <(profile_dirs "$HOME/.thunderbird")
+# ---- end browser + mail chrome -----------------------------------------------
+
+# 3) reloads — everything that can hot-reload, does
+# Everything started below outlives this script, so none of it may inherit fd 9 (the
+# lock): a waybar or swayosd-server holding it made every later switch wait 30 s and
+# give up ("another dram-theme is still running"; cabin, 2026-10-11). Hence 9>&-.
+# wallpaper: re-render the quote in the new theme's colors (async, ~3s)
+setsid -f "$HOME/.local/bin/quote-wallpaper.sh" >/dev/null 2>&1 9>&- || true
+hyprctl reload >/dev/null 2>&1 || true
+# waybar: SIGUSR2 does NOT reliably re-read an @import'd color file that lives
+# behind a stable symlink (GTK caches the import by URI, so the colors go stale).
+# Fully restart instead — a fresh process always reads the new theme, and this
+# also self-heals if waybar had died.
+if command -v waybar >/dev/null 2>&1; then
+  killall waybar 2>/dev/null || true
+  (
+    sleep 0.3
+    setsid -f waybar >/dev/null 2>&1
+  ) 9>&- &
+fi
+swaync-client -rs >/dev/null 2>&1 || true
+pkill -SIGUSR1 -x kitty 2>/dev/null || true
+pkill -SIGUSR2 -x cava 2>/dev/null || true
+pkill -SIGUSR2 -x btop 2>/dev/null || true
+if pgrep -x swayosd-server >/dev/null 2>&1; then
+  pkill -x swayosd-server || true # it may have exited between pgrep and pkill
+  (
+    sleep 0.4
+    setsid -f swayosd-server >/dev/null 2>&1
+  ) 9>&- &
+fi
+
+notify-send -a dram-theme "$MENU" "rofi/hyprlock pick it up on next open. GTK, Qt, Chromium, LibreWolf + Thunderbird need a restart." 2>/dev/null || true
+echo "switched to $MENU ($name)"

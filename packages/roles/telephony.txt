@@ -1,0 +1,8 @@
+# role: telephony — the Yate lab (~/git/homelab/pots) on cabin and lantern. yate accepted
+# 2026-10-11 (Origin ruling; docs/toolchain/development/README.md).
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "telephony" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+
+# the telephony engine of the POTS lab (extra)
+yate

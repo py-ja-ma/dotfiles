@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "host": "cabin-win",
+  "release": "unstaged",
+  "commit": "unstaged",
+  "roles": ["desktop","gaming"],
+  "documents": [
+    {"file":"10-machine.winget","phase":"10","scope":"machine","units":["fonts-machine"]},
+    {"file":"30-machine.winget","phase":"30","scope":"machine","units":["zebar","battle-net","steam"]},
+    {"file":"30-user.winget","phase":"30","scope":"user","units":["spotify"]}
+  ],
+  "scripts": [
+    {"args":[],"dryRun":"-DryRun","file":"debloat.ps1","phase":"00","when":"debloat"},
+    {"args":[],"dryRun":"-DryRun","file":"account-picture.ps1","phase":"20","when":"always"},
+    {"args":[],"dryRun":"-DryRun","file":"icons.ps1","phase":"30","when":"always"},
+    {"args":[],"dryRun":"-DryRun","file":"look.ps1","phase":"30","when":"always"},
+    {"args":[],"dryRun":"-DryRun","file":"autostart.ps1","phase":"40","when":"always"}
+  ],
+  "files": [
+    {"path":"account-picture.ps1","sha256":"","source":"repo:install/windows/dram-windows/account-picture.ps1"},
+    {"path":"apply-live.ps1","sha256":"","source":"repo:install/windows/dram-windows/apply-live.ps1"},
+    {"path":"autostart.ps1","sha256":"","source":"repo:install/windows/dram-windows/autostart.ps1"},
+    {"path":"avatar/pj-32.png","sha256":"","source":"repo:dotfiles/.local/share/dram/avatar/pj-32.png"},
+    {"path":"build/10-machine.winget","sha256":"","source":"render:windows/build/cabin-win/10-machine.winget"},
+    {"path":"build/30-machine.winget","sha256":"","source":"render:windows/build/cabin-win/30-machine.winget"},
+    {"path":"build/30-user.winget","sha256":"","source":"render:windows/build/cabin-win/30-user.winget"},
+    {"path":"converge.ps1","sha256":"","source":"repo:install/windows/dram-windows/converge.ps1"},
+    {"path":"cursors/NOTICE","sha256":"","source":"repo:install/windows/cursors.notice"},
+    {"path":"cursors/cursors.pin","sha256":"","source":"repo:install/windows/cursors.pin"},
+    {"path":"cursors/default.cur","sha256":"","source":"pin:install/windows/cursors.pin#Arrow"},
+    {"path":"cursors/progress.ani","sha256":"","source":"pin:install/windows/cursors.pin#AppStarting"},
+    {"path":"debloat.ps1","sha256":"","source":"repo:install/windows/dram-windows/debloat.ps1"},
+    {"path":"fonts/EBGaramond[wght].ttf","sha256":"","source":"pin:install/windows/fonts.pin#eb-garamond"},
+    {"path":"fonts/MonaspaceXenon-Regular.otf","sha256":"","source":"pin:install/windows/fonts.pin#monaspace"},
+    {"path":"fonts/SymbolsNerdFontMono-Regular.ttf","sha256":"","source":"pin:install/windows/fonts.pin#nerd-symbols"},
+    {"path":"icons.ps1","sha256":"","source":"repo:install/windows/dram-windows/icons.ps1"},
+    {"path":"letterpress-colors.css","sha256":"","source":"repo:dotfiles/.config/themes/washi/browser.css"},
+    {"path":"letterpress.png","sha256":"","source":"repo:system/refind-letterpress/background.png"},
+    {"path":"letterpress/accent.json","sha256":"","source":"repo:install/windows/letterpress/accent.json"},
+    {"path":"librewolf/userChrome.css","sha256":"","source":"repo:dotfiles/.librewolf/chrome/userChrome.css"},
+    {"path":"look.ps1","sha256":"","source":"repo:install/windows/dram-windows/look.ps1"},
+    {"path":"starship.toml","sha256":"","source":"repo:dotfiles/.config/starship.toml"},
+    {"path":"units/battle-net.ps1","sha256":"","source":"repo:windows/units/battle-net.ps1"},
+    {"path":"units/fonts-machine.ps1","sha256":"","source":"repo:windows/units/fonts-machine.ps1"}
+  ],
+  "byHand": [
+    {"how":"the Riot Client, by hand from riotgames.com; League and Vanguard come with it (waived, decisions/log.md#d92)","name":"manual:riot-client","role":"gaming"}
+  ]
+}

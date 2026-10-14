@@ -1,0 +1,27 @@
+# shellcheck disable=SC2034,SC2154
+# [dram] my own package (UPSTREAM own:), decisions/log.md#d123; review in
+# REVIEW.md. The CPU and GPU temperatures on the Antec Flux Pro's side panel (USB 2022:0522),
+# Arch's half (Windows: install/windows/dram-windows/case-display.ps1). The sources are the
+# files next to this PKGBUILD.
+
+pkgname=dram-case-display
+pkgver=2026.10.12
+pkgrel=1
+pkgdesc="CPU and GPU temperatures on the Antec Flux Pro's side panel (dram)"
+arch=('any')
+license=('LicenseRef-dram') # my own code, MIT like the repo (LICENSE): the field follows at the next pkgrel
+depends=('python' 'systemd')
+optdepends=('nvidia-utils: the GPU temperature (NVML, libnvidia-ml.so.1)')
+source=('case-display' 'dram-case-display.service' '60-dram-case-display.rules'
+  'dram-case-display.sysusers')
+sha256sums=('6554413af58944705095f78bba6b1719a1b06f4ec15f4c00fc84aacbc3fb3295'
+            '0682bdbfcb99b0e68c7fffd924eb45c67c42413487e13a8b05464e893f973ee5'
+            '57aa8ee21eb14165c9e99390414aef412e2fde0b4302cf10246e58c6199d4ac9'
+            'e852fcc31bb6967e6d9210e486b214fdb7fa89cee4e03316ef8a8c3f70a6eacd')
+
+package() {
+  install -Dm755 case-display "$pkgdir/usr/lib/dram/case-display"
+  install -Dm644 dram-case-display.service "$pkgdir/usr/lib/systemd/system/dram-case-display.service"
+  install -Dm644 60-dram-case-display.rules "$pkgdir/usr/lib/udev/rules.d/60-dram-case-display.rules"
+  install -Dm644 dram-case-display.sysusers "$pkgdir/usr/lib/sysusers.d/dram-case-display.conf"
+}

@@ -1,0 +1,28 @@
+{
+  "DarkMode": {
+    "enable": "yes",
+    "enableWindowsMode": "no",
+    "colorTone": "32",
+    "customColorTop": "790550",
+    "customColorMenuHotTrack": "2239034",
+    "customColorActive": "1712430",
+    "customColorMain": "988188",
+    "customColorError": "2835648",
+    "customColorText": "13358822",
+    "customColorDarkText": "9608364",
+    "customColorDisabledText": "5792113",
+    "customColorLinkText": "9407086",
+    "customColorEdge": "2239034",
+    "customColorHotEdge": "5792113",
+    "customColorDisabledEdge": "1712430",
+    "darkThemeName": "Letterpress.xml"
+  },
+  "globalOverride": {
+    "font": "yes",
+    "fontSize": "yes"
+  },
+  "noUpdate": {
+    "autoUpdateMode": "0",
+    "#text": "yes"
+  }
+}

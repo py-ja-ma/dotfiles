@@ -1,0 +1,37 @@
+# Names a WSL clone never installs although one of its roles (or the [dram] every-host set)
+# declares them (decisions/0021-wsl-clone.md). `dram apply` drops them from a WSL
+# host's plan (install/lib/roles.sh wsl_skip_names); metal hosts never read this file. Not a
+# *.txt: it is not a package list. bin/check.sh §21 checks that every name here is
+# declared by some list, and that a WSL host's plan holds no metal or hardware name and no
+# [dram] name ([dram] is not configured in the clone, v1). TAB-separated: name, why.
+vscodium-bin	the editor runs natively on Windows and reaches the clone through Open Remote - SSH at 127.0.0.1:2222 (decisions/log.md#d55); [dram]
+proton-pass-cli	Proton Pass is a Windows app there; [dram]
+wireshark-qt	a GUI (WSLg is off, decisions/log.md#d80): Wireshark runs natively on Windows; tcpdump stays in the clone
+qemu-base	the VM kit stays on Arch (nestedVirtualization=false in install/windows/wslconfig)
+qemu-desktop	the VM kit stays on Arch
+edk2-ovmf	the VM kit stays on Arch
+swtpm	the VM kit stays on Arch
+mtools	the VM kit stays on Arch
+libvirt	the VM kit stays on Arch (system/virt-setup.sh skips in WSL)
+virt-manager	the VM kit stays on Arch (a GUI as well)
+dnsmasq	the VM kit stays on Arch (libvirt's NAT network)
+imhex-bin	a GUI, and [dram]: on Arch, or ImHex natively on Windows
+uefitool-ng	a GUI, and [dram]: on Arch
+pulseview	a GUI (WSLg is off): sigrok-cli stays in the clone
+ggml-vulkan	ml in a clone is optional (CPU on thermos): Vulkan in WSL is Mesa's experimental dzn; CUDA would come through Windows' libcuda
+zettlr	a GUI (WSLg is off, decisions/log.md#d80): Zettlr runs natively on Windows (packages/winget/office.txt); zk and marksman stay in the clone
+libreoffice-still	a GUI: LibreOffice runs natively on Windows (packages/winget/office.txt)
+hunspell-en_us	the spelling dictionary of LibreOffice and Zettlr, which run on Windows
+pdfarranger	a GUI: PDF Arranger runs natively on Windows; qpdf and img2pdf stay in the clone
+sane	scanners are Windows' (driverless, or NAPS2 once ruled, decisions/log.md#d107); a USB one would need usbipd
+simple-scan	a GUI, and scanners are Windows'
+kicad	a GUI: KiCad runs natively on Windows (packages/winget/college.txt); ngspice stays in the clone
+kicad-library	KiCad's symbols and footprints: with KiCad, on Windows
+kicad-library-3d	KiCad's 3D models (gigabytes): with KiCad, on Windows
+gtkwave	a GUI (WSLg is off): the HDL simulators stay in the clone, their waves open on Arch
+drawio-desktop	a GUI: draw.io runs natively on Windows
+xournalpp	a GUI: Xournal++ runs natively on Windows
+anki	a GUI: Anki runs natively on Windows
+cups	Windows prints for a clone (system/printing-setup.sh skips WSL)
+cups-pk-helper	CUPS' polkit helper: Windows prints for a clone
+system-config-printer	a GUI, and Windows prints for a clone

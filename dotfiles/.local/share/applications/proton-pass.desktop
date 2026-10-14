@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Proton Pass
+Exec=proton-pass --password-store=gnome-libsecret %U
+Icon=proton-pass
+Categories=Utility;Security;
+Terminal=false
+StartupWMClass=Proton Pass

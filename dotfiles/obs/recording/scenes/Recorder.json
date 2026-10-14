@@ -1,0 +1,500 @@
+{
+    "name": "Recorder",
+    "current_scene": "Screen + cam",
+    "current_program_scene": "Screen + cam",
+    "scene_order": [
+        {
+            "name": "Screen + cam"
+        },
+        {
+            "name": "Screen"
+        },
+        {
+            "name": "Cam"
+        }
+    ],
+    "current_transition": "Fade",
+    "transition_duration": 300,
+    "transitions": [],
+    "groups": [],
+    "quick_transitions": [],
+    "preview_locked": false,
+    "scaling_enabled": false,
+    "sources": [
+        {
+            "name": "Capture card (cabin screen)",
+            "id": "v4l2_input",
+            "versioned_id": "v4l2_input",
+            "settings": {
+                "device_id": "",
+                "auto_reset": true
+            },
+            "mixers": 0,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        },
+        {
+            "name": "Cabin audio (card, track 3)",
+            "id": "pulse_input_capture",
+            "versioned_id": "pulse_input_capture",
+            "settings": {
+                "device_id": ""
+            },
+            "mixers": 5,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        },
+        {
+            "name": "Webcam",
+            "id": "v4l2_input",
+            "versioned_id": "v4l2_input",
+            "settings": {
+                "device_id": ""
+            },
+            "mixers": 0,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        },
+        {
+            "name": "Mic (processed, track 1)",
+            "id": "pulse_input_capture",
+            "versioned_id": "pulse_input_capture",
+            "settings": {
+                "device_id": "default"
+            },
+            "mixers": 1,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [
+                {
+                    "name": "Noise suppression (RNNoise)",
+                    "id": "noise_suppress_filter_v2",
+                    "versioned_id": "noise_suppress_filter_v2",
+                    "enabled": true,
+                    "settings": {
+                        "method": "rnnoise"
+                    }
+                },
+                {
+                    "name": "Compressor",
+                    "id": "compressor_filter",
+                    "versioned_id": "compressor_filter",
+                    "enabled": true,
+                    "settings": {
+                        "ratio": 4.0,
+                        "threshold": -18.0,
+                        "attack_time": 6,
+                        "release_time": 60,
+                        "output_gain": 0.0
+                    }
+                },
+                {
+                    "name": "Limiter",
+                    "id": "limiter_filter",
+                    "versioned_id": "limiter_filter",
+                    "enabled": true,
+                    "settings": {
+                        "threshold": -3.0,
+                        "release_time": 60
+                    }
+                }
+            ],
+            "monitoring_type": 0,
+            "sync": 0
+        },
+        {
+            "name": "Mic (raw, track 2)",
+            "id": "pulse_input_capture",
+            "versioned_id": "pulse_input_capture",
+            "settings": {
+                "device_id": "default"
+            },
+            "mixers": 2,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        },
+        {
+            "name": "Screen + cam",
+            "id": "scene",
+            "versioned_id": "scene",
+            "settings": {
+                "custom_size": false,
+                "id_counter": 5,
+                "items": [
+                    {
+                        "name": "Capture card (cabin screen)",
+                        "id": 1,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 2560,
+                            "y": 1440
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Webcam",
+                        "id": 2,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 2048,
+                            "y": 1138
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 480,
+                            "y": 270
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Cabin audio (card, track 3)",
+                        "id": 3,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Mic (processed, track 1)",
+                        "id": 4,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Mic (raw, track 2)",
+                        "id": 5,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    }
+                ]
+            },
+            "mixers": 0,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        },
+        {
+            "name": "Screen",
+            "id": "scene",
+            "versioned_id": "scene",
+            "settings": {
+                "custom_size": false,
+                "id_counter": 4,
+                "items": [
+                    {
+                        "name": "Capture card (cabin screen)",
+                        "id": 1,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 2560,
+                            "y": 1440
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Cabin audio (card, track 3)",
+                        "id": 2,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Mic (processed, track 1)",
+                        "id": 3,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Mic (raw, track 2)",
+                        "id": 4,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    }
+                ]
+            },
+            "mixers": 0,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        },
+        {
+            "name": "Cam",
+            "id": "scene",
+            "versioned_id": "scene",
+            "settings": {
+                "custom_size": false,
+                "id_counter": 3,
+                "items": [
+                    {
+                        "name": "Webcam",
+                        "id": 1,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 2560,
+                            "y": 1440
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Mic (processed, track 1)",
+                        "id": 2,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    },
+                    {
+                        "name": "Mic (raw, track 2)",
+                        "id": 3,
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "align": 5,
+                        "bounds_type": 2,
+                        "bounds_align": 0,
+                        "bounds": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0
+                    }
+                ]
+            },
+            "mixers": 0,
+            "muted": false,
+            "volume": 1.0,
+            "enabled": true,
+            "filters": [],
+            "monitoring_type": 0,
+            "sync": 0
+        }
+    ]
+}

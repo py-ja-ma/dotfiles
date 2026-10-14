@@ -1,0 +1,6 @@
+/* Aqua — swayosd palette (imported by swayosd/style.css) */
+@define-color osd-bg       #0d1117;
+@define-color osd-border   #5ac8fa;
+@define-color osd-fg       #e6edf3;
+@define-color osd-progress #5ac8fa;
+@define-color osd-trough   #474e57;

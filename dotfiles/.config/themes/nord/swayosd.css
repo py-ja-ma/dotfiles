@@ -1,0 +1,6 @@
+/* Nord — swayosd palette (imported by swayosd/style.css) */
+@define-color osd-bg       #2e3440;
+@define-color osd-border   #88c0d0;
+@define-color osd-fg       #eceff4;
+@define-color osd-progress #88c0d0;
+@define-color osd-trough   #3b4252;

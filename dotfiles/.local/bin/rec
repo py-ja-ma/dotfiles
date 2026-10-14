@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+"""usage: rec <start|stop|toggle|status|server-setup|templates-save> [--no-spare]
+
+Remote start/stop for the recording workflow (docs/toolchain/profiles/creator.md): OBS on
+the recorder records the capture card, webcam and mic; cabin starts and stops it over
+obs-websocket v5 (built into OBS 28+), because OBS has no global hotkeys on Wayland.
+SUPER+CTRL+R in hyprland.lua runs `rec toggle` on hosts with the creator role.
+
+  start, stop, toggle   the recorder's OBS recording; on this machine the local
+                        gpu-screen-recorder spare (record-toggle.sh) follows along
+                        unless --no-spare (it saves a take when the card path fails)
+  status                is the recorder recording, and for how long
+  server-setup          on the RECORDER, once: turn on OBS's websocket server (port
+                        4455, a random password) if OBS has no websocket config yet,
+                        and print the line to put on cabin
+  templates-save        copy this machine's live OBS scene collections and profiles
+                        back over the repo templates (dotfiles/obs/), to commit
+  --no-spare            leave the local spare alone
+  -h, --help            this text
+
+Connection: ~/.config/dram/obs-websocket (mode 0600, never in git), lines
+host=, port=, password=; DRAM_OBS_HOST/DRAM_OBS_PORT/DRAM_OBS_PASSWORD override it.
+The recorder's firewall opens 4455 to the creator hosts only (system/recording-setup.sh).
+
+exit: 0 ok · 1 OBS refused or is unreachable · 2 bad usage
+see: docs/toolchain/profiles/creator.md
+"""
+import base64
+import hashlib
+import json
+import os
+import secrets
+import shutil
+import socket
+import struct
+import subprocess
+import sys
+import uuid
+
+HOME = os.path.expanduser("~")
+CONF = os.path.join(HOME, ".config", "dram", "obs-websocket")
+OBS = os.path.join(HOME, ".config", "obs-studio")
+REPO = os.environ.get("DRAM_REPO", os.path.join(HOME, "git", "dotfiles"))
+SPARE = os.path.join(HOME, ".local", "bin", "record-toggle.sh")
+SPARE_STATE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "record-toggle.state")
+
+
+def die(msg, code=1):
+    print("rec: " + msg, file=sys.stderr)
+    sys.exit(code)
+
+
+def usage(code):
+    print(__doc__.strip().splitlines()[0], file=sys.stderr if code else sys.stdout)
+    sys.exit(code)
+
+
+# --- a minimal WebSocket client (RFC 6455: client frames are masked) ---------------
+class WS:
+    def __init__(self, host, port, timeout=5):
+        self.s = socket.create_connection((host, port), timeout=timeout)
+        key = base64.b64encode(os.urandom(16)).decode()
+        req = (
+            "GET / HTTP/1.1\r\nHost: %s:%d\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+            "Sec-WebSocket-Key: %s\r\nSec-WebSocket-Version: 13\r\n"
+            "Sec-WebSocket-Protocol: obswebsocket.json\r\n\r\n" % (host, port, key)
+        )
+        self.s.sendall(req.encode())
+        head = b""
+        while b"\r\n\r\n" not in head:
+            chunk = self.s.recv(1024)
+            if not chunk:
+                raise ConnectionError("closed during the handshake")
+            head += chunk
+        head, self.buf = head.split(b"\r\n\r\n", 1)
+        lines = head.decode("latin-1").split("\r\n")
+        if " 101 " not in lines[0] + " ":
+            raise ConnectionError("no upgrade: " + lines[0])
+        want = base64.b64encode(hashlib.sha1((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()).digest()).decode()
+        accept = [l.split(":", 1)[1].strip() for l in lines[1:] if l.lower().startswith("sec-websocket-accept:")]
+        if accept != [want]:
+            raise ConnectionError("bad Sec-WebSocket-Accept")
+
+    def _read(self, n):
+        while len(self.buf) < n:
+            chunk = self.s.recv(65536)
+            if not chunk:
+                raise ConnectionError("connection closed")
+            self.buf += chunk
+        out, self.buf = self.buf[:n], self.buf[n:]
+        return out
+
+    def send(self, obj, opcode=1):
+        data = json.dumps(obj).encode() if opcode == 1 else obj
+        mask = os.urandom(4)
+        n = len(data)
+        if n < 126:
+            head = struct.pack("!BB", 0x80 | opcode, 0x80 | n)
+        elif n < 65536:
+            head = struct.pack("!BBH", 0x80 | opcode, 0x80 | 126, n)
+        else:
+            head = struct.pack("!BBQ", 0x80 | opcode, 0x80 | 127, n)
+        self.s.sendall(head + mask + bytes(b ^ mask[i % 4] for i, b in enumerate(data)))
+
+    def recv(self):
+        while True:
+            b1, b2 = self._read(2)
+            opcode, n = b1 & 0x0F, b2 & 0x7F
+            if n == 126:
+                (n,) = struct.unpack("!H", self._read(2))
+            elif n == 127:
+                (n,) = struct.unpack("!Q", self._read(8))
+            mask = self._read(4) if b2 & 0x80 else None
+            data = self._read(n)
+            if mask:
+                data = bytes(b ^ mask[i % 4] for i, b in enumerate(data))
+            if opcode == 9:  # ping
+                self.send(data, opcode=10)
+            elif opcode == 8:
+                raise ConnectionError("closed by OBS: %r" % data[2:].decode("utf-8", "replace"))
+            elif opcode in (1, 2):
+                return json.loads(data)
+
+
+def settings():
+    s = {}
+    try:
+        with open(CONF, encoding="utf-8") as f:
+            for line in f:
+                if "=" in line and not line.lstrip().startswith("#"):
+                    k, v = line.split("=", 1)
+                    s[k.strip()] = v.strip()
+    except FileNotFoundError:
+        pass
+    host = os.environ.get("DRAM_OBS_HOST") or s.get("host")
+    port = int(os.environ.get("DRAM_OBS_PORT") or s.get("port") or 4455)
+    password = os.environ.get("DRAM_OBS_PASSWORD") or s.get("password", "")
+    if not host:
+        die("no recorder configured: write host=, port=, password= to %s (rec server-setup on the recorder prints them)" % CONF)
+    return host, port, password
+
+
+def obs_session():
+    host, port, password = settings()
+    try:
+        ws = WS(host, port)
+        hello = ws.recv()
+        ident = {"rpcVersion": 1}
+        auth = hello.get("d", {}).get("authentication")
+        if auth:
+            if not password:
+                die("OBS wants a password and %s has none" % CONF)
+            secret = base64.b64encode(hashlib.sha256((password + auth["salt"]).encode()).digest()).decode()
+            ident["authentication"] = base64.b64encode(hashlib.sha256((secret + auth["challenge"]).encode()).digest()).decode()
+        ws.send({"op": 1, "d": ident})
+        msg = ws.recv()
+        if msg.get("op") != 2:
+            die("OBS did not accept us (wrong password?): %s" % msg)
+        return ws
+    except (OSError, ConnectionError) as e:
+        die("cannot reach OBS at %s:%d — is OBS running there with its websocket server on? (%s)" % (host, port, e))
+
+
+def request(ws, kind):
+    rid = str(uuid.uuid4())
+    ws.send({"op": 6, "d": {"requestType": kind, "requestId": rid, "requestData": {}}})
+    while True:
+        msg = ws.recv()
+        if msg.get("op") == 7 and msg["d"].get("requestId") == rid:
+            st = msg["d"]["requestStatus"]
+            return st.get("result", False), st, msg["d"].get("responseData") or {}
+
+
+def spare_running():
+    try:
+        with open(SPARE_STATE) as f:
+            pid = int(f.read().split()[0])
+        os.kill(pid, 0)
+        return True
+    except (OSError, ValueError, IndexError):
+        return False
+
+
+def spare(want_on):
+    if not os.access(SPARE, os.X_OK) or not shutil.which("gpu-screen-recorder"):
+        return
+    if spare_running() != want_on:
+        subprocess.run([SPARE], check=False)
+
+
+def cmd_record(action, use_spare):
+    ws = obs_session()
+    ok, st, data = request(ws, "GetRecordStatus")
+    active = bool(data.get("outputActive"))
+    if action == "toggle":
+        action = "stop" if active else "start"
+    if action == "start" and not active:
+        ok, st, _ = request(ws, "StartRecord")
+    elif action == "stop" and active:
+        ok, st, data = request(ws, "StopRecord")
+    else:
+        ok = True
+    if not ok:
+        die("OBS refused %s: %s" % (action, st.get("comment") or st.get("code")))
+    if use_spare:
+        spare(action == "start")
+    print("recorder: recording %s" % ("started" if action == "start" else "stopped"))
+    if action == "stop" and data.get("outputPath"):
+        print("recorder: saved %s" % data["outputPath"])
+
+
+def cmd_status():
+    ws = obs_session()
+    ok, st, data = request(ws, "GetRecordStatus")
+    if not ok:
+        die("OBS refused GetRecordStatus: %s" % st)
+    if data.get("outputActive"):
+        print("recorder: recording, %s%s" % (data.get("outputTimecode", "?"), " (paused)" if data.get("outputPaused") else ""))
+    else:
+        print("recorder: not recording")
+    print("local spare: %s" % ("running" if spare_running() else "off"))
+
+
+def cmd_server_setup():
+    cfg_dir = os.path.join(OBS, "plugin_config", "obs-websocket")
+    cfg = os.path.join(cfg_dir, "config.json")
+    if os.path.exists(cfg):
+        with open(cfg, encoding="utf-8") as f:
+            current = json.load(f)
+        print("OBS already has a websocket config (%s): server_enabled=%s port=%s — left alone" % (cfg, current.get("server_enabled"), current.get("server_port")))
+        password = current.get("server_password", "")
+    else:
+        password = secrets.token_urlsafe(24)
+        os.makedirs(cfg_dir, exist_ok=True)
+        with open(os.open(cfg, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w", encoding="utf-8") as f:
+            json.dump({"alerts_enabled": False, "auth_required": True, "first_load": False,
+                       "server_enabled": True, "server_password": password, "server_port": 4455}, f, indent=2)
+        print("wrote %s (websocket on, port 4455, a new password); restart OBS once" % cfg)
+    host = socket.gethostname()
+    print("\nOn cabin (and any creator host), put this in %s, mode 0600:" % CONF.replace(HOME, "~"))
+    print("  host=%s\n  port=4455\n  password=%s" % (host, password))
+
+
+def cmd_templates_save():
+    src_scenes = os.path.join(OBS, "basic", "scenes")
+    src_profiles = os.path.join(OBS, "basic", "profiles")
+    base = os.path.join(REPO, "dotfiles", "obs")
+    if not os.path.isdir(base):
+        die("no templates at %s (DRAM_REPO?)" % base)
+    saved = 0
+    for role in sorted(os.listdir(base)):
+        for name in sorted(os.listdir(os.path.join(base, role, "scenes"))):
+            src = os.path.join(src_scenes, name)
+            if os.path.isfile(src):
+                shutil.copyfile(src, os.path.join(base, role, "scenes", name))
+                saved += 1
+                print("saved scenes/%s -> dotfiles/obs/%s/" % (name, role))
+        for name in sorted(os.listdir(os.path.join(base, role, "profiles"))):
+            src = os.path.join(src_profiles, name, "basic.ini")
+            if os.path.isfile(src):
+                shutil.copyfile(src, os.path.join(base, role, "profiles", name, "basic.ini"))
+                saved += 1
+                print("saved profiles/%s/basic.ini -> dotfiles/obs/%s/" % (name, role))
+    print("%d file(s) saved; review `git diff dotfiles/obs` (bin/check.sh refuses stream keys and /home paths), then commit" % saved)
+
+
+def main(argv):
+    args = [a for a in argv if not a.startswith("-")]
+    flags = [a for a in argv if a.startswith("-")]
+    if "-h" in flags or "--help" in flags:
+        print(__doc__.strip())
+        return 0
+    unknown = [f for f in flags if f != "--no-spare"]
+    if unknown or len(args) != 1:
+        usage(2)
+    cmd = args[0]
+    if cmd in ("start", "stop", "toggle"):
+        cmd_record(cmd, "--no-spare" not in flags)
+    elif cmd == "status":
+        cmd_status()
+    elif cmd == "server-setup":
+        cmd_server_setup()
+    elif cmd == "templates-save":
+        cmd_templates_save()
+    else:
+        usage(2)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

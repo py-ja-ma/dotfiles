@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Switch to Gaming Mode
+Comment=Log out of the desktop and straight into Gaming Mode (decisions/0012)
+Exec=steamos-session-select gaming
+Icon=steam
+Type=Application
+Categories=Game;

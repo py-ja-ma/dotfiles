@@ -1,0 +1,52 @@
+# Static information about the filesystems.
+# See fstab(5) for details.
+
+# <file system> <dir> <type> <options> <dump> <pass>
+# /dev/nvme0n1p2 LABEL=dram-sys
+UUID=15450436-68ce-45ef-85dc-babec8a94f59	/         	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@	0 0
+
+# /dev/nvme0n1p2 LABEL=dram-sys
+UUID=15450436-68ce-45ef-85dc-babec8a94f59	/home     	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@home	0 0
+
+# /dev/nvme0n1p2 LABEL=dram-sys
+UUID=15450436-68ce-45ef-85dc-babec8a94f59	/home/.snapshots	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@home_snapshots	0 0
+
+# /dev/nvme0n1p2 LABEL=dram-sys
+UUID=15450436-68ce-45ef-85dc-babec8a94f59	/.snapshots	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@snapshots	0 0
+
+# /dev/nvme0n1p2 LABEL=dram-sys
+UUID=15450436-68ce-45ef-85dc-babec8a94f59	/var/log  	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@var_log	0 0
+
+# /dev/nvme0n1p2 LABEL=dram-sys
+UUID=15450436-68ce-45ef-85dc-babec8a94f59	/var/cache/pacman/pkg	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@var_cache_pacman	0 0
+
+# /dev/nvme0n1p2 LABEL=dram-sys
+UUID=15450436-68ce-45ef-85dc-babec8a94f59	/var/lib/flatpak	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@flatpak	0 0
+
+# /dev/nvme0n1p2 LABEL=dram-sys
+UUID=15450436-68ce-45ef-85dc-babec8a94f59	/var/lib/sbctl	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@sbctl	0 0
+
+# /dev/nvme0n1p3 LABEL=dram-data
+UUID=b06f5c36-5aed-4633-a5be-743c9c56a05d	/data/games	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@games	0 0
+
+# /dev/nvme0n1p3 LABEL=dram-data
+UUID=b06f5c36-5aed-4633-a5be-743c9c56a05d	/data/emulation	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@emulation	0 0
+
+# /dev/nvme0n1p3 LABEL=dram-data
+UUID=b06f5c36-5aed-4633-a5be-743c9c56a05d	/data/recordings	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@recordings	0 0
+
+# /dev/nvme1n1p1 LABEL=dram-work
+UUID=eb8755e2-3d9a-4441-837a-8c48976ba79a	/data/vm  	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@vm	0 0
+
+# /dev/nvme1n1p1 LABEL=dram-work
+UUID=eb8755e2-3d9a-4441-837a-8c48976ba79a	/data/ml  	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@ml	0 0
+
+# /dev/nvme1n1p1 LABEL=dram-work
+UUID=eb8755e2-3d9a-4441-837a-8c48976ba79a	/var/lib/containers	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@containers	0 0
+
+# /dev/nvme1n1p1 LABEL=dram-work
+UUID=eb8755e2-3d9a-4441-837a-8c48976ba79a	/data/scratch	btrfs     	rw,noatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvol=/@scratch	0 0
+
+# /dev/nvme0n1p1 LABEL=ESP
+UUID=FE23-60FF      	/efi      	vfat      	rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro	0 2
+

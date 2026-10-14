@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!-- dram-gaming-mode (decisions/0012): the person at the machine may switch their own
+     session between Desktop and Gaming Mode without a password. Nobody else may:
+     not remote (ssh) users, not inactive sessions. session-switch takes the user from
+     PKEXEC_UID, never from its arguments. -->
+<policyconfig>
+  <vendor>dram</vendor>
+  <action id="org.dram.session-select">
+    <description>Switch between Desktop and Gaming Mode</description>
+    <message>Switching sessions requires authentication</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/dram/session-switch</annotate>
+  </action>
+</policyconfig>

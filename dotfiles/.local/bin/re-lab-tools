@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# usage: re-lab-tools [--dry-run]
+#
+# The per-user half of the re-lab role (docs/toolchain/profiles/re-lab.md): the uv tools
+# pinned in packages/uv/re-lab.txt (`uv tool install name==version`, one isolated
+# environment each) and the Ghidra extensions in packages/ghidra-extensions.tsv built
+# for the installed Ghidra's major.minor, downloaded, checked against their sha256 and
+# unpacked into ~/.config/ghidra/ghidra_<version>_PUBLIC/Extensions. Idempotent: a tool
+# at its pinned version and an extension whose sha256 is recorded are skipped. Re-run
+# after a Ghidra update (each Ghidra version has its own settings directory). Never root.
+#
+#   -n, --dry-run   print what would be installed
+#   -h, --help      this text
+#
+# env: DRAM_REPO (default ~/git/dotfiles), GHIDRA_HOME (default /opt/ghidra)
+# exit: 0 ok · 1 a tool or extension failed · 2 bad usage
+# see: docs/toolchain/profiles/re-lab.md
+
+DRY=0
+case "${1:-}" in
+  "") ;;
+  -n | --dry-run) DRY=1 ;;
+  -h | --help)
+    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+  *)
+    sed -n '2s/^# \{0,1\}//p' "$0" >&2
+    exit 2
+    ;;
+esac
+
+set -uo pipefail
+REPO="${DRAM_REPO:-$HOME/git/dotfiles}"
+GHIDRA_HOME="${GHIDRA_HOME:-/opt/ghidra}"
+RC=0
+say() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
+ok() { printf '\033[1;32m[ok]\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*" >&2; }
+fail() {
+  warn "$*"
+  RC=1
+}
+run() { if [ "$DRY" -eq 1 ]; then printf '  \033[2m[dry-run] %s\033[0m\n' "$*"; else "$@"; fi; }
+rows() { grep -vE '^[[:space:]]*(#|$)' "$1" 2>/dev/null; }
+[ "$(id -u)" -ne 0 ] || {
+  warn "run as your user, not root (uv tools and Ghidra extensions are per user)"
+  exit 1
+}
+
+# --- uv tools ------------------------------------------------------------------
+say "uv tools (packages/uv/re-lab.txt)"
+if ! command -v uv >/dev/null 2>&1; then
+  fail "uv is not installed — dram apply installs it (packages/roles/dev.txt)"
+else
+  have="$(uv tool list 2>/dev/null | awk '/^[^-]/ {print $1"=="substr($2,2)}')"
+  while IFS= read -r spec; do
+    if grep -qxF "$spec" <<<"$have"; then
+      ok "$spec"
+    else
+      run uv tool install --force "$spec" >/dev/null && ok "$spec installed" || fail "uv tool install $spec failed"
+    fi
+  done < <(rows "$REPO/packages/uv/re-lab.txt")
+fi
+
+# --- Ghidra extensions -----------------------------------------------------------
+say "Ghidra extensions (packages/ghidra-extensions.tsv)"
+props="$GHIDRA_HOME/Ghidra/application.properties"
+gver="$(sed -n 's/^application.version=//p' "$props" 2>/dev/null)"
+if [ -z "$gver" ]; then
+  fail "no Ghidra at $GHIDRA_HOME — dram apply installs it (packages/roles/re-lab.txt)"
+else
+  ext="$HOME/.config/ghidra/ghidra_${gver}_PUBLIC/Extensions"
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
+  while IFS=$'\t' read -r name built url sha; do
+    case "$gver" in
+      "$built" | "$built".*) ;;
+      *)
+        warn "$name is built for Ghidra $built, this is $gver — skipped (bump packages/ghidra-extensions.tsv)"
+        continue
+        ;;
+    esac
+    if grep -rqxF "$sha" "$ext"/*/.dram-sha256 2>/dev/null; then
+      ok "$name (Ghidra $gver)"
+      continue
+    fi
+    if [ "$DRY" -eq 1 ]; then
+      run curl -fsSL -o "$tmp/$name.zip" "$url"
+      continue
+    fi
+    curl -fsSL -o "$tmp/$name.zip" "$url" || {
+      fail "$name: download failed ($url)"
+      continue
+    }
+    got="$(sha256sum "$tmp/$name.zip" | cut -d' ' -f1)"
+    [ "$got" = "$sha" ] || {
+      fail "$name: sha256 $got, want $sha — not installed"
+      continue
+    }
+    mkdir -p "$ext" "$tmp/$name"
+    (cd "$tmp/$name" && bsdtar -xf "../$name.zip") || {
+      fail "$name: could not unpack"
+      continue
+    }
+    for d in "$tmp/$name"/*/; do
+      d="${d%/}"
+      rm -rf "${ext:?}/$(basename "$d")"
+      cp -R "$d" "$ext/" && printf '%s\n' "$sha" >"$ext/$(basename "$d")/.dram-sha256"
+    done
+    ok "$name installed into $ext (enable it in Ghidra: File -> Install Extensions)"
+  done < <(rows "$REPO/packages/ghidra-extensions.tsv")
+fi
+exit "$RC"

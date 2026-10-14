@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Gaming Mode
+Comment=Steam Big Picture fullscreen in Hyprland (dram-gaming-mode, decisions/0012)
+Exec=/usr/lib/dram/session-hyprland gaming
+Type=Application

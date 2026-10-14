@@ -1,0 +1,24 @@
+# System units a host must have enabled, by role (decisions/0008). `dram apply` enables
+# the missing ones (timers with --now); `dram doctor` reports drift. User units belong to
+# Home Manager, not here. Conditional units stay with their script: NetworkManager
+# (system/network-setup.sh: it must switch networkd + iwd off in the same step), iwd (maintenance.sh,
+# only with a Wi-Fi device), docker (opt-in, decisions/0015), the WSL clone's own
+# (system/wsl-setup.sh). TAB-separated: unit, role, note.
+# A role column is a role, a pseudo-role (base: every host; metal: every host on its own
+# hardware; wsl: every WSL clone, decisions/0021), "!role" (every host WITHOUT it), or
+# several joined by "," that must all hold ("metal,!desktop": metal hosts without desktop).
+sshd.service	base	remote access (harden.sh makes it keys-only; in WSL wsl-setup.sh keeps it on 127.0.0.1:2222 for VSCodium)
+nftables.service	metal	the default-deny firewall (system/nftables.conf); WSL: Windows' and the Hyper-V firewall
+systemd-networkd.service	metal,!desktop	wired networking on headless hosts (desktops and laptops: NetworkManager; WSL: Windows')
+systemd-resolved.service	metal	DNS (DNS-over-TLS opportunistic, harden.sh); WSL generates resolv.conf, resolved stays masked
+systemd-timesyncd.service	metal	clock (a WSL VM keeps Windows' time)
+fstrim.timer	base	weekly TRIM on SSDs (in WSL: freed blocks back to the sparse VHDX)
+paccache.timer	base	package cache cleanup (maintenance.sh)
+reflector.timer	base	mirrorlist refresh (maintenance.sh; failure-tolerant since 2026-10-11)
+arch-audit.timer	base	CVE report (security.archlinux.org is reachable)
+smartd.service	metal	disk health monitoring
+ly@tty2.service	desktop	the display manager
+bluetooth.service	desktop	Bluetooth
+pcscd.socket	desktop	smart-card access for the YubiKeys' PIV (age-plugin-yubikey, ykman piv; docs/security/identity/yubikeys.md)
+snapper-cleanup.timer	metal	snapshot retention (system/snapper/root, home)
+snapper-timeline.timer	metal	the /home daily/weekly snapshots

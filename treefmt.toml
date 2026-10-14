@@ -1,0 +1,44 @@
+# treefmt — one `treefmt` run formats the whole tree with the right tool per
+# language. Nothing runs it automatically. The shell scripts have been
+# shfmt-clean since 2026-10-07 and bin/check.sh §4 fails on any drift; *.nix
+# and the Lua files were not reformatted — the first nixfmt/stylua run will
+# touch many files, do that as its own commit. `nix fmt` (flake.nix
+# `formatter` = nixpkgs' nixfmt-tree) is nixfmt only and ignores this file; the
+# pacman `treefmt` package reads it.
+#
+# The shfmt flags match bin/check.sh §4 (`shfmt -i 2 -ci -bn`).
+
+[formatter.nixfmt]
+command = "nixfmt"
+includes = ["*.nix"]
+
+[formatter.shfmt]
+command = "shfmt"
+options = ["-i", "2", "-ci", "-bn", "-w"]
+includes = [
+  "*.sh",
+  # bash scripts without an extension (shebang-detected by check.sh)
+  "dotfiles/.local/bin/dram",
+  "dotfiles/.local/bin/dram-switch",
+  "dotfiles/.local/bin/sysupdate",
+  "dotfiles/.local/bin/dram-theme",
+  # (dram-theme-auto is Python — not here)
+  "dotfiles/.local/bin/codium-themes-install",
+  "dotfiles/.local/share/bash-completion/completions/dram",
+]
+
+[formatter.stylua]
+command = "stylua"
+includes = ["*.lua"]
+
+[global]
+excludes = [
+  # superseded files, kept verbatim with an explanation
+  "legacy/**",
+  # harvested machine state and vendored themes are not ours to format
+  "hosts/**",
+  "system/plymouth-catppuccin/**",
+  "system/refind-catppuccin/**",
+  "*.md",
+  "*.lock",
+]

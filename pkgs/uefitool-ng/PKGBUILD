@@ -1,0 +1,48 @@
+# shellcheck disable=SC2034,SC2154,SC2164,SC2206
+# [dram] vendored from aur:uefitool-ng (see UPSTREAM), bumped A74 -> A75 (upstream release
+# 2026-07-10); x86_64 only. Review in REVIEW.md.
+# Maintainer: Yurii Kolesnykov <root@yurikoles.com>
+
+pkgname=uefitool-ng
+_pkgname=UEFITool
+_tools=(UEFITool UEFIExtract UEFIFind)
+pkgver=A75
+pkgrel=1
+pkgdesc='UEFI firmware image viewer and editor'
+arch=(x86_64)
+url='https://github.com/LongSoft/UEFITool'
+license=(BSD-2-Clause)
+depends=(qt6-base)
+provides=(
+  "uefiextract=${pkgver}"
+  "uefifind=${pkgver}"
+  "uefitool=${pkgver}"
+)
+conflicts=(uefitool)
+makedepends=(
+  cmake
+  vulkan-headers
+)
+source=("${pkgname}-${pkgver}-${pkgrel}.tar.gz::${url}/archive/${pkgver}.tar.gz")
+sha256sums=('f624ac80cdd716ed5e071d46f1516c84ce99b44fd5ce72663903c0a569c40770')
+
+build() {
+  for _tool in "${_tools[@]}"; do
+    local cmake_options=(
+        -B "${_tool}-build"
+        -S "${_pkgname}-${pkgver}/${_tool}"
+        -W no-dev
+        -D CMAKE_BUILD_TYPE=None
+    )
+    cmake "${cmake_options[@]}"
+	cmake --build "${_tool}-build"
+  done
+}
+
+package() {
+  for _tool in "${_tools[@]}"; do
+    install -Dm755 "${_tool}-build/${_tool,,}" "${pkgdir}/usr/bin/${_tool,,}"
+  done
+  
+  install -Dm644 "${_pkgname}-${pkgver}"/LICENSE.md "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

@@ -1,0 +1,22 @@
+/* Kanagawa Wave — waybar palette (imported by waybar/style.css) */
+@define-color base     #1f1f28;
+@define-color mantle   #181820;
+@define-color crust    #16161d;
+@define-color text     #dcd7ba;
+@define-color subtext  #c8c093;
+@define-color overlay  #727169;
+@define-color surface0 #2a2a37;
+@define-color surface1 #363646;
+@define-color blue     #7e9cd8;
+@define-color lavender #9cabca;
+@define-color sapphire #7fb4ca;
+@define-color sky      #a3d4d5;
+@define-color teal     #7aa89f;
+@define-color green    #98bb6c;
+@define-color yellow   #e6c384;
+@define-color peach    #ffa066;
+@define-color maroon   #e46876;
+@define-color red      #c34043;
+@define-color mauve    #957fb8;
+@define-color pink     #d27e99;
+@define-color accent   #7e9cd8;   /* the ONE accent ink (Letterpress) */

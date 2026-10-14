@@ -1,0 +1,4 @@
+# Crt — satty annotation palette (spliced into ~/.config/satty/config.toml by dram-theme)
+# One line: dram-theme replaces the `palette = [...]` line with sed.
+[color-palette]
+palette = ["#22dddd", "#ff5566", "#55ff99", "#ffdd55", "#cc88ff"]

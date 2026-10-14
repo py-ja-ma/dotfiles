@@ -1,0 +1,11 @@
+{
+  "Theme": "Default",
+  "ColorizationMode": "CustomColor",
+  "CustomThemeColor": {
+    "A": 255,
+    "R": 28,
+    "G": 20,
+    "B": 15
+  },
+  "CustomThemeColorIntensity": 100
+}

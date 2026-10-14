@@ -1,0 +1,18 @@
+# role: creator — making videos: OBS, the virtual camera, terminal casts. On cabin (the
+# machine being recorded: local spare + SRT fallback) and on the recorder, which adds the
+# "recording" role (editing). `rec` + the OBS templates: modules/creator.nix;
+# docs/toolchain/profiles/creator.md.
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists
+# "creator" in `roles` (decisions/0009-roles-and-host-shape.md). One name per line,
+# own-line comments only; a name may appear in ONE packages list (bin/check.sh §3).
+
+# streaming/recording studio; screen capture via the PipeWire portal, NVENC/VA-API via the driver
+obs-studio
+# OBS virtual camera (dkms module; builds against base.txt's linux-headers and any other
+# kernel's headers); options in system/v4l2loopback.conf
+v4l2loopback-dkms
+# v4l2-ctl (the capture card and webcam modes), mediainfo (check a take's tracks and codecs)
+v4l-utils
+mediainfo
+# terminal tutorials as text (asciinema 3; `agg` for GIFs is not packaged)
+asciinema

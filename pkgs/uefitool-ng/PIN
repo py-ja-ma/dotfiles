@@ -1,0 +1,3 @@
+uefitool-ng — how to re-pin
+  1. New release on github.com/LongSoft/UEFITool (tag A7x): pkgver.
+  2. updpkgsums against your own download.

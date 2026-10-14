@@ -1,0 +1,13 @@
+borgmatic.timer
+dram-theme-auto.service
+dram-theme-auto.timer
+p11-kit-server.socket
+pipewire-pulse.socket
+pipewire.socket
+protonmail-bridge.service
+set-SSH_AUTH_SOCK.service
+sops-nix.service
+ssh-agent.service
+ssh-agent.socket
+wireplumber.service
+xdg-user-dirs.service

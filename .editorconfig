@@ -1,0 +1,33 @@
+# https://editorconfig.org — matches treefmt.toml (nixfmt / shfmt -i 2) and
+# bin/check.sh §4. Editors pick this up without any plugin on most platforms.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.md]
+# two trailing spaces are a hard line break in Markdown
+trim_trailing_whitespace = false
+
+[*.py]
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+
+# packages/register.tsv: TAB is the column separator (bin/check-register.py)
+[*.tsv]
+indent_style = tab
+trim_trailing_whitespace = false
+
+# superseded files are kept byte-for-byte; harvested machine state is not ours
+[{legacy,hosts}/**]
+indent_style = unset
+indent_size = unset
+trim_trailing_whitespace = unset
+insert_final_newline = unset

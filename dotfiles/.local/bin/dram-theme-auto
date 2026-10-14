@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""usage: dram-theme-auto [--print|-n|--dry-run] [--nightlight]
+
+Follows the sun between the two washi themes (washi-day between sunrise and sunset, washi otherwise) and drives the hyprsunset night light the same way (identity by day, warm after sunset). Only ever switches when the current theme is one of those two, so a theme picked by hand (SUPER+T) is never overridden; a no-op when already right. Run by the systemd user timer every 10 minutes (modules/desktop.nix) and at login. Location: ~/.config/dram/location, one line "LAT LON" (decimal degrees, east positive; dram.location writes it); sunrise/sunset come from the NOAA solar-position approximation (+-2 min), pure Python.
+
+  --print, -n, --dry-run   show today's times and what would happen; change nothing
+  --nightlight             re-apply only the night light's sun state (nightlight.sh's "off" press)
+  -h, --help               this text
+
+exit: 0 ok · 1 the wanted theme is not installed or dram-theme failed · 2 bad usage
+see: docs/design/themes/switcher.md
+"""
+import datetime as dt
+import math
+import os
+import subprocess
+import sys
+
+HOME = os.path.expanduser("~")
+LOCATION_FILE = os.path.join(HOME, ".config", "dram", "location")
+DEFAULT_LOCATION = (42.36, -71.06)           # Boston (dram.location overrides)
+THEMES_DIR = os.path.join(HOME, ".config", "themes")
+CURRENT_LINK = os.path.join(THEMES_DIR, "current")
+DRAM_THEME = os.path.join(HOME, ".local", "bin", "dram-theme")
+DAY_THEME, NIGHT_THEME = "washi-day", "washi"
+NIGHT_TEMP = 4000                            # same warmth as nightlight.sh
+RUNTIME = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+NIGHTLIGHT_STATE = os.path.join(RUNTIME, "nightlight.state")   # nightlight.sh's manual override
+ZENITH = 90.833                              # official sunrise/sunset (refraction + solar disc)
+
+
+def read_location():
+    try:
+        with open(LOCATION_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.split("#", 1)[0].strip()
+                if not line:
+                    continue
+                lat, lon = (float(x) for x in line.replace(",", " ").split()[:2])
+                if -90 <= lat <= 90 and -180 <= lon <= 180:
+                    return lat, lon
+                break
+    except (OSError, ValueError):
+        pass
+    return DEFAULT_LOCATION
+
+
+def sun_times_utc(date, lat, lon):
+    """(sunrise, sunset) as minutes after 00:00 UTC on `date`, per NOAA.
+
+    Returns (None, True) for polar day and (None, False) for polar night."""
+    doy = date.timetuple().tm_yday
+    gamma = 2.0 * math.pi / 365.0 * (doy - 1 + 0.5)           # fractional year, noon
+    eqtime = 229.18 * (0.000075 + 0.001868 * math.cos(gamma) - 0.032077 * math.sin(gamma)
+                       - 0.014615 * math.cos(2 * gamma) - 0.040849 * math.sin(2 * gamma))
+    decl = (0.006918 - 0.399912 * math.cos(gamma) + 0.070257 * math.sin(gamma)
+            - 0.006758 * math.cos(2 * gamma) + 0.000907 * math.sin(2 * gamma)
+            - 0.002697 * math.cos(3 * gamma) + 0.00148 * math.sin(3 * gamma))
+    lat_r = math.radians(lat)
+    cos_ha = (math.cos(math.radians(ZENITH)) / (math.cos(lat_r) * math.cos(decl))
+              - math.tan(lat_r) * math.tan(decl))
+    if cos_ha > 1.0:
+        return None, False          # sun never rises
+    if cos_ha < -1.0:
+        return None, True           # sun never sets
+    ha = math.degrees(math.acos(cos_ha))
+    sunrise = 720.0 - 4.0 * (lon + ha) - eqtime
+    sunset = 720.0 - 4.0 * (lon - ha) - eqtime
+    return sunrise, sunset
+
+
+def is_daytime(now_utc, lat, lon):
+    """Daylight test that survives UTC-day wraparound: the local day straddles two
+    UTC dates west of Greenwich (yesterday's arc, +1440) and east of about 90°E
+    (tomorrow's arc, -1440: local sunrise falls before 00:00 UTC of the same date)."""
+    today = now_utc.date()
+    minutes = now_utc.hour * 60 + now_utc.minute + now_utc.second / 60.0
+    for date, offset in ((today, 0.0), (today - dt.timedelta(days=1), 1440.0), (today + dt.timedelta(days=1), -1440.0)):
+        rise, setting = sun_times_utc(date, lat, lon)
+        if rise is None:
+            return setting              # polar: True = day, False = night
+        if rise <= minutes + offset <= setting:
+            return True
+    return False
+
+
+def local_hhmm(date, minutes_utc):
+    t = dt.datetime.combine(date, dt.time(), tzinfo=dt.timezone.utc) + dt.timedelta(minutes=minutes_utc)
+    return t.astimezone().strftime("%H:%M")
+
+
+def current_theme():
+    try:
+        if not os.path.exists(CURRENT_LINK):
+            return ""
+        return os.path.basename(os.path.realpath(CURRENT_LINK))
+    except OSError:
+        return ""
+
+
+def ensure_hyprland_env():
+    """The systemd user timer runs outside Hyprland's env; dram-theme's reloads
+    need HYPRLAND_INSTANCE_SIGNATURE / WAYLAND_DISPLAY to reach the compositor.
+    Hyprland normally exports them to systemd --user itself; this is the fallback."""
+    runtime = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+    hypr = os.path.join(runtime, "hypr")
+    if not os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        try:
+            live = [d for d in os.listdir(hypr)
+                    if os.path.exists(os.path.join(hypr, d, ".socket.sock"))]
+        except OSError:
+            live = []
+        if live:
+            live.sort(key=lambda d: os.path.getmtime(os.path.join(hypr, d)))
+            os.environ["HYPRLAND_INSTANCE_SIGNATURE"] = live[-1]
+    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    if sig and not os.environ.get("WAYLAND_DISPLAY"):
+        display = "wayland-1"
+        try:
+            with open(os.path.join(hypr, sig, "hyprland.lock"), encoding="utf-8") as f:
+                lines = [l.strip() for l in f.read().splitlines()]
+            if len(lines) >= 2 and lines[1].startswith("wayland-"):
+                display = lines[1]
+        except OSError:
+            pass
+        os.environ["WAYLAND_DISPLAY"] = display
+
+
+def hyprsunset_running():
+    try:
+        out = subprocess.run(["pgrep", "-x", "hyprsunset"], capture_output=True, text=True)
+        return out.returncode == 0
+    except OSError:
+        return False
+
+
+def apply_nightlight(day):
+    """Warm the screen at night over hyprsunset's IPC. No-op without a running
+    hyprsunset (hyprland.lua autostarts one) or while nightlight.sh holds a
+    manual override. hyprsunset applies the same value idempotently."""
+    if os.path.exists(NIGHTLIGHT_STATE) or not hyprsunset_running():
+        return "manual" if os.path.exists(NIGHTLIGHT_STATE) else "no hyprsunset"
+    ensure_hyprland_env()
+    cmd = ["hyprctl", "hyprsunset"] + (["identity"] if day else ["temperature", str(NIGHT_TEMP)])
+    try:
+        subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.TimeoutExpired):
+        return "ipc failed"
+    return "identity" if day else f"{NIGHT_TEMP}K"
+
+
+def _parse_args():
+    """argparse over the module docstring: usage line, description, hidden flags."""
+    import argparse
+    doc = (__doc__ or "").strip().splitlines()
+    ap = argparse.ArgumentParser(
+        prog=doc[0].split()[1], usage=doc[0][len("usage: "):],
+        description="\n".join(doc[1:]).strip(), add_help=False,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("-h", "--help", action="help", help=argparse.SUPPRESS)
+    ap.add_argument("--print", "-n", "--dry-run", action="store_true", help=argparse.SUPPRESS)
+    ap.add_argument("--nightlight", action="store_true", help=argparse.SUPPRESS)
+    return ap.parse_args()
+
+
+def main(argv):
+    lat, lon = read_location()
+    now = dt.datetime.now(dt.timezone.utc)
+    day = is_daytime(now, lat, lon)
+    want = DAY_THEME if day else NIGHT_THEME
+    have = current_theme()
+    if "--nightlight" in argv:              # nightlight.sh "off" press: re-apply the sun's state only
+        print(f"night light: {apply_nightlight(day)}")
+        return 0
+
+    if "--print" in argv or "-n" in argv or "--dry-run" in argv:
+        rise, setting = sun_times_utc(now.date(), lat, lon)
+        when = ("polar day" if setting else "polar night") if rise is None else \
+            f"sunrise {local_hhmm(now.date(), rise)}  sunset {local_hhmm(now.date(), setting)}"
+        print(f"location {lat} {lon}  {when}  now={'day' if day else 'night'}")
+        print(f"current={have or 'none'}  want={want}  "
+              f"action={'switch' if have in (DAY_THEME, NIGHT_THEME) and have != want else 'none'}  "
+              f"night light={'identity' if day else str(NIGHT_TEMP) + 'K'}"
+              f"{' (manual override active)' if os.path.exists(NIGHTLIGHT_STATE) else ''}")
+        return 0
+
+    apply_nightlight(day)
+    if have not in (DAY_THEME, NIGHT_THEME):
+        return 0                        # a hand-picked theme: leave it alone
+    if have == want:
+        return 0                        # already right
+    if not os.path.isdir(os.path.join(THEMES_DIR, want)):
+        print(f"dram-theme-auto: theme {want} is not installed", file=sys.stderr)
+        return 1
+    ensure_hyprland_env()
+    return subprocess.call([DRAM_THEME, want])
+
+
+if __name__ == "__main__":
+    _parse_args()
+    sys.exit(main(sys.argv[1:]))

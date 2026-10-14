@@ -1,0 +1,13 @@
+# role: creator (Windows) - OBS with its own virtual camera and FOSS background removal, which
+# replaced XSplit VCam (2026-10-12, decisions/log.md#d93); Vesktop picks "OBS Virtual Camera".
+# cabin-win (docs/toolchain/profiles/creator.md).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in ONE
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A
+# Windows host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh).
+
+winget:OBSProject.OBSStudio
+# 1.4.1 from its GitHub release, pinned by SHA-256 (the creator role's obs-background-removal
+# unit; winget's RoyShilkrot.obs-backgroundremoval is the stale 1.1.13)
+manual:obs-backgroundremoval

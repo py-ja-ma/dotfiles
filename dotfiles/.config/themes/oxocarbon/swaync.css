@@ -1,0 +1,11 @@
+/* Oxocarbon — swaync palette (imported by swaync/style.css) */
+@define-color base     #161616;
+@define-color mantle   #131313;
+@define-color crust    #0d0d0d;
+@define-color text     #f2f4f8;
+@define-color subtext  #dde1e6;
+@define-color surface0 #262626;
+@define-color surface1 #393939;
+@define-color blue     #33b1ff;
+@define-color red      #ee5396;
+@define-color accent   #33b1ff;   /* the ONE accent ink (Letterpress) */

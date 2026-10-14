@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# usage: codium-themes-install [--marketplace]
+#
+# Makes the editor's dram themes available: registers the local Letterpress
+# extension (dotfiles/.vscode/extensions/letterpress-themes, one generated VS
+# Code theme per dram theme, bin/gen-vscode-themes.py) in
+# ~/.vscode/extensions/extensions.json, and with --marketplace also installs
+# the pinned historical marketplace themes. Works for VS Code (~/.vscode) and
+# VSCodium (~/.vscode-oss); the name is historical. Needs no editor binary for
+# the default. Idempotent; dram-theme runs it on every switch.
+#
+#   --marketplace   also install the pinned marketplace themes (id@version)
+#   -h, --help      this text
+#
+# exit: 0 ok · 1 an install failed · 2 bad usage
+# see: dotfiles/.vscode/extensions/letterpress-themes/README.md
+
+# DEFAULT — the local extension. Every dram theme has a generated VS Code
+# theme ("Letterpress — <MENU_NAME>", bin/gen-vscode-themes.py) in the
+# extension folder dotfiles/.vscode/extensions/letterpress-themes, which
+# modules/desktop.nix links at ~/.vscode/extensions/pj.letterpress-themes.
+# A folder alone is NOT enough: since the profiles rewrite (VS Code >= 1.74)
+# the extensions dir has a manifest, extensions.json, and the scanner reads
+# ONLY the entries in it — a folder it does not list is ignored. (Verified
+# with 1.138: without the file VS Code scans the dir and writes the file
+# itself; with the file present an unlisted folder never shows in
+# `--list-extensions`.) So this registers the link there: one entry with
+# identifier/version/location/relativeLocation, the shape VS Code writes for
+# its own installs. The version in package.json wins over the entry's.
+# Needs no editor binary. A running window picks the entry up on its next
+# start (Developer: Reload Window is enough).
+#
+# --marketplace — the historical set, PINNED. These are no longer selected by
+# any theme (meta.sh VSCODIUM_THEME all name Letterpress themes) and are only
+# here for a host that wants the upstream looks to compare against. With
+# `extensions.autoUpdate = false` (settings.json.default) the editor never
+# pulls a newer extension on its own; this file is the only place versions
+# change. Bump them by hand, re-run, commit. Versions come from the
+# Marketplace API (docs/security/software-supply/README.md, Phase 1).
+
+set -euo pipefail
+
+MARKET=0
+case "${1:-}" in
+  --marketplace) MARKET=1 ;;
+  "") ;;
+  -h | --help)
+    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+  *)
+    echo "usage: codium-themes-install [--marketplace]" >&2
+    exit 2
+    ;;
+esac
+
+# ---- local extension: register the link in each editor's extensions.json ----
+register() { # $1 = extensions dir
+  local dir="$1" link="$1/pj.letterpress-themes"
+  [ -f "$link/package.json" ] || return 0 # not linked here (desktop.nix not applied)
+  if [ ! -f "$dir/extensions.json" ]; then
+    # no manifest yet: VS Code scans the folder and writes the file itself
+    echo "$dir: no extensions.json yet — VS Code registers the folder on its first start"
+    return 0
+  fi
+  python3 - "$dir" "$link" <<'PY'
+import json, os, sys
+d, link = sys.argv[1], sys.argv[2]
+mf = os.path.join(d, "extensions.json")
+version = json.load(open(os.path.join(link, "package.json"), encoding="utf-8"))["version"]
+try:
+    entries = json.load(open(mf, encoding="utf-8"))
+except (OSError, ValueError):
+    entries = []
+if not isinstance(entries, list):
+    entries = []
+mine = {
+    "identifier": {"id": "pj.letterpress-themes"},
+    "version": version,
+    "location": {"$mid": 1, "path": link, "scheme": "file"},
+    "relativeLocation": "pj.letterpress-themes",
+}
+others = [e for e in entries if (e.get("identifier") or {}).get("id", "").lower() != "pj.letterpress-themes"]
+new = others + [mine]
+if new != entries:
+    tmp = mf + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(new, f, ensure_ascii=False)
+    os.replace(tmp, mf)
+    print(f"{mf}: registered pj.letterpress-themes@{version}")
+else:
+    print(f"{mf}: pj.letterpress-themes@{version} already registered")
+PY
+}
+for d in "$HOME/.vscode/extensions" "$HOME/.vscode-oss/extensions"; do
+  [ -d "$d" ] && register "$d"
+done
+
+[ "$MARKET" = 1 ] || exit 0
+
+# ---- marketplace set (optional) ------------------------------------------------
+BIN=$(command -v code || command -v codium || true)
+if [ -z "$BIN" ]; then
+  echo "neither code nor codium found on PATH (install vscodium-bin first)" >&2
+  exit 1
+fi
+
+# verified 2026-10-06 against the Marketplace API (all "validated, public")
+EXTENSIONS=(
+  catppuccin.catppuccin-vsc@3.19.0
+  arcticicestudio.nord-visual-studio-code@0.19.0
+  enkia.tokyo-night@1.1.2
+  jdinhlife.gruvbox@1.29.1
+  mvllow.rose-pine@2.15.2
+  sainnhe.everforest@0.3.0
+  metaphore.kanagawa-vscode-color-theme@1.2.0
+  NyoomEngineering.oxocarbon-vscode@1.3.1
+)
+
+for ext in "${EXTENSIONS[@]}"; do
+  echo ">> installing $ext"
+  "$BIN" --install-extension "$ext" --force
+done
+
+echo "done: marketplace theme extensions installed at their pinned versions"

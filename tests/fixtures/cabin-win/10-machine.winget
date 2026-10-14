@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+#
+# tests/fixtures/cabin-win/10-machine.winget - a stand-in for windows/build/cabin-win's, in the
+# renderer's shape (bin/render-windows.sh), for tests/push-windows.sh: a Script unit that runs its
+# file under units\.
+properties:
+  configurationVersion: "0.2.0"
+  resources:
+    # --- desktop (windows/roles/desktop.nix, packages/winget/desktop.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "fonts-machine"
+      directives:
+        description: "the house fonts for every account (Windows Fonts folder + HKLM)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\fonts-machine.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\fonts-machine.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\fonts-machine.ps1'))) -Mode Set"

@@ -1,0 +1,11 @@
+/* Aqua — swaync palette (imported by swaync/style.css) */
+@define-color base     #0d1117;
+@define-color mantle   #0a0d12;
+@define-color crust    #080a0d;
+@define-color text     #e6edf3;
+@define-color subtext  #bdc5cc;
+@define-color surface0 #474e57;
+@define-color surface1 #6e7681;
+@define-color blue     #5ac8fa;
+@define-color red      #ff6b6b;
+@define-color accent   #5ac8fa;   /* the ONE accent ink (Letterpress) */

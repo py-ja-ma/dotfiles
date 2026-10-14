@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+#
+# tests/fixtures/cabin-win/30-machine.winget - a stand-in for windows/build/cabin-win's, in the
+# renderer's shape (bin/render-windows.sh), for tests/push-windows.sh: winget packages, one
+# pinned, and a Script unit whose file installs a winget id (packages.tsv must find it there).
+properties:
+  configurationVersion: "0.2.0"
+  resources:
+    # --- desktop (windows/roles/desktop.nix, packages/winget/desktop.txt) ---
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "zebar"
+      directives:
+        description: "Zebar 3.3.1, the masthead's bar (a machine-wide MSI)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "glzr-io.zebar"
+        source: "winget"
+        version: "3.3.1"
+    # --- gaming (windows/roles/gaming.nix, packages/winget/gaming.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "battle-net"
+      directives:
+        description: "Battle.net (its package needs an install location, which WinGetPackage cannot pass)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\battle-net.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\battle-net.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\battle-net.ps1'))) -Mode Set"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "steam"
+      directives:
+        description: "Steam"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "Valve.Steam"
+        source: "winget"

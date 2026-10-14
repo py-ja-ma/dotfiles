@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+#
+# windows/build/cabin-win/40-user.winget - rendered by bin/render-windows.sh from
+# windows/hosts/cabin-win.nix and what it names; edit those, never this (decisions/0020).
+# Phase 40, autostart, what starts by itself; scope user: pj's own context (HKCU is pj's; never run it as SYSTEM).
+# dram.ps1 (or converge.ps1) applies the documents in manifest.json's order, from build\:
+#   winget configure -f C:\ProgramData\dram\build\40-user.winget --accept-configuration-agreements --disable-interactivity
+properties:
+  configurationVersion: "0.2.0"
+  resources:
+    # --- desktop (windows/roles/desktop.nix, packages/winget/desktop.txt) ---
+    - resource: "PSDscResources/Registry"
+      id: "zebar-autostart"
+      directives:
+        description: "Zebar starts at sign-in and opens the masthead (autostart.ps1 keeps the Zebar entry on)"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+        ValueName: "Zebar"
+        ValueType: "String"
+        ValueData: "\"C:\\Program Files\\glzr.io\\Zebar\\zebar.exe\" startup"
+        Force: true

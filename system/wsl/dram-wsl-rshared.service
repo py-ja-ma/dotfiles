@@ -1,0 +1,13 @@
+# written by dotfiles/system/wsl-setup.sh - do not hand-edit (system/wsl/README.md)
+# WSL mounts / private; rootless Podman wants it shared (the Arch wiki's WSL fix).
+[Unit]
+Description=Make / a shared mount for rootless Podman (WSL clone, system/wsl/README.md)
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/mount --make-rshared /
+
+[Install]
+WantedBy=multi-user.target

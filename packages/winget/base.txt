@@ -1,0 +1,20 @@
+# role: base (Windows) - every Windows PC of this repo (cabin-win, thermos): PowerShell 7 and
+# the prompt, the VPN, passwords and the YubiKeys (docs/platforms/windows/renderer.md).
+# Windows Terminal, OpenSSH and the firewall are part of Windows; WSL comes with the clone
+# (docs/platforms/wsl/README.md); git lives only in the clone (decisions/log.md#d108).
+# One name per line, own-line comments only: winget:<id>, msstore:<id> (the Microsoft Store)
+# or manual:<name> (a Script unit installs it, or it is installed by hand); each name in one
+# packages/winget list, each with a packages/register.tsv row (bin/check-register.py). A Windows
+# host installs every name of its roles' lists unless it holds one back (windows/,
+# bin/render-windows.sh; packages/README.md).
+
+# the shell: PowerShell 7, and starship with Arch's own starship.toml (the unit starship-config)
+winget:Microsoft.PowerShell
+winget:Starship.Starship
+# the VPN, as on Arch
+winget:WireGuard.WireGuard
+# passwords
+winget:Proton.ProtonPass
+# not installed anywhere yet: pass-cli and ykman, as on Arch
+winget:Proton.ProtonPass.CLI
+winget:Yubico.YubiKeyManagerCLI

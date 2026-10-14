@@ -1,0 +1,31 @@
+# role: office — tasks, notes, money, documents (docs/toolchain/profiles/office.md). Plain text
+# in git wherever it costs no usability. Obsidian left 2026-10-11 (decisions/log.md#d5: a git
+# Markdown vault + Zettlr). typst and xournalpp are the college role's. Later into [dram]:
+# ocrmypdf (accepted, AUR only). Waiting on an Origin ruling: sane-airscan (network scanners),
+# unpaper.
+# Read by install/lib/roles.sh for every host whose modules/hosts/<name>.nix lists the role
+# in `roles` (decisions/0009). One name per line, own-line comments only; a name may appear
+# in ONE packages list (bin/check.sh §3).
+
+# tasks and time (Taskwarrior 3 syncs through a git remote: docs/toolchain/profiles/office.md)
+task
+taskwarrior-tui
+vit
+timew
+# notes: the Markdown vault in git, Zettlr to read and write it; zk + marksman in the terminal
+zettlr
+zk
+marksman
+# money: plain-text accounting, journal in git
+hledger
+hledger-ui
+hledger-web
+# documents
+libreoffice-still
+hunspell-en_us
+# PDF, scan, OCR
+pdfarranger
+qpdf
+img2pdf
+sane
+simple-scan

@@ -1,0 +1,11 @@
+# yazi theme — TEMPLATE. The live file is ~/.config/yazi/theme.toml (not
+# tracked): dram-theme seeds it from this file on first run and then rewrites
+# BOTH the `dark = "..."` and `light = "..."` lines with the active theme's
+# YAZI_FLAVOR (meta.sh) — yazi picks dark/light by sniffing the terminal
+# background, and a dram theme owns the terminal, so both must agree. The
+# flavors are ours, generated: ~/.config/yazi/flavors -> dotfiles/.config/yazi/
+# flavors/letterpress-<theme>.yazi (bin/gen-yazi-flavors.py,
+# dotfiles/.config/yazi/README.md). Nothing is fetched with `ya pkg`.
+[flavor]
+dark = "letterpress-washi"
+light = "letterpress-washi-day"

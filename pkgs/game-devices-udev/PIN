@@ -1,0 +1,4 @@
+game-devices-udev — how to re-pin
+  1. A new signed tag on codeberg.org/fabiscafe/game-devices-udev: set pkgver to it.
+  2. updpkgsums (the git checkout gets a real b2sum); makepkg verifies the tag signature
+     against keys/pgp/ — add the new key there if the author changes keys.

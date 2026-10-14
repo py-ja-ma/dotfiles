@@ -1,0 +1,7 @@
+LicenseRef-Arch-Package-Files
+
+The files under hosts/<host>/etc/ are copies of configuration files from a host's /etc,
+taken by `dram harvest`. Most of them are files an Arch Linux package installs (pacman,
+mkinitcpio, glibc's locale.gen and others), with the host's local edits. Each keeps the
+license of the package that ships it; the local edits are offered under the same terms.
+The files a host writes itself (fstab, hostname, vconsole.conf) hold facts about that host.

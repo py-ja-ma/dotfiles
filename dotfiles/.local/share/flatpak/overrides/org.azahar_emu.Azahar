@@ -1,0 +1,13 @@
+# org.azahar_emu.Azahar — 3DS emulator (Flathub verified: azahar-emu.org). Least-privilege override on top of the manifest's
+# finish-args (flatpak-metadata(5) format); policy: docs/toolchain/packaging/flatpak.md, set: decisions/0016.
+# Installed for the emulation role by system/flatpak-setup.sh (packages/flatpak/emulation.txt).
+#
+# Granted here:   /data/emulation (roms, bios, saves, storage — the EmuDeck-style tree on
+#                 the data pool, docs/toolchain/profiles/emulation.md); nothing else of the disk.
+# Manifest grants kept: network (netplay, the emulator's own update check), audio,
+#                 wayland/x11, devices=all (controllers through evdev/hidraw; GPU), and
+#                 the gamescope socket; host:ro, desktop/menu entry creation and the Discord socket go.
+# Never granted:  host, home — the emulator cannot read ~/.ssh, ~/git, the keyring.
+
+[Context]
+filesystems=/data/emulation;!host;!home;!/media;!/run/media;!xdg-desktop;!xdg-data/applications;!~/.local/share/applications;!xdg-run/app/com.discordapp.Discord;!xdg-run/app/com.discordapp.DiscordCanary;!xdg-run/discord-ipc-0;

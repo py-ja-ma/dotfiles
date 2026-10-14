@@ -1,0 +1,3 @@
+50-pkglist.hook
+70-proton-pass-sandbox.hook
+99-refind.hook

@@ -1,0 +1,2595 @@
+#!/usr/bin/env bash
+# usage: dram <command> [args]
+#
+# Updates, applies, themes and checks this host: the Home Manager flake for
+# <user>@<host> (host from /etc/hostname), the Arch update path, the theme, health
+# and backups, and the [dram] package repo. Every command answers --help.
+#
+#   switch                  apply the Home Manager flake for <user>@<host> (never bare home-manager);
+#                           writes ~/.config/dram/release (the running build's identity)
+#   update [--check] [--full] [--clean] [--no-switch]
+#                           record the build -> check out the channel target -> keyring ->
+#                           paccache -> pacman -Syu -> flatpak -> pacnew -> orphans ->
+#                           reboot? -> switch -> doctor --brief; --check exits 7 when nothing is pending;
+#                           in a WSL clone it first receives a newer staged bundle
+#   receive [<bundle>] [--force]
+#                           take the branch and tags from a git bundle without ssh (a WSL clone:
+#                           the one bin/push-host.sh --wsl staged in C:\ProgramData\dram)
+#   version [--json]        the running build: version, build id, channel, generation
+#   channel [stable|main|--target]
+#                           what `dram update` follows: stable = latest release tag, main = master
+#   changelog [vX|--since vX]
+#                           release notes from CHANGELOG.md (latest section by default)
+#   theme [name|--list|--ids]
+#                           switch the desktop theme (dram-theme); --list = bar name + id, --ids = ids
+#   check                   repo invariants (bin/check.sh) + nix flake check
+#   doctor [--boot] [--brief] [--supply]
+#                           read-only health report; every warning names its fix
+#                           (--supply: provenance and integrity only)
+#   pacnew                  merge *.pacnew with vim -d (pacdiff -s)
+#   rollback [N|--list|--system [N]]
+#                           no args: the previous build (commit + generation; pacman -U lines printed);
+#                           N: the Nth previous Home Manager generation; --list: recorded builds;
+#                           --system: the snapper snapshots, --system N: restore one as / (decisions/0011)
+#   builds                  = rollback --list
+#   backup [run|list|check|restore <path>]
+#                           borgmatic to the peer host; restore lands in /tmp/dram-restore
+#   apply [--dry-run] [--prune] [--yes] [--rollout]
+#                           converge the system layer to this host's roles: declared packages,
+#                           units, role hooks; reports what no role declares (decisions/0008)
+#   harvest                 refresh hosts/<host>/ (packages, units, /etc copies) from this box
+#   boot-to <os|list>       reboot once into another OS on this machine (firmware BootNext):
+#                           windows, debian, fedora, nixos, or an entry number; list shows them
+#   pkgs <check|update|build|publish|log|list>
+#                           the [dram] package repo (bin/pkgs.sh)
+#   yubikey <status|enroll|ssh|use>
+#                           the YubiKeys: enrol one, fetch its SSH handle on this host, choose
+#                           the key that signs (bin/yubikey.sh, docs/security/identity/yubikeys.md)
+#   help, -h, --help        this text
+#
+# Shims kept for muscle memory: sysupdate = dram update, upgrade = dram update
+# --clean (interactive shells only), dram-switch = dram switch. On a host set up
+# before 2026-10-06 the first dram command moves the old rice state directories
+# (~/.config/rice, ~/.local/state/rice, ~/.cache/rice{,-pkgs}) to their dram names,
+# file by file, once (decisions/0007).
+#
+# needs:  bash, git, nix and home-manager, pacman and pacman-contrib; by command
+#         flatpak, borgmatic, snapper, efibootmgr, sbctl; this repo at ~/git/dotfiles
+#         (DRAM_REPO overrides it)
+# alone:  no: it reads the host files, packages/, system/*.tsv and install/lib/;
+#         dram-switch and sysupdate are one-line shims onto it
+# here:   linked into ~/.local/bin by modules/cli.nix on every host; bin/check.sh
+#         §13 runs each subcommand's --help and a bad flag in a throwaway clone
+# exit:   0 ok · 1 the command failed · 2 bad usage · 7 `update --check`: nothing pending
+# see:    docs/operations/dram/README.md, docs/operations/releases/README.md
+
+# SPDX-FileCopyrightText: 2026 Patrick Jordan
+# SPDX-License-Identifier: MIT
+
+set -uo pipefail
+
+# Nix's bin directories even when no login shell put them on PATH (`ssh host dram update`
+# runs a plain non-interactive shell: home-manager and nix were "not on PATH" — cabin,
+# 2026-10-11). Appended, so whatever the caller's PATH has first still wins.
+for d in "$HOME/.nix-profile/bin" /nix/var/nix/profiles/default/bin; do
+  [ -d "$d" ] && case ":$PATH:" in *":$d:"*) ;; *) PATH="$PATH:$d" ;; esac
+done
+export PATH
+
+REPO="${DRAM_REPO:-$HOME/git/dotfiles}"
+# uname -n, not hostname(1): inetutils is not in a WSL clone's base image
+HOST="$(cat /etc/hostname 2>/dev/null || uname -n)"
+ME="$(id -un)" # the flake names each host's configuration <user>@<host> (dram.user)
+STATE="$HOME/.local/state/dram"
+NIXF=(--extra-experimental-features 'nix-command flakes')
+
+say() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
+ok() { printf '\033[1;32m[ok]\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*"; }
+die() {
+  printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2
+  exit 1
+}
+run() {
+  printf '\033[2m$ %s\033[0m\n' "$*"
+  "$@"
+}
+have() { command -v "$1" >/dev/null 2>&1; }
+ask() { # ask "question" -> 0 for yes; non-interactive = no
+  [ -t 0 ] || return 1
+  local a
+  read -rp "    $1 [y/N] " a
+  [ "${a,,}" = y ]
+}
+
+# --------------------------------------------------------- release model ----
+# A build is a commit; a release is an annotated tag vYYYY.MM.N cut by
+# bin/release.sh on the Mac and carried to the hosts by bin/push-host.sh (the
+# hosts have no remote: master and the tags arrive in the bundle). The checkout
+# IS the live config (~/.local/bin and ~/.config are symlinks into it), so
+# `git checkout <target>` is the slot switch. ~/.config/dram/release names the
+# build that was last activated; ~/.config/dram/channel says what `dram update`
+# follows. Steam Deck vocabulary throughout (docs/operations/releases/README.md).
+RELEASE="$HOME/.config/dram/release"
+CHANNEL_FILE="$HOME/.config/dram/channel"
+BUILDS="$STATE/builds"
+UPDATES_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/dram/updates"
+
+g() { git -C "$REPO" "$@"; }
+head_sha() { g rev-parse HEAD 2>/dev/null; }
+short_sha() { g rev-parse --short "${1:-HEAD}" 2>/dev/null; }
+latest_tag() { g tag -l 'v*' --sort=-v:refname 2>/dev/null | head -1; }
+nearest_tag() { g describe --tags --match 'v*' --abbrev=0 "${1:-HEAD}" 2>/dev/null; }
+head_name() { g describe --tags --exact-match --match 'v*' HEAD 2>/dev/null || short_sha; }
+build_id() { echo "$(g log -1 --date=format:%Y%m%d --format=%cd "${1:-HEAD}" 2>/dev/null).$(short_sha "${1:-HEAD}")"; }
+hm_gen_line() { home-manager generations 2>/dev/null | head -1; } # "<date> <time> : id N -> /nix/store/... (current)"
+hm_gen_id() { hm_gen_line | awk '{ for (i = 1; i <= NF; i++) if ($i == "id") print $(i + 1) }'; }
+badge_refresh() { # the bar's updates badge caches its answer; drop it and ask for a redraw
+  rm -f "$UPDATES_CACHE".*
+  pkill -RTMIN+8 -x waybar 2>/dev/null || true
+}
+channel() { # stable once a release exists, main before (today's hosts keep working)
+  local c
+  if [ -f "$CHANNEL_FILE" ]; then
+    # tolerate case/whitespace; anything else is a corrupt file, fall back loudly
+    c="$(tr -d '[:space:]' <"$CHANNEL_FILE" | tr '[:upper:]' '[:lower:]')"
+    case "$c" in
+      stable | main)
+        echo "$c"
+        return 0
+        ;;
+      *) printf '\033[1;33m[!]\033[0m %s\n' "$CHANNEL_FILE says '$c' (not stable|main) — using the default; fix with dram channel stable|main" >&2 ;;
+    esac
+  fi
+  if [ -n "$(latest_tag)" ]; then echo stable; else echo main; fi
+}
+channel_desc() { [ "$(channel)" = stable ] && echo 'the latest release tag' || echo 'master, the newest push from the Mac'; }
+channel_target() { # the ref the channel resolves to on the LOCAL refs; '' when there is none yet
+  case "$(channel)" in
+    stable) latest_tag ;;
+    main) g rev-parse -q --verify master >/dev/null 2>&1 && echo master ;;
+  esac
+}
+dram_pending() { # "<target> <n>" + exit 0 when the channel target is not the checkout; exit 1 when current
+  local t ts n
+  t="$(channel_target)"
+  [ -n "$t" ] || return 1
+  ts="$(g rev-parse "$t^{commit}" 2>/dev/null)"
+  [ "$ts" != "$(head_sha)" ] || return 1
+  n="$(g rev-list --count "HEAD...$ts" 2>/dev/null || echo '?')"
+  echo "$t $n"
+}
+# bin/release.sh writes the marker as its own paragraph ("checkpoint: every host must pass
+# through …"); match that line, not the word anywhere in the annotation
+tag_is_checkpoint() { g tag -l --format='%(contents)' "$1" 2>/dev/null | grep -ci '^checkpoint:' >/dev/null; }
+next_checkpoint() { # the first checkpoint tag strictly between HEAD and $1; exit 1 when none
+  local t ts cur target
+  cur="$(head_sha)" target="$(g rev-parse "$1^{commit}" 2>/dev/null)"
+  for t in $(g tag -l 'v*' --sort=v:refname); do
+    ts="$(g rev-parse "$t^{commit}")"
+    [ "$ts" = "$cur" ] || [ "$ts" = "$target" ] && continue
+    g merge-base --is-ancestor "$cur" "$ts" 2>/dev/null || continue
+    g merge-base --is-ancestor "$ts" "$target" 2>/dev/null || continue
+    if tag_is_checkpoint "$t"; then
+      echo "$t"
+      return 0
+    fi
+  done
+  return 1
+}
+release_get() { sed -n "s/^$1=//p" "${2:-$RELEASE}" 2>/dev/null | head -1; }
+write_release() { # write_release [dest]: the identity of the build that is running now (os-release style)
+  local dest="${1:-$RELEASE}" v
+  mkdir -p "$(dirname "$dest")" "$STATE"
+  v="$(nearest_tag)"
+  [ -n "$v" ] || v=0.0.0-dev
+  {
+    echo "ID=dram"
+    echo "VERSION_ID=$v"
+    echo "BUILD_ID=$(build_id)"
+    echo "COMMIT=$(head_sha)"
+    echo "BRANCH=$(channel)"
+    echo "HOST=$HOST"
+    echo "HM_GENERATION=$(hm_gen_id)"
+    echo "FLAKE_LOCK=$(sha256sum "$REPO/flake.lock" 2>/dev/null | head -c 12)"
+    echo "SWITCHED=$(date -Iseconds)"
+  } >"$dest"
+  [ "$dest" = "$RELEASE" ] && date +%s >"$STATE/last-switch"
+  return 0
+}
+builds_newest_first() { # the recorded build directories (names), newest first by mtime
+  [ -d "$BUILDS" ] || return 0
+  ls -1t "$BUILDS" 2>/dev/null
+}
+record_build() { # snapshot the RUNNING build under builds/<BUILD_ID>.<epoch>/ before anything changes; keep 5
+  # One record per run, never overwritten: a packages-only update leaves commit and
+  # generation unchanged, and the previous pkgs.txt is exactly what `dram rollback`
+  # needs then.
+  local id d old
+  id="$(release_get BUILD_ID)"
+  [ -n "$id" ] || id="$(build_id)"
+  d="$BUILDS/$id.$(date +%s)"
+  mkdir -p "$d"
+  if [ -f "$RELEASE" ]; then cp "$RELEASE" "$d/release"; else write_release "$d/release"; fi
+  pacman -Q >"$d/pkgs.txt" 2>/dev/null || true
+  hm_gen_line | awk '{ for (i = 1; i <= NF; i++) if ($i == "id") print $(i + 1), $(i + 3) }' >"$d/hm-generation"
+  release_get COMMIT "$d/release" >"$d/commit"
+  touch "$d"
+  builds_newest_first | tail -n +6 | while read -r old; do rm -rf "${BUILDS:?}/$old"; done
+  echo "${d##*/}" # the record's directory name: <BUILD_ID>.<epoch>
+}
+checkout_target() { # checkout_target <ref>: the slot switch; refuses over uncommitted tracked edits
+  local ref="$1" dirty keep
+  [ "$(g rev-parse "$ref^{commit}")" != "$(head_sha)" ] && {
+    dirty="$(g status --porcelain --untracked-files=no)"
+    if [ -n "$dirty" ]; then
+      echo "$dirty" | sed 's/^/    /'
+      die "uncommitted edits to tracked files in $REPO — commit them (git -C $REPO commit -a; a detached checkout's commits are kept on a keep-<date> branch), stash them (git -C $REPO stash), or discard (git -C $REPO checkout -- <file>); then dram update again"
+    fi
+    # A detached checkout (channel stable) with local commits: `checkout --detach
+    # <tag>` would leave them reachable only from the reflog. Park them on a branch
+    # first. On a branch (channel main) the branch itself keeps them.
+    if ! g symbolic-ref -q HEAD >/dev/null 2>&1 && ! g merge-base --is-ancestor HEAD "$ref" 2>/dev/null; then
+      keep="keep-$(date +%Y%m%d-%H%M%S)"
+      g branch "$keep" HEAD >/dev/null 2>&1 && warn "the checkout had commits not in $ref — kept on branch $keep (git -C $REPO log --oneline $ref..$keep)"
+    fi
+    if [ "$ref" = master ]; then
+      run git -C "$REPO" checkout -q master || die "git checkout master failed"
+    else
+      run git -C "$REPO" checkout -q --detach "$ref" || die "git checkout $ref failed"
+    fi
+    badge_refresh
+  }
+  return 0
+}
+
+# -------------------------------------------------------------- platform ----
+# Where this runs (decisions/0021): on its own hardware (metal), or as a WSL clone, Arch
+# inside WSL 2 on a Windows PC, whose kernel, boot chain, disks, network and GPU are
+# Windows'. install/lib/detect.sh decides (DRAM_FORM=wsl or laptop|desktop forces it there,
+# as for dram apply's other detection overrides). A host file says which it is (`form`),
+# and the commands that change this machine refuse a host file of the other kind.
+LIBS_LOADED=0 PLATFORM=""
+libs_load() { # the shared readers, once: install/lib/detect.sh and install/lib/roles.sh
+  [ "$LIBS_LOADED" -eq 1 ] && return 0
+  # shellcheck source=/dev/null
+  . "$REPO/install/lib/detect.sh" || die "cannot read install/lib/detect.sh"
+  # shellcheck source=/dev/null
+  . "$REPO/install/lib/roles.sh" || die "cannot read install/lib/roles.sh"
+  LIBS_LOADED=1
+}
+platform() { # metal | wsl, detected once
+  if [ -z "$PLATFORM" ]; then
+    libs_load
+    PLATFORM="$(detect_platform)"
+  fi
+  echo "$PLATFORM"
+}
+# platform_init: detect in this shell, so the $(platform) subshells after it inherit the
+# answer instead of each detecting again (the commands that ask call it first)
+platform_init() { platform >/dev/null; }
+# The bundle a WSL clone receives: bin/push-host.sh --wsl stages it in Windows'
+# C:\ProgramData\dram through Windows' OpenSSH, seen here through WSL's automount
+WSL_BUNDLE=/mnt/c/ProgramData/dram/dotfiles.bundle
+wsl_distro() { # the clone's distro name (wsl.exe -d <distro>): its host file's wsl.distro
+  libs_load
+  host_wsl "$REPO" "$HOST" distro
+}
+# platform_guard: refuse to change this machine through a host file of the other kind.
+# Inside WSL the distro takes the Windows computer name unless wsl.conf names it, and
+# cabin's Windows is `cabin`: dram would then install the bench host's kernels and session.
+platform_guard() {
+  [ -f "$REPO/modules/hosts/$HOST.nix" ] || return 0
+  libs_load
+  local p f
+  p="$(platform)" f="$(host_form "$REPO" "$HOST")"
+  [ "$p" = "$f" ] && return 0
+  if [ "$p" = wsl ]; then
+    die "this is WSL, but modules/hosts/$HOST.nix is a metal host (it sets no form = \"wsl\"): the distro is named after Windows. Give it its own name — [network] hostname=<host>-wsl in /etc/wsl.conf (system/wsl/wsl.conf), then from Windows: wsl.exe --terminate <distro> — docs/platforms/wsl/README.md"
+  fi
+  die "modules/hosts/$HOST.nix is a WSL clone (form = \"wsl\"), but this is not WSL: is /etc/hostname right? (decisions/0021)"
+}
+
+# ------------------------------------------------------- rice -> dram ----
+# The command was `rice` until 2026-10-06 (decisions/0007-rename-rice-to-dram.md).
+# The per-user directories move ONCE, here, before anything reads or writes
+# them: modules/core.nix writes dram/facts.lua and dram/location on the switch,
+# so this runs first; gpgkey, peer, release, channel, builds/ and last-switch
+# keep their names inside. Idempotent: a missing old dir or an existing new one
+# is a no-op. The system side (/etc/pacman.d, /var/lib/dram-repo, /srv/dram) is
+# root's: system/pacman-dram-repo.sh --migrate-from-rice.
+migrate_rice_dirs() {
+  local old new f cache="${XDG_CACHE_HOME:-$HOME/.cache}"
+  for old in "$HOME/.config/rice" "$HOME/.local/state/rice" "$cache/rice" "$cache/rice-pkgs"; do
+    [ -d "$old" ] || continue
+    new="$(dirname "$old")/dram${old##*/rice}"
+    if [ ! -e "$new" ]; then
+      mv "$old" "$new" && ok "moved $old -> $new (rice is now dram)"
+      continue
+    fi
+    # both exist (modules/core.nix or `dram channel` created the new dir first):
+    # carry over every entry the new side lacks, then drop the old dir when empty
+    for f in "$old"/* "$old"/.[!.]*; do
+      [ -e "$f" ] || continue
+      [ -e "$new/${f##*/}" ] || mv "$f" "$new/"
+    done
+    if rmdir "$old" 2>/dev/null; then
+      ok "merged $old into $new (rice is now dram)"
+    else
+      warn "$old still holds entries that also exist in $new — compare them and remove $old by hand"
+    fi
+  done
+  return 0
+}
+
+# ---------------------------------------------------------------- switch ----
+# WHY NOT bare `home-manager switch`: it ignores the flake, reads
+# ~/.config/home-manager/home.nix, and once tore down every dotfile symlink.
+# The flake has one output per machine; the host comes from /etc/hostname.
+# Dated backup suffix: a fixed "bak" refuses the second time a file collides.
+switch_usage() {
+  cat <<'EOF'
+usage: dram switch [home-manager switch args]
+  applies the flake for <user>@<host> with a dated -b bak-<stamp>; extra args go to home-manager
+EOF
+}
+cmd_switch() {
+  case "${1:-}" in -h | --help)
+    switch_usage
+    return 0
+    ;;
+  esac
+  have home-manager || die "home-manager not on PATH (install/bootstrap.sh phase 3)"
+  platform_guard
+  mkdir -p "$STATE"
+  run home-manager switch --flake "$REPO#$ME@$HOST" "${NIXF[@]}" \
+    -b "bak-$(date +%Y%m%d-%H%M)" "$@"
+  local rc=$?
+  [ "$rc" -eq 0 ] && write_release && echo "    $(release_get VERSION_ID) · build $(release_get BUILD_ID) · generation $(release_get HM_GENERATION) -> $RELEASE"
+  return "$rc"
+}
+
+# --------------------------------------------------------------- version ----
+version_usage() {
+  cat <<'EOF'
+usage: dram version [--json]
+  the running build from ~/.config/dram/release: version (nearest release tag or
+  0.0.0-dev), build id (<commit date>.<sha>), channel, Home Manager generation
+EOF
+}
+cmd_version() {
+  case "${1:-}" in
+    "" | --json) ;;
+    -h | --help)
+      version_usage
+      return 0
+      ;;
+    *)
+      version_usage >&2
+      return 2
+      ;;
+  esac
+  [ -f "$RELEASE" ] || die "no $RELEASE yet — dram switch writes it"
+  local v b commit ch gen sw fl tag ahead="" stale="" gdate=""
+  v="$(release_get VERSION_ID)" b="$(release_get BUILD_ID)" commit="$(release_get COMMIT)"
+  ch="$(channel)" gen="$(release_get HM_GENERATION)" sw="$(release_get SWITCHED)" fl="$(release_get FLAKE_LOCK)"
+  tag="$(nearest_tag "$commit")"
+  if [ -n "$tag" ] && [ "$(g rev-parse "$tag^{commit}" 2>/dev/null)" != "$commit" ]; then
+    ahead="$(g rev-list --count "$tag..$commit" 2>/dev/null)"
+  fi
+  [ "$commit" = "$(head_sha)" ] || stale="$(head_name)"
+  [ -n "$gen" ] && gdate="$(home-manager generations 2>/dev/null | awk -v id="$gen" '{ for (i = 1; i <= NF; i++) if ($i == "id" && $(i + 1) == id) print $1 " " $2 }' | head -1)"
+  if [ "${1:-}" = --json ]; then
+    printf '{"id":"dram","version":"%s","build":"%s","commit":"%s","channel":"%s","host":"%s","generation":"%s","generation_date":"%s","flake_lock":"%s","switched":"%s","ahead_of":%s,"checkout":"%s"}\n' \
+      "$v" "$b" "$commit" "$ch" "$(release_get HOST)" "$gen" "$gdate" "$fl" "$sw" \
+      "$([ -n "$ahead" ] && printf '{"tag":"%s","commits":%s}' "$tag" "$ahead" || echo null)" "$(head_name)"
+    return 0
+  fi
+  printf '\033[1mdram %s\033[0m · build %s · channel %s\n' "$v" "$b" "$ch"
+  printf '  %-12s %s\n' commit "$(short_sha "$commit") ($(g log -1 --format=%s "$commit" 2>/dev/null | cut -c1-72))"
+  printf '  %-12s %s\n' host "$(release_get HOST)"
+  printf '  %-12s %s\n' generation "${gen:-?}${gdate:+ ($gdate)}"
+  printf '  %-12s %s\n' switched "$sw"
+  printf '  %-12s %s\n' flake.lock "$fl"
+  [ -n "$ahead" ] && printf '  %-12s %s commits ahead of %s\n' "" "$ahead" "$tag"
+  [ -n "$stale" ] && warn "the checkout is at $stale, not the switched build — dram switch"
+  return 0
+}
+
+# --------------------------------------------------------------- channel ----
+channel_usage() {
+  cat <<'EOF'
+usage: dram channel [stable|main|--target]
+  (no args)  print the channel `dram update` follows
+  stable     the latest release tag (v*, cut by bin/release.sh on the Mac)
+  main       the newest commit pushed from the Mac (master)
+  --target   one line for scripts: "<channel> <target> <commits>" (0 = the checkout is the target)
+EOF
+}
+cmd_channel() {
+  local ch t p n
+  case "${1:-}" in
+    "")
+      ch="$(channel)" t="$(channel_target)"
+      if p="$(dram_pending)"; then n="${p##* }"; else n=0; fi
+      case "$ch" in
+        stable) echo "stable — the latest release tag (${t:-no release yet}$([ -n "$t" ] && { [ "$n" = 0 ] && echo ", checked out" || echo ", $n commits away: dram update"; }))" ;;
+        main) echo "main — the newest commit pushed from the Mac (master$([ -n "$t" ] && { [ "$n" = 0 ] && echo ", checked out" || echo ", $n commits away: dram update"; }))" ;;
+      esac
+      [ -f "$CHANNEL_FILE" ] || echo "    (default: no $CHANNEL_FILE; dram channel stable|main writes it)"
+      ;;
+    --target)
+      ch="$(channel)" t="$(channel_target)"
+      if p="$(dram_pending)"; then n="${p##* }"; else n=0; fi
+      echo "$ch ${t:--} $n"
+      ;;
+    stable | main)
+      mkdir -p "$(dirname "$CHANNEL_FILE")"
+      echo "$1" >"$CHANNEL_FILE"
+      ok "channel: $1 — $([ "$1" = stable ] && echo 'dram update follows the latest release tag (v*)' || echo 'dram update follows master, the newest commit pushed from the Mac')"
+      t="$(channel_target)"
+      if [ -z "$t" ]; then warn "nothing to follow yet ($([ "$1" = stable ] && echo 'no v* tag' || echo 'no master branch') on this host)"; elif p="$(dram_pending)"; then echo "    target $t is ${p##* } commits from the checkout: dram update"; else echo "    the checkout is already at $t"; fi
+      badge_refresh
+      ;;
+    -h | --help)
+      channel_usage
+      return 0
+      ;;
+    *)
+      channel_usage >&2
+      return 2
+      ;;
+  esac
+}
+
+# ------------------------------------------------------------- changelog ----
+changelog_usage() {
+  cat <<'EOF'
+usage: dram changelog [vX | --since vX]
+  (no args)   the latest release's section of CHANGELOG.md
+  vX          that release's section
+  --since vX  every section newer than vX
+EOF
+}
+cmd_changelog() {
+  local f="$REPO/CHANGELOG.md" mode=latest want=""
+  case "${1:-}" in
+    "") ;;
+    -h | --help)
+      changelog_usage
+      return 0
+      ;;
+    --since)
+      mode=since want="${2:-}"
+      [ -n "$want" ] || {
+        changelog_usage >&2
+        return 2
+      }
+      ;;
+    v*) mode=one want="$1" ;;
+    *)
+      changelog_usage >&2
+      return 2
+      ;;
+  esac
+  [ -f "$f" ] || die "no $f — bin/release.sh (Mac) writes it when a release is cut"
+  [ "$mode" = one ] && ! grep -q "^## $want " "$f" && die "no section for $want in CHANGELOG.md (dram changelog --since v0 prints everything)"
+  # sections start with "## vX — date"; the file is newest first
+  awk -v mode="$mode" -v want="$want" '
+    /^## v/ {
+      if (mode == "latest") { if (n++) exit; on = 1 }
+      else if (mode == "one") { on = ($2 == want) }
+      else if (mode == "since") { if ($2 == want) exit; on = 1 }
+    }
+    on { print }
+  ' "$f" | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'
+}
+
+# --------------------------------------------------------------- receive ----
+# A host with no ssh path from the Mac takes a release as a file: the WSL clone, whose
+# Windows PC's OpenSSH is the door (bin/push-host.sh --wsl stages the bundle in
+# C:\ProgramData\dram). The same steps as bin/push-host.sh's remote half, run here: the
+# branch and every tag are fetched; a checkout on a branch (channel main) is reset to the
+# pushed tip, one detached at a release (stable) keeps its checkout until `dram update`.
+receive_usage() {
+  cat <<'EOF'
+usage: dram receive [<bundle>] [--force]
+  fetch the branch (master when the bundle has it) and every tag from a git bundle into
+  ~/git/dotfiles, after git bundle verify. A checkout on a branch (channel main) is reset
+  to the received tip; a detached one (channel stable) keeps its checkout until dram
+  update. Inside WSL the bundle defaults to /mnt/c/ProgramData/dram/dotfiles.bundle,
+  which bin/push-host.sh --wsl stages from the Mac; dram update runs this first when that
+  bundle is newer. --force discards uncommitted edits to tracked files (branch only).
+EOF
+}
+# staged_newer: exit 0 when the staged WSL bundle carries a tag this checkout lacks, or a
+# branch tip ahead of the local branch
+staged_newer() {
+  local sha ref mine
+  [ -r "$WSL_BUNDLE" ] || return 1
+  while read -r sha ref; do
+    case "$ref" in
+      refs/tags/*) g rev-parse -q --verify "$ref" >/dev/null || return 0 ;;
+      refs/heads/*)
+        mine="$(g rev-parse -q --verify "$ref" 2>/dev/null)"
+        [ "$mine" = "$sha" ] && continue
+        [ -n "$mine" ] || return 0
+        g cat-file -e "$sha" 2>/dev/null || return 0
+        g merge-base --is-ancestor "$mine" "$sha" 2>/dev/null && return 0
+        ;;
+    esac
+  done < <(g bundle list-heads "$WSL_BUNDLE" 2>/dev/null)
+  return 1
+}
+cmd_receive() {
+  local b="" force=0 a heads br on_branch=0 dirty t
+  for a in "$@"; do
+    case "$a" in
+      --force) force=1 ;;
+      -h | --help)
+        receive_usage
+        return 0
+        ;;
+      -*)
+        receive_usage >&2
+        return 2
+        ;;
+      *) b="$a" ;;
+    esac
+  done
+  if [ -z "$b" ]; then
+    [ "$(platform)" = wsl ] || die "name the bundle: dram receive <file> (only a WSL clone has a default, $WSL_BUNDLE)"
+    b="$WSL_BUNDLE"
+  fi
+  [ -r "$b" ] || die "no readable bundle at $b — stage one from the Mac: bin/push-host.sh --wsl $HOST <user>@<windows address> (docs/platforms/wsl/README.md)"
+  g rev-parse --git-dir >/dev/null 2>&1 || die "$REPO is not a git checkout"
+  g bundle verify -q "$b" >/dev/null 2>&1 || die "$b does not verify (git bundle verify): cut short, or not this repo's — stage it again"
+  heads="$(g bundle list-heads "$b" 2>/dev/null | sed -n 's|^[0-9a-f]* refs/heads/||p')"
+  if grep -qx master <<<"$heads"; then br=master; else br="$(head -1 <<<"$heads")"; fi
+  [ -n "$br" ] || die "$b carries no branch"
+  g symbolic-ref -q HEAD >/dev/null && on_branch=1
+  if [ "$on_branch" -eq 1 ]; then
+    # only the branch arm resets the checkout, so only there can edits be lost
+    dirty="$(g status --porcelain --untracked-files=no)"
+    if [ -n "$dirty" ] && [ "$force" -ne 1 ]; then
+      echo "$dirty" | sed 's/^/    /'
+      die "uncommitted edits to tracked files in $REPO — the reset would discard them: commit or stash them, or dram receive --force"
+    fi
+    [ -n "$dirty" ] && warn "--force: discarding edits to: $(awk '{print $2}' <<<"$dirty" | paste -sd' ' -)"
+  fi
+  say "Receiving $br and the tags from $b"
+  run git -C "$REPO" fetch -q "$b" "$br" || die "git fetch from $b failed"
+  if [ "$on_branch" -eq 1 ]; then
+    run git -C "$REPO" reset -q --hard FETCH_HEAD || die "git reset --hard failed"
+  else
+    run git -C "$REPO" update-ref "refs/heads/$br" FETCH_HEAD || die "git update-ref failed"
+  fi
+  # the tags: fetching the branch does not carry them; + = a re-cut tag wins
+  git -C "$REPO" fetch -q "$b" '+refs/tags/*:refs/tags/*' 2>/dev/null || true
+  badge_refresh
+  if [ "$on_branch" -eq 1 ]; then
+    ok "checkout now at $(g log -1 --format='%h %s' | cut -c1-70) (dram switch, or dram update)"
+  else
+    t="$(latest_tag)"
+    if [ -n "$t" ] && [ "$(g rev-parse "$t^{commit}" 2>/dev/null)" = "$(head_sha)" ]; then
+      ok "checkout stays at $(head_name) (detached: channel stable), the newest release; $br -> $(short_sha "$br")"
+    else
+      ok "checkout stays at $(head_name) (detached: channel stable); $br -> $(short_sha "$br")${t:+, newest tag $t: dram update applies it}"
+    fi
+  fi
+}
+
+# ---------------------------------------------------------------- update ----
+# Omarchy-style order, pacman-wiki-correct: keyring first (only when it is
+# actually behind), trim the cache BEFORE
+# downloading (what is left is the offline downgrade path), one full -Syu,
+# then everything that depends on the new packages.
+update_usage() {
+  cat <<'EOF'
+usage: dram update [--check] [--full] [--clean] [--no-switch]
+  --check      read-only (apart from the one-time rice->dram state rename every dram
+               command performs): pending repo ([dram] included)/flatpak updates, the channel target
+               ("dram: <current> -> <target> (N commits)" or "dram: up to date"),
+               then build (not switch) the dram. Exit 7 when nothing is pending.
+  --full       also `nix flake update` (bump pinned nix inputs); flake.lock is
+               restored if the rebuilt dram fails to switch
+  --clean      also expire HM generations >7d and nix-collect-garbage
+  --no-switch  skip `dram switch` at the end
+Before anything changes the running build is recorded under
+~/.local/state/dram/builds/ (dram rollback goes back to it), then the checkout
+moves to the channel target (dram channel): the latest v* tag on stable, master
+on main. A release tagged "checkpoint" on the way is applied first; run
+dram update again after it. In a WSL clone a newer bundle staged in
+C:\ProgramData\dram (bin/push-host.sh --wsl) is received first (dram receive),
+and "reboot" means restarting the distro after /etc/wsl.conf changed.
+EOF
+}
+
+sudo_keepalive() {
+  # One password prompt for the whole run; a background loop keeps the
+  # timestamp fresh so a long upgrade never prompts again mid-way.
+  sudo -v || die "sudo authentication failed"
+  (
+    while sleep 50; do
+      kill -0 "$$" 2>/dev/null || exit 0
+      sudo -n true 2>/dev/null || exit 0
+    done
+  ) &
+  KEEPALIVE_PID=$!
+  trap 'kill "$KEEPALIVE_PID" 2>/dev/null' EXIT
+}
+
+pkgver() { pacman -Q "$1" 2>/dev/null | awk '{print $2}'; }
+
+reboot_needed() { # prints reasons, one per line; exit 0 if any
+  local running found=0 k reasons=()
+  if [ "$(platform)" = wsl ]; then
+    # A WSL clone boots no Arch kernel (Microsoft's runs the VM) and no Hyprland, so neither
+    # check below means anything; what a restart of the distro applies is a changed
+    # /etc/wsl.conf (WSL reads it only when the distro starts; PID 1 is the distro's systemd)
+    local started
+    started="$(date -d "$(ps -o lstart= -p 1 2>/dev/null)" +%s 2>/dev/null || echo 0)"
+    if [ -f /etc/wsl.conf ] && [ "${started:-0}" -gt 0 ] && [ "$(stat -c %Y /etc/wsl.conf)" -gt "$started" ]; then
+      echo "/etc/wsl.conf changed since the distro started: from Windows, wsl.exe --terminate $(wsl_distro), then open it again"
+      return 0
+    fi
+    return 1
+  fi
+  running="$(uname -r)"
+  for k in /usr/lib/modules/*/vmlinuz; do
+    [ -f "$k" ] || continue
+    pacman -Qo "$k" >/dev/null 2>&1 || continue
+    [ "$(basename "$(dirname "$k")")" = "$running" ] && found=1
+  done
+  [ "$found" -eq 1 ] || reasons+=("running kernel $running is no longer on disk (kernel updated)")
+  local hpid
+  hpid="$(pgrep -x Hyprland | head -1)"
+  if [ -n "$hpid" ] && [[ "$(readlink "/proc/$hpid/exe" 2>/dev/null)" == *"(deleted)"* ]]; then
+    reasons+=("the running Hyprland binary was replaced (hyprland updated)")
+  fi
+  if [ -f "$STATE/reboot-required" ]; then
+    local boot
+    boot="$(date -d "$(uptime -s)" +%s 2>/dev/null || echo 0)"
+    if [ "$(stat -c %Y "$STATE/reboot-required")" -gt "$boot" ]; then
+      reasons+=("$(cat "$STATE/reboot-required")")
+    fi
+  fi
+  [ "${#reasons[@]}" -gt 0 ] || return 1
+  printf '%s\n' "${reasons[@]}"
+}
+
+cmd_update() {
+  local CLEAN=0 FULL=0 CHECK=0 NO_SWITCH=0 a
+  for a in "$@"; do
+    case "$a" in
+      --clean) CLEAN=1 ;;
+      --full) FULL=1 ;;
+      --check) CHECK=1 ;;
+      --no-switch) NO_SWITCH=1 ;;
+      -h | --help)
+        update_usage
+        return 0
+        ;;
+      *)
+        warn "unknown option: $a" >&2
+        update_usage >&2
+        return 2
+        ;;
+    esac
+  done
+  mkdir -p "$STATE"
+  platform_init
+
+  # --- --check: read-only preview, then stop ---------------------------------
+  if [ "$CHECK" -eq 1 ]; then
+    local pending=0 out
+    say "Pending repo updates (checkupdates — read-only, own temp DB)"
+    if have checkupdates; then
+      checkupdates
+      case $? in
+        0) pending=1 ;;
+        2) ok "no repo updates" ;;
+        *) warn "checkupdates failed — network or mirror problem?" ;;
+      esac
+    else
+      warn "checkupdates not installed (pacman-contrib) — skipping"
+    fi
+    if have flatpak; then
+      say "Pending Flatpak updates (flatpak remote-ls --updates)"
+      out="$(timeout 30 flatpak remote-ls --updates --app --columns=application 2>/dev/null)"
+      if [ -n "$out" ]; then
+        echo "$out" | sed 's/^/    /'
+        pending=1
+      else ok "no flatpak updates"; fi
+    fi
+    if have arch-audit; then
+      say "Vulnerable packages with a fix available (arch-audit -u)"
+      timeout 20 arch-audit -u || ok "none"
+    fi
+    say "Dram (channel $(channel): $(channel_desc))"
+    local target cp
+    target="$(channel_target)"
+    if [ "$(platform)" = wsl ] && staged_newer; then
+      echo "dram: a newer bundle is staged in C:\\ProgramData\\dram (dram update receives it first)"
+      pending=1
+    fi
+    if [ -z "$target" ]; then
+      warn "nothing to follow yet: no $([ "$(channel)" = stable ] && echo 'v* tag' || echo 'master branch') on this host (dram channel main; bin/release.sh on the Mac cuts a tag)"
+    elif out="$(dram_pending)"; then
+      echo "dram: $(head_name) -> ${out% *} (${out##* } commits)"
+      if cp="$(next_checkpoint "$target")"; then echo "    via checkpoint $cp first (dram update twice)"; fi
+      pending=1
+    elif [ -n "$(release_get COMMIT)" ] && [ "$(release_get COMMIT)" != "$(head_sha)" ]; then
+      # a push from the Mac moved the checkout; the switched build is older
+      echo "dram: $(head_name) is checked out but not switched (build $(release_get BUILD_ID) runs) — dram update"
+      pending=1
+    else
+      echo "dram: up to date ($(head_name))"
+    fi
+    say "Proving the dram still evaluates (build only — NOT switched)"
+    if have home-manager; then
+      run home-manager build --flake "$REPO#$ME@$HOST" "${NIXF[@]}" --no-out-link
+    else
+      run nix "${NIXF[@]}" build --no-link "$REPO#homeConfigurations.\"$ME@$HOST\".activationPackage"
+    fi
+    local rc=$?
+    if [ "$rc" -eq 0 ]; then ok "dram builds for $ME@$HOST"; else warn "dram build FAILED for $ME@$HOST — fix the flake before 'dram update'"; fi
+    if [ "$rc" -eq 0 ] && [ "$pending" -eq 0 ]; then
+      say "Check done. Nothing is pending (exit 7). Nothing was changed."
+      return 7
+    fi
+    say "Check done. Nothing was changed."
+    return "$rc"
+  fi
+
+  [ -e /var/lib/pacman/db.lck ] && die "/var/lib/pacman/db.lck exists — another pacman is running (or crashed: check pgrep -a pacman, then sudo rm it)"
+  platform_guard
+
+  # --- 0a) a WSL clone: the bundle its Windows PC holds -----------------------
+  # No ssh reaches the clone; bin/push-host.sh --wsl leaves the release in Windows'
+  # C:\ProgramData\dram. Taken in first, so the channel target below sees its tags.
+  if [ "$(platform)" = wsl ]; then
+    if staged_newer; then
+      cmd_receive || die "the staged bundle was not received (above); nothing else was run"
+    else
+      ok "no newer bundle staged in C:\\ProgramData\\dram$([ -r "$WSL_BUNDLE" ] || echo ' (none there)')"
+    fi
+  fi
+
+  # --- 0) the previous build, then the slot switch ---------------------------
+  # Record what runs NOW (identity, pacman -Q, HM generation) so `dram rollback`
+  # has a "previous build"; then move the checkout to the channel target. A
+  # checkpoint tag between here and the target is applied first (atomupd's
+  # rule: some builds must be passed through, not jumped over).
+  say "Recording the running build (dram rollback goes back to it)"
+  local rec
+  rec="$(record_build)"
+  ok "builds/$rec ($(release_get VERSION_ID "$BUILDS/$rec/release"), generation $(cut -d' ' -f1 "$BUILDS/$rec/hm-generation"))"
+  local target="" CHECKPOINT=""
+  say "Channel $(channel)"
+  target="$(channel_target)"
+  if [ -z "$target" ]; then
+    warn "nothing to follow yet on this host (no $([ "$(channel)" = stable ] && echo 'v* tag' || echo 'master branch')) — the checkout stays at $(head_name)"
+  elif ! dram_pending >/dev/null; then
+    ok "the checkout is the channel target ($target = $(head_name))"
+    # same commit, wrong attachment: a stable host attached to master would
+    # follow the next plain push; a main host detached would not follow any
+    if [ "$target" = master ] && ! g symbolic-ref -q HEAD >/dev/null; then
+      run git -C "$REPO" checkout -q master && ok "attached to master (follows pushes from the Mac)"
+    elif [ "$target" != master ] && g symbolic-ref -q HEAD >/dev/null; then
+      run git -C "$REPO" checkout -q --detach "$target" && ok "detached at $target (a push from the Mac waits for dram update)"
+    fi
+  else
+    if CHECKPOINT="$(next_checkpoint "$target")"; then
+      warn "checkpoint $CHECKPOINT lies between $(head_name) and $target — applying it first"
+      target="$CHECKPOINT"
+    fi
+    echo "    $(head_name) -> $target ($(g rev-list --count "HEAD...$target") commits)"
+    checkout_target "$target"
+    ok "checkout at $(head_name)"
+  fi
+
+  sudo_keepalive
+
+  local hypr_before nv_before
+  hypr_before="$(pkgver hyprland)"
+  nv_before="$(pkgver nvidia-utils)"
+
+  # --- 1) keyring, only when it is actually behind -------------------------
+  # A stale keyring is THE cause of "signature is unknown trust" mid-upgrade.
+  # `pacman -Qu pkg` compares the local version with the sync DB; -Sy for a
+  # single package is only ever done for archlinux-keyring, never otherwise.
+  say "Keyring"
+  if pacman -Qu archlinux-keyring >/dev/null 2>&1; then
+    run sudo pacman -Sy --needed --noconfirm archlinux-keyring && ok "archlinux-keyring refreshed first"
+  else
+    ok "archlinux-keyring is current"
+  fi
+
+  # (no news step: archlinux.org is unreachable from this LAN — handbook ch 11 §5;
+  #  nothing else reads the news either)
+
+  # --- 2) cache trim BEFORE downloading ------------------------------------
+  # Keep 2 versions of everything: the cache is the offline downgrade path
+  # (`pacman -U /var/cache/pacman/pkg/<old>`), so it is trimmed, never wiped.
+  say "Package cache (keep the last 2 versions of each package)"
+  if have paccache; then run sudo paccache -rk2; else warn "paccache missing — sudo pacman -S pacman-contrib"; fi
+
+  # --- 3) the upgrade: official repos + [dram] in ONE transaction -------------
+  # [dram] is an ordinary signed sync repo, so pacman upgrades it with the rest;
+  # paru left the hosts 2026-10-10 (decisions/0013: Community; packages/aur.txt is
+  # empty — anything from the AUR is vendored into pkgs/ and built on the builder).
+  say "Upgrading system software (official repos + [dram]) via pacman -Syu"
+  run sudo pacman -Syu || die "pacman -Syu failed — nothing below was run (see docs/operations/releases/README.md)"
+  ok "system software up to date"
+  badge_refresh # waybar custom/updates
+
+  # --- 4b) Flatpak apps (Vesktop, LocalSend — docs/toolchain/packaging/flatpak.md) ---------------
+  if have flatpak; then
+    say "Flatpak apps (flatpak update)"
+    run sudo flatpak update -y --noninteractive || warn "flatpak update failed — run it by hand"
+  fi
+
+  # --- 4) pacnew / pacsave ---------------------------------------------------
+  say "Config files pacman could not merge (*.pacnew / *.pacsave)"
+  if have pacdiff; then
+    local pn
+    pn="$(pacdiff -o 2>/dev/null)"
+    if [ -n "$pn" ]; then
+      echo "$pn" | sed 's/^/    /'
+      warn "merge them with: dram pacnew"
+    else
+      ok "none"
+    fi
+  else
+    warn "pacdiff missing — sudo pacman -S pacman-contrib"
+  fi
+
+  # --- 5) orphans (asked, never silent) --------------------------------------
+  say "Orphaned packages (installed as deps, needed by nothing)"
+  local -a ORPHANS
+  mapfile -t ORPHANS < <(pacman -Qqdt 2>/dev/null)
+  if [ "${#ORPHANS[@]}" -gt 0 ]; then
+    warn "${#ORPHANS[@]} orphan(s): ${ORPHANS[*]}"
+    if ask "Remove them (sudo pacman -Rns)?"; then
+      run sudo pacman -Rns "${ORPHANS[@]}" || warn "removal had issues"
+    else
+      echo "    kept. Later: sudo pacman -Rns \$(pacman -Qqdt)"
+    fi
+  else
+    ok "none"
+  fi
+
+  # --- 6) reboot needed? -----------------------------------------------------
+  if [ "$nv_before" != "$(pkgver nvidia-utils)" ] && [ -n "$nv_before" ]; then
+    echo "nvidia-utils changed $nv_before -> $(pkgver nvidia-utils)" >"$STATE/reboot-required"
+  elif [ "$hypr_before" != "$(pkgver hyprland)" ] && [ -n "$hypr_before" ]; then
+    echo "hyprland changed $hypr_before -> $(pkgver hyprland)" >"$STATE/reboot-required"
+  fi
+
+  # --- 7) the dram (Home Manager flake) --------------------------------------
+  # --full bumps the pinned inputs first. Safe: the rebuild is atomic (a failed
+  # build leaves the current generation active), and a breaking newer nixpkgs
+  # gets flake.lock restored to the last-good pins.
+  if [ "$NO_SWITCH" -eq 0 ]; then
+    if [ "$FULL" -eq 1 ]; then
+      say "Updating pinned nix inputs (nix flake update)"
+      if (cd "$REPO" && run nix "${NIXF[@]}" flake update); then ok "flake.lock updated"; else warn "nix flake update failed — keeping existing pins"; fi
+    fi
+    say "Rebuilding the dram (home-manager flake at $REPO)"
+    if cmd_switch; then
+      ok "dram rebuilt (current generation active)"
+      [ "$FULL" -eq 1 ] && echo "    flake.lock was bumped — commit it when happy: git -C $REPO commit -m 'flake: bump inputs' flake.lock"
+    else
+      warn "dram rebuild FAILED — the PREVIOUS generation is still active, nothing broke"
+      if [ "$FULL" -eq 1 ]; then
+        warn "the newer nix inputs likely caused it — restoring flake.lock to the last-good pins"
+        (cd "$REPO" && run git checkout -- flake.lock) && ok "flake.lock restored"
+      fi
+    fi
+  fi
+
+  # --- 8) optional cleanup --------------------------------------------------
+  if [ "$CLEAN" -eq 1 ]; then
+    say "Cleanup: old Home Manager generations + nix store (conservative, 7 days)"
+    if have home-manager; then run home-manager expire-generations "-7 days" && ok "HM generations older than 7 days expired"; fi
+    if have nix-collect-garbage; then run nix-collect-garbage --delete-older-than 7d && ok "nix store garbage-collected"; fi
+  fi
+
+  date +%s >"$STATE/last-update"
+  local why
+  if [ "$(platform)" = wsl ]; then
+    say "Restart the distro?"
+    if why="$(reboot_needed)"; then
+      echo "$why" | sed 's/^/    /'
+      warn "restart the clone when convenient"
+    else
+      ok "no restart needed (the kernel is Windows' WSL kernel; wsl --update on Windows updates it)"
+    fi
+  else
+    say "Reboot?"
+    if why="$(reboot_needed)"; then
+      echo "$why" | sed 's/^/    /'
+      warn "reboot when convenient"
+    else
+      ok "no reboot needed"
+    fi
+  fi
+  cmd_doctor --brief || true
+  if [ -n "$CHECKPOINT" ]; then
+    say "checkpoint $CHECKPOINT reached, run dram update again"
+    echo "    the channel target is $(channel_target); this build had to be passed through on the way there"
+    return 0
+  fi
+  say "Done."
+}
+
+# ----------------------------------------------------------------- doctor ----
+# Read-only. Every warning names the command that fixes it. --brief prints
+# only warnings (this is what `dram update` runs at the end). --supply runs
+# only the provenance/integrity section (docs/security/software-supply/integrity.md). Exit 1 if any
+# warning fired, so it is usable from scripts.
+D_BRIEF=0 D_BOOT=0 D_SUPPLY=0 D_WARN=0
+sec() { [ "$D_BRIEF" -eq 1 ] || printf '\n\033[1m%s\033[0m\n' "$*"; }
+dok() { [ "$D_BRIEF" -eq 1 ] || ok "$*"; }
+dwarn() {
+  D_WARN=$((D_WARN + 1))
+  warn "$1"
+  [ -n "${2:-}" ] && printf '      \033[2mfix:\033[0m %s\n' "$2"
+}
+
+gen_path() { home-manager generations 2>/dev/null | head -1 | awk '{ for (i = 1; i <= NF; i++) if ($i == "->") print $(i + 1) }'; }
+gen_date() { home-manager generations 2>/dev/null | head -1 | awk '{print $1" "$2}'; }
+age_days() { echo $((($(date +%s) - $1) / 86400)); }
+dinfo() { [ "$D_BRIEF" -eq 1 ] || printf '\033[1;36m[i]\033[0m %s\n' "$*"; }
+dskip() { [ "$D_BRIEF" -eq 1 ] || printf '\033[2m[skip]\033[0m %s\n' "$*"; }
+dlist() { # dlist "<text>" [max]: indented, bounded to max lines + a count; silent in --brief
+  [ "$D_BRIEF" -eq 1 ] && return 0
+  local max="${2:-20}" n
+  n="$(printf '%s\n' "$1" | wc -l)"
+  printf '%s\n' "$1" | head -n "$max" | sed 's/^/      /'
+  [ "$n" -gt "$max" ] && printf '      \033[2m... and %s more\033[0m\n' "$((n - max))"
+  return 0
+}
+doctor_finish() {
+  if [ "$D_WARN" -gt 0 ]; then
+    printf '\n\033[1;33m%s warning(s)\033[0m — each line above names its fix. Full report: dram doctor [--boot]\n' "$D_WARN"
+    return 1
+  fi
+  [ "$D_BRIEF" -eq 1 ] && ok "doctor: all clear"
+  return 0
+}
+
+# --- supply: provenance + integrity (docs/security/software-supply/integrity.md) ------------------------
+# Every check degrades to a [skip] line when its input is not there yet
+# (pkgs/manifest.txt, a host without flatpak...).
+names_of() { # package names from a manifest: own-line comments, `name` or `name=version`
+  [ -f "$1" ] || return 0
+  grep -vE '^[[:space:]]*(#|$)' "$1" | awk '{print $1}' | sed 's/[=<>].*//' | sort -u
+}
+doctor_supply() {
+  local out n f
+  sec "supply"
+
+  # 1) files on disk differ from what the package shipped (pacman -Qkk).
+  #    Only /etc edits are expected (config); anything under /usr is a warning.
+  if have pacman; then
+    # Unprivileged: root-only files report "Permission denied"/"failed to
+    # calculate" — not tampering. mtime/permission/GID-only lines come from
+    # post-install hooks (ucode, journal, jvm symlinks) — info at most. What
+    # counts is CONTENT: checksum, size or symlink-target mismatch. Known,
+    # explained rewrites are excluded by path (see docs/security/software-supply/integrity.md):
+    #   /usr/share/pkgconfig/hyprland.pc  the retired hyprpm patched it for header builds
+    #   /usr/share/icons/Papirus*          papirus-folders recolours the links
+    #   /usr/lib/jvm/default*              archlinux-java set (Ghidra needs JDK 21)
+    #   /usr/lib/ghc-*/…/package.cache     ghc-libs' own install script runs ghc-pkg recache
+    out="$(timeout 300 pacman -Qkk 2>&1 >/dev/null | grep -E '^warning: [^ ]+: /' | sed 's/^warning: //' \
+      | grep -E 'SHA256 checksum mismatch|Size mismatch|Symlink path mismatch' \
+      | grep -vE ' /usr/share/pkgconfig/hyprland\.pc | /usr/share/icons/Papirus| /usr/lib/jvm/default| /usr/lib/ghc-[^/]+/lib/package\.conf\.d/package\.cache ' || true)"
+    if [ -n "$out" ]; then
+      local usr etc
+      usr="$(echo "$out" | awk '{p=$1; sub(":$","",p); if ($2 !~ /^\/etc\//) print p}' | sort -u)"
+      etc="$(echo "$out" | awk '{p=$1; sub(":$","",p); if ($2 ~ /^\/etc\//) print p}' | sort -u | grep -vxF -f <(echo "${usr:-^$}"))"
+      if [ -n "$usr" ]; then
+        dwarn "$(echo "$usr" | wc -l) package(s) with altered files outside /etc: $(echo "$usr" | paste -sd' ')" "pacman -Qkk <pkg>; pacman -Qo <file>; sudo pacman -S <pkg>  (docs/security/software-supply/integrity.md)"
+        dlist "$(echo "$out" | grep -vE '^[^ ]+: /etc/')"
+      else dok "no altered files outside /etc"; fi
+      [ -n "$etc" ] && dinfo "edited config files (expected) in: $(echo "$etc" | paste -sd' ')"
+    else dok "pacman -Qkk: every installed file matches its package"; fi
+  else dskip "pacman not on PATH — integrity checks need an Arch host"; fi
+
+  # 2) every foreign package is accounted for: pkgs/manifest.txt (our [dram]
+  #    repo) or packages/aur.txt (residual AUR). Converse: listed but absent.
+  local manifest="$REPO/pkgs/manifest.txt" aurlist="$REPO/packages/aur.txt"
+  if ! have pacman; then
+    dskip "foreign packages (no pacman)"
+  elif [ ! -f "$manifest" ] && [ ! -f "$aurlist" ]; then
+    dskip "foreign packages: neither pkgs/manifest.txt nor packages/aur.txt exists"
+  else
+    local known foreign
+    known="$(cat <(names_of "$manifest") <(names_of "$aurlist") | sort -u)"
+    foreign="$(pacman -Qqm 2>/dev/null | sed 's/-debug$//' | sort -u)"
+    out="$(comm -23 <(echo "$foreign") <(echo "$known") | grep .)"
+    if [ -n "$out" ]; then
+      for f in $out; do dwarn "unaccounted foreign package: $f" "add to packages/aur.txt or vendor into pkgs/"; done
+    else dok "every foreign package (pacman -Qm) is in pkgs/manifest.txt or packages/aur.txt"; fi
+    local installed
+    installed="$(pacman -Qq 2>/dev/null | sort -u)"
+    out="$(comm -13 <(echo "$installed") <(echo "$known") | grep .)"
+    [ -n "$out" ] && dinfo "listed but not installed here: $(echo "$out" | paste -sd' ')"
+    [ -f "$manifest" ] || dinfo "pkgs/manifest.txt not created yet (Phase 2) — checked packages/aur.txt only"
+  fi
+
+  # 3) Hyprland plugins must be built against the running Hyprland.
+  local hv
+  hv="$(pkgver hyprland)"
+  if [ -z "$hv" ]; then
+    dskip "hyprland not installed — plugin/Hyprland version match"
+  elif ! ls "$REPO"/pkgs/*/PKGBUILD >/dev/null 2>&1; then
+    dskip "no pkgs/*/PKGBUILD yet — plugin/Hyprland version match"
+  else
+    local pin pkg hit=0 bad=0
+    for f in "$REPO"/pkgs/*/PKGBUILD; do
+      grep -qE "hyprland[=<>'\" )]" "$f" || continue
+      grep -qE '^[[:space:]]*(make)?depends=.*hyprland' "$f" || grep -qE "^[[:space:]]*['\"]?hyprland[=<>]" "$f" || continue
+      hit=1
+      pkg="$(basename "$(dirname "$f")")"
+      pin="$(grep -oE "hyprland=[^'\" )]+" "$f" | head -1 | sed 's/^hyprland=//')"
+      [ -n "$pin" ] || {
+        dinfo "$pkg depends on hyprland without a = pin"
+        continue
+      }
+      local cmp="$hv"
+      [[ "$pin" == *-* ]] || cmp="${hv%-*}"
+      if [ "$pin" != "$cmp" ]; then
+        dwarn "plugin package $pkg built for hyprland $pin, hyprland is $hv" "dram pkgs build $pkg"
+        bad=1
+      fi
+    done
+    if [ "$hit" -eq 0 ]; then
+      dskip "no pkgs/*/PKGBUILD depends on hyprland"
+    elif [ "$bad" -eq 0 ]; then dok "every vendored Hyprland plugin is pinned to hyprland $hv"; fi
+  fi
+  # 3b) [dram] signing key: pacman rejects signatures from an expired key
+  #     (SigLevel Required), so warn 90 days out. The repo file is what both
+  #     hosts imported (/etc/pacman.d/gnupg needs root to read); colon field 7
+  #     of the pub line is the expiry epoch, empty when the key never expires.
+  local kasc="$REPO/pkgs/dram.asc" kexp kdays
+  if ! have gpg || [ ! -f "$kasc" ]; then
+    dskip "[dram] signing key expiry (no gpg or no pkgs/dram.asc)"
+  else
+    kexp="$(gpg --batch --show-keys --with-colons "$kasc" 2>/dev/null | awk -F: '$1=="pub"{print $7; exit}')"
+    if [[ ! "$kexp" =~ ^[0-9]+$ ]]; then
+      dok "[dram] signing key (pkgs/dram.asc) has no expiry"
+    else
+      kdays=$(((kexp - $(date +%s)) / 86400))
+      if [ "$kdays" -lt 90 ]; then
+        dwarn "[dram] signing key (pkgs/dram.asc) expires in $kdays days" "on cabin, as pj: gpg --quick-set-expire 044DFA31C5CD72299A1460B56EF00BFB391BD348 2y && gpg --armor --export 044DFA31C5CD72299A1460B56EF00BFB391BD348 > $kasc; commit; then on EVERY host: sudo bash $REPO/system/pacman-dram-repo.sh  (re-imports the new expiry)"
+      else dok "[dram] signing key valid for $kdays more days"; fi
+    fi
+  fi
+  # 3c) lib32 twins of core packages (pkgs/lib32-*): informational when the
+  #     32-bit build is behind its 64-bit package — harmless, never a warning;
+  #     rebuild when convenient.
+  local b v32 v64 behind="" twins=0
+  if have pacman; then
+    for b in libcap audit libnsl; do
+      v32="$(pkgver "lib32-$b")"
+      [ -n "$v32" ] || continue
+      twins=1
+      v64="$(pkgver "$b")"
+      [ "${v32%-*}" = "${v64%-*}" ] || behind="${behind:+$behind }lib32-$b $v32 (core $v64)"
+    done
+    if [ "$twins" -eq 0 ]; then
+      dskip "no lib32-{libcap,audit,libnsl} installed here"
+    elif [ -n "$behind" ]; then
+      dinfo "lib32 behind core: $behind — rebuild when convenient (bump it per pkgs/<pkg>/PIN, then dram pkgs build <pkg> on cabin; docs/toolchain/packaging/README.md)"
+    else dok "lib32-{libcap,audit,libnsl} match their core packages"; fi
+  fi
+  # 4) data that must be pinned: yazi flavors (rev), editor extensions (@version).
+  # The yazi flavors are generated in-repo (letterpress-*, bin/gen-yazi-flavors.py),
+  # so package.toml normally declares no deps and the rev check has nothing to do.
+  local ptoml="$REPO/dotfiles/.config/yazi/package.toml"
+  if [ ! -f "$ptoml" ]; then
+    dskip "yazi package.toml not found"
+  elif ! grep -qE '^\[\[(flavor|plugin)(\.deps)?\]\]' "$ptoml"; then
+    dok "yazi package.toml declares no ya pkg deps (flavors are generated in-repo: letterpress-*)"
+  else
+    out="$(awk '
+      function flush() { if (blk != "" && !rev) print (use == "" ? blk : use); blk = ""; use = ""; rev = 0 }
+      /^\[\[(flavor|plugin)(\.deps)?\]\]/ { flush(); blk = $0; next }
+      blk != "" && /^[[:space:]]*use[[:space:]]*=/ { u = $0; sub(/^[^"]*"/, "", u); sub(/".*$/, "", u); use = u }
+      blk != "" && /^[[:space:]]*rev[[:space:]]*=[[:space:]]*"[^"]+"/ { rev = 1 }
+      END { flush() }' "$ptoml")"
+    if [ -n "$out" ]; then dwarn "$(echo "$out" | wc -l) yazi flavor/plugin(s) without a rev pin: $(echo "$out" | paste -sd' ')" "ya pkg install && ya pkg list  (writes rev into package.toml); commit it"; else dok "every yazi flavor/plugin in package.toml carries a rev"; fi
+  fi
+  local cti="$REPO/dotfiles/.local/bin/codium-themes-install"
+  if [ -f "$cti" ]; then
+    out="$(awk '/^EXTENSIONS=\(/ { f = 1; next } f && /^\)/ { f = 0 } f && $1 !~ /^#/ && NF { print $1 }' "$cti" | grep -v '@')"
+    if [ -n "$out" ]; then dwarn "$(echo "$out" | wc -l) editor extension(s) not pinned to @version: $(echo "$out" | paste -sd' ')" "code --list-extensions --show-versions; write id@version in codium-themes-install"; else dok "every editor extension in codium-themes-install is pinned to @version"; fi
+  else dskip "codium-themes-install not found"; fi
+
+  # 5) the [dram] repo on this host: package count vs manifest, signed database
+  local rconf=/etc/pacman.d/dram.conf rdb=/var/lib/dram-repo/dram.db
+  if [ ! -f "$rconf" ] && [ "$(platform)" = wsl ]; then
+    dinfo "no [dram] in a WSL clone (v1): its plan leaves the [dram] names out (packages/wsl-skip.tsv)"
+  elif [ ! -f "$rconf" ]; then
+    if [ -f /etc/pacman.d/rice.conf ]; then
+      dwarn "[dram] repo is still configured under its pre-2026-10-06 name (/etc/pacman.d/rice.conf, /var/lib/rice-repo)" "sudo bash system/pacman-dram-repo.sh --migrate-from-rice"
+    elif [ -f "$manifest" ]; then dinfo "[dram] repo not configured on this host ($rconf missing) — system/pacman-dram-repo.sh"; else dskip "[dram] repo not set up (Phase 2)"; fi
+  else
+    if grep -qE '^[[:space:]]*SigLevel[[:space:]]*=.*Required.*DatabaseRequired' "$rconf"; then dok "[dram] SigLevel = Required DatabaseRequired"; else dwarn "[dram] repo stanza does not require package + database signatures" "edit $rconf: SigLevel = Required DatabaseRequired"; fi
+    if [ -e "$rdb.sig" ]; then dok "[dram] database is signed ($rdb.sig)"; else dwarn "[dram] database signature $rdb.sig missing" "on cabin: dram pkgs publish (repo-add -s); then bin/sync-dram-repo.sh from the Mac"; fi
+    if have pacman; then
+      n="$(pacman -Sl dram 2>/dev/null | wc -l)"
+      local m
+      m="$(names_of "$manifest" | grep -c .)"
+      if [ "$n" -eq 0 ]; then
+        dwarn "[dram] repo is empty or unreadable on this host (pacman -Sl dram)" "bin/sync-dram-repo.sh from the Mac; then sudo pacman -Syu"
+      elif [ -f "$manifest" ] && [ "$n" -ne "$m" ]; then
+        dwarn "[dram] repo has $n package(s), pkgs/manifest.txt lists $m" "on cabin: dram pkgs build && dram pkgs publish; then bin/sync-dram-repo.sh from the Mac"
+      else dok "[dram] repo serves $n package(s)$([ -f "$manifest" ] && echo " = manifest")"; fi
+    fi
+  fi
+
+  # 6) Flatpak: Flathub only, both for apps and remotes
+  if have flatpak; then
+    out="$(timeout 20 flatpak list --app --columns=application,origin 2>/dev/null | awk '$2 != "flathub" && NF { print $1 " (" $2 ")" }')"
+    if [ -n "$out" ]; then dwarn "flatpak app(s) not from flathub: $(echo "$out" | paste -sd' ')" "flatpak uninstall <app>; flatpak install flathub <app>"; else dok "every flatpak app comes from flathub"; fi
+    out="$(timeout 20 flatpak remotes --columns=name 2>/dev/null | grep -vE '^(flathub)?$' | paste -sd' ')"
+    if [ -n "$out" ]; then dwarn "flatpak remote(s) other than flathub: $out" "flatpak remote-delete <name>"; else dok "flatpak remotes: flathub only"; fi
+  else dskip "flatpak not installed"; fi
+
+  # 7) sshd + firewall (read-only; the fix is docs/security/network/hardening.md)
+  if [ -f /etc/ssh/sshd_config ]; then
+    local sshcfg
+    sshcfg="$(cat /etc/ssh/sshd_config.d/*.conf /etc/ssh/sshd_config 2>/dev/null)"
+    if echo "$sshcfg" | grep -qiE '^[[:space:]]*PasswordAuthentication[[:space:]]+no'; then dok "sshd: PasswordAuthentication no"; else dwarn "sshd: password authentication is not explicitly off" "echo 'PasswordAuthentication no' | sudo tee /etc/ssh/sshd_config.d/10-keys-only.conf && sudo systemctl reload sshd  (docs/security/network/hardening.md)"; fi
+    echo "$sshcfg" | grep -qiE '^[[:space:]]*PermitRootLogin[[:space:]]+yes' && dwarn "sshd: PermitRootLogin yes" "set PermitRootLogin no in /etc/ssh/sshd_config.d/10-keys-only.conf"
+  else dskip "no sshd on this host"; fi
+  if [ "$(platform)" = wsl ]; then
+    dskip "WSL: no firewall of its own — Windows' firewall and the Hyper-V firewall filter the clone, and its sshd listens on 127.0.0.1 only"
+  elif have systemctl; then
+    # nftables.service is a oneshot without RemainAfterExit: "inactive" is its
+    # resting state. Loaded = enabled + last run succeeded.
+    if [ "$(systemctl is-enabled nftables 2>/dev/null)" = enabled ] && [ "$(systemctl show nftables -p Result --value 2>/dev/null)" = success ]; then dok "nftables firewall loaded (enabled, last load succeeded)"; else dwarn "nftables is not loaded — no firewall" "sudo bash $REPO/system/harden.sh  (docs/security/network/hardening.md)"; fi
+  else dskip "no systemd — firewall check"; fi
+}
+
+doctor_usage() {
+  cat <<'EOF'
+usage: dram doctor [--boot] [--brief] [--supply]
+  --boot     also the boot chain (ESP, refind.conf, initramfs, ly)
+  --brief    only the warnings, each with its fix
+  --supply   provenance and integrity only (docs/security/software-supply/integrity.md); also at the end of dram update
+EOF
+}
+cmd_doctor() {
+  local a
+  for a in "$@"; do
+    case "$a" in
+      --brief) D_BRIEF=1 ;;
+      --boot) D_BOOT=1 ;;
+      --supply) D_SUPPLY=1 ;;
+      -h | --help)
+        doctor_usage
+        return 0
+        ;;
+      *)
+        warn "unknown option: $a"
+        doctor_usage >&2
+        return 2
+        ;;
+    esac
+  done
+  local n out
+  platform_init
+  if [ "$D_SUPPLY" -eq 1 ]; then
+    doctor_supply
+    doctor_finish
+    return
+  fi
+
+  sec "systemd"
+  local failed nvpcr="" nvpcr_sig='Failed to initialize NvPCR index: No such file|Could not extend NvPCR: No such file'
+  failed="$(systemctl --failed --no-legend --plain 2>/dev/null | awk '{print $1}')"
+  # systemd 262 initializes NvPCRs only from a UKI that embeds a signed initrd PCR policy
+  # (ukify --sign-initrd-pcrs + PCRPKey); mkinitcpio's UKIs have none, so these units fail
+  # at every boot with ENOENT (upstream github.com/systemd/systemd/issues/43848, fix PRs
+  # open). Nothing here binds to NvPCRs (lantern's disk is PCR 7): information, not a warning.
+  # grep -c >/dev/null, never `cmd | grep -q`, in this file: under pipefail grep -q exits at the
+  # first match, the producer dies of SIGPIPE and the test reads false (dkms, journalctl: cabin)
+  if [ "$(journalctl -b -q --no-pager -o cat 2>/dev/null | grep -cE "$nvpcr_sig")" -gt 0 ]; then
+    nvpcr="$(grep -E '^(systemd-tpm2-setup-early|systemd-pcrproduct|systemd-pcrlogin@[^ ]*)\.service$' <<<"$failed" || true)"
+    [ -n "$nvpcr" ] && failed="$(grep -vxF -f <(printf '%s\n' "$nvpcr") <<<"$failed" || true)"
+  fi
+  n="$(grep -c . <<<"$failed")"
+  if [ "$n" -gt 0 ]; then dwarn "$n failed system unit(s): $(paste -sd' ' <<<"$failed")" "systemctl status <unit>; sudo systemctl reset-failed"; else dok "no failed system units"; fi
+  [ -z "$nvpcr" ] || dinfo "systemd 262 NvPCR units fail on a mkinitcpio UKI ($(paste -sd' ' <<<"$nvpcr")): known upstream, github.com/systemd/systemd/issues/43848 — nothing here uses NvPCRs"
+  n="$(systemctl --user --failed --no-legend --plain 2>/dev/null | wc -l)"
+  if [ "$n" -gt 0 ]; then dwarn "$n failed user unit(s): $(systemctl --user --failed --no-legend --plain | awk '{print $1}' | paste -sd' ')" "systemctl --user status <unit>; systemctl --user reset-failed"; else dok "no failed user units"; fi
+  # Known-benign p3 noise on these hosts (seen on every boot, no effect; handbook 11 §2):
+  # dbus "Ignoring duplicate name" for xfconf/thunar service files, the laptop's
+  # USB-C PPM init timeout, bluetooth's "Failed to set privacy", the kernel's "TDX not
+  # supported" on hosts without TDX, gkr-pam at ly before the keyring daemon runs, and
+  # wpa_supplicant on Wi-Fi chips without multicast RX registration. Everything else counts.
+  local jignore='Ignoring duplicate name|ucsi_acpi|Failed to set privacy|sd-device-monitor|TDX not supported|gkr-pam: unable to locate daemon control file|multicast RX registrations are not supported'
+  # the NvPCR units above, and their "Failed to start" lines, once they are recognized
+  [ -n "$nvpcr" ] && jignore="$jignore|NvPCR|Early TPM SRK Setup"
+  n="$(journalctl -p3 -b -q --no-pager -o cat 2>/dev/null | grep -Evc "$jignore")"
+  if [ "$n" -gt 0 ]; then
+    dwarn "$n error-level journal lines this boot (last 3 below; known noise filtered)" "journalctl -p3 -b"
+    journalctl -p3 -b -q --no-pager -o cat 2>/dev/null | grep -Ev "$jignore" | tail -n 3 | cut -c1-110 | sed 's/^/      /'
+  else dok "no error-level journal entries this boot (beyond known noise)"; fi
+
+  sec "pacman"
+  if have pacdiff; then
+    n="$(pacdiff -o 2>/dev/null | wc -l)"
+    if [ "$n" -gt 0 ]; then dwarn "$n unmerged .pacnew/.pacsave" "dram pacnew"; else dok "no pacnew files"; fi
+  fi
+  n="$(pacman -Qqdt 2>/dev/null | wc -l)"
+  if [ "$n" -gt 0 ]; then dwarn "$n orphaned package(s): $(pacman -Qqdt | paste -sd' ')" "sudo pacman -Rns \$(pacman -Qqdt)"; else dok "no orphans"; fi
+  if have checkrebuild; then
+    out="$(timeout 60 checkrebuild 2>/dev/null)"
+    if [ -n "$out" ]; then dwarn "packages built against old deps: $(echo "$out" | awk '{print $2}' | paste -sd' ')" "sudo pacman -S <pkg> (official) or dram pkgs build <pkg> ([dram]); checkrebuild -v explains why"; else dok "no packages need a rebuild"; fi
+  else dok "checkrebuild not installed (rebuild-detector) — skipped"; fi
+  if have arch-audit; then
+    out="$(timeout 20 arch-audit -u -q 2>/dev/null)"
+    if [ -n "$out" ]; then dwarn "vulnerable packages with a fix available: $(echo "$out" | paste -sd' ')" "dram update"; else dok "no fixable CVEs (arch-audit -u)"; fi
+  fi
+  local repo_n=0
+  if have checkupdates; then
+    out="$(timeout 60 checkupdates 2>/dev/null)"
+    [ -n "$out" ] && repo_n="$(echo "$out" | wc -l)"
+  fi
+  if [ "$repo_n" -gt 0 ]; then dwarn "$repo_n update(s) pending (official + [dram])" "dram update"; else dok "no pending updates"; fi
+  if out="$(reboot_needed)"; then dwarn "reboot needed: $(echo "$out" | paste -sd';')" "reboot when convenient"; else dok "no reboot needed"; fi
+  if have dkms; then
+    local k bad=""
+    for k in /usr/lib/modules/*/vmlinuz; do
+      [ -f "$k" ] && pacman -Qo "$k" >/dev/null 2>&1 || continue
+      k="$(basename "$(dirname "$k")")"
+      dkms status -k "$k" 2>/dev/null | grep -c installed >/dev/null || bad="$bad $k"
+    done
+    if [ -n "$bad" ]; then dwarn "dkms: no module installed for kernel(s):$bad" "sudo dkms autoinstall -k <ver>  (headers installed? pacman -Q linux-headers linux-lts-headers)"; else dok "dkms modules installed for every kernel"; fi
+  fi
+  local pc=/etc/pacman.conf
+  if grep -q '^Color' $pc && grep -q '^ParallelDownloads' $pc && grep -qF 'NoExtract = usr/share/wayland-sessions/hyprland-uwsm.desktop' $pc; then dok "pacman.conf: Color, ParallelDownloads, NoExtract(uwsm) present"; else dwarn "pacman.conf is missing Color / ParallelDownloads / the uwsm NoExtract line" "sudo bash $REPO/system/maintenance.sh"; fi
+  local t missing="" timers="paccache.timer reflector.timer arch-audit.timer smartd.service"
+  # a WSL clone has no disk of its own to watch (smartmontools is metal.txt's)
+  [ "$(platform)" = wsl ] && timers="paccache.timer reflector.timer arch-audit.timer"
+  for t in $timers; do systemctl is-active -q "$t" 2>/dev/null || missing="$missing $t"; done
+  [ -f /etc/pacman.d/hooks/50-pkglist.hook ] || missing="$missing 50-pkglist.hook"
+  if [ -n "$missing" ]; then dwarn "maintenance not installed:$missing" "sudo bash $REPO/system/maintenance.sh"; else dok "maintenance timers + hooks in place"; fi
+
+  if [ "$D_BOOT" -eq 1 ] && [ "$(platform)" = wsl ]; then
+    sec "boot"
+    dskip "WSL: no boot chain of its own (Microsoft's kernel boots the VM; wsl --update on Windows updates it)"
+  elif [ "$D_BOOT" -eq 1 ] && grep -qx 'BOOTLOADER=systemd-boot' /etc/dram/install-facts.env 2>/dev/null; then
+    doctor_boot_sdboot
+  elif [ "$D_BOOT" -eq 1 ]; then
+    sec "boot"
+    if have efibootmgr; then
+      out="$(efibootmgr 2>/dev/null)"
+      local first
+      first="$(echo "$out" | awk '/^BootOrder:/{split($2,a,","); print a[1]}')"
+      if echo "$out" | grep -qi "^Boot${first}\*.*refind"; then dok "efibootmgr: rEFInd boots first (Boot$first)"; else dwarn "efibootmgr: first boot entry is not rEFInd ($(echo "$out" | grep "^Boot${first}" | cut -c1-60))" "sudo efibootmgr -o <refind>,...  (see docs/platforms/arch/boot-chain.md)"; fi
+    else dwarn "efibootmgr not installed" "sudo pacman -S efibootmgr"; fi
+    [ -f /boot/EFI/refind/refind_x64.efi ] && dok "/boot/EFI/refind/refind_x64.efi present" || dwarn "/boot/EFI/refind/refind_x64.efi missing" "sudo refind-install"
+    [ -f /boot/EFI/BOOT/BOOTX64.EFI ] && dok "/boot/EFI/BOOT/BOOTX64.EFI fallback present" || dwarn "no /boot/EFI/BOOT/BOOTX64.EFI fallback loader" "sudo refind-install --usedefault /dev/<esp>  or copy refind_x64.efi there"
+    local kp
+    for kp in linux linux-lts linux-zen linux-hardened; do
+      pacman -Q "$kp" >/dev/null 2>&1 || continue
+      [ -f "/boot/initramfs-$kp-fallback.img" ] && dok "fallback initramfs for $kp" || dwarn "no /boot/initramfs-$kp-fallback.img" "sudo mkinitcpio -p $kp"
+    done
+    n="$(df --output=avail -m /boot 2>/dev/null | tail -1 | tr -d ' ')"
+    if [ -n "$n" ] && [ "$n" -lt 100 ]; then dwarn "/boot has only ${n}MB free" "sudo paccache -rk1; remove unused kernels"; else dok "/boot free: ${n:-?}MB"; fi
+  fi
+
+  sec "dram"
+  if [ -f "$REPO/flake.lock" ]; then
+    n="$(age_days "$(stat -c %Y "$REPO/flake.lock")")"
+    if [ "$n" -gt 60 ]; then dwarn "flake.lock is $n days old" "dram update --full"; else dok "flake.lock is $n days old"; fi
+  else dwarn "$REPO/flake.lock missing" "git -C $REPO status"; fi
+  if git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
+    n="$(git -C "$REPO" status --porcelain 2>/dev/null | wc -l)"
+    if [ "$n" -gt 0 ]; then dwarn "repo has $n uncommitted change(s)" "git -C $REPO status; commit them"; else dok "repo is clean"; fi
+    if git -C "$REPO" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+      out="$(git -C "$REPO" rev-list --left-right --count '@{u}...HEAD' 2>/dev/null)"
+      local behind ahead
+      read -r behind ahead <<<"$out"
+      if [ "${ahead:-0}" -gt 0 ] || [ "${behind:-0}" -gt 0 ]; then dwarn "repo is $ahead ahead / $behind behind its upstream" "git -C $REPO pull --rebase && git -C $REPO push"; else dok "repo in sync with upstream"; fi
+    else dok "repo has no upstream (LAN clones; bin/push-host.sh from the Mac)"; fi
+    # the release model: the running build, and whether the checkout follows its channel
+    if [ -f "$RELEASE" ]; then
+      dinfo "running $(release_get VERSION_ID) · build $(release_get BUILD_ID) · channel $(channel) · generation $(release_get HM_GENERATION) (dram version)"
+      if [ "$(release_get COMMIT)" != "$(head_sha)" ]; then dwarn "the checkout ($(head_name)) is not the switched build ($(release_get BUILD_ID))" "dram switch"; else dok "the switched build is the checkout ($(head_name))"; fi
+    else dwarn "no $RELEASE — the running build is unknown" "dram switch  (writes it)"; fi
+    if [ -z "$(channel_target)" ]; then
+      dinfo "channel $(channel) has no target on this host yet ($([ "$(channel)" = stable ] && echo 'no v* tag: bin/release.sh on the Mac' || echo 'no master branch'))"
+    elif out="$(dram_pending)"; then
+      dwarn "behind channel $(channel): ${out% *} is ${out##* } commits from the checkout" "dram update  (dram changelog for the notes)"
+    else dok "channel $(channel): the checkout is the target ($(channel_target))"; fi
+  fi
+  if have home-manager; then
+    local gd gp
+    gd="$(gen_date)" gp="$(gen_path)"
+    if [ -n "$gd" ]; then
+      n="$(age_days "$(date -d "$gd" +%s)")"
+      local cfg_ts
+      cfg_ts="$(git -C "$REPO" log -1 --format=%ct -- modules flake.nix flake.lock 2>/dev/null || echo 0)"
+      # A switch that produced an IDENTICAL closure creates no new generation, so
+      # compare the commit against the last successful `dram switch` (state file,
+      # seconds) when there is one, else against the generation date (minute
+      # resolution, 60 s tolerance).
+      local sw_ts
+      sw_ts="$(cat "$STATE/last-switch" 2>/dev/null || echo 0)"
+      [ "${sw_ts:-0}" -gt 0 ] || sw_ts="$(($(date -d "$gd" +%s) + 60))"
+      if [ "${cfg_ts:-0}" -gt "$sw_ts" ]; then dwarn "modules/ or flake changed after the last dram switch (generation $n days old)" "dram switch"; else dok "active HM generation is $n days old; nothing in modules/ changed since the last switch"; fi
+      [ -n "$gp" ] && [ ! -e "$gp" ] && dwarn "active generation path $gp is gone" "dram switch"
+    else dwarn "no Home Manager generation found" "dram switch"; fi
+  fi
+  local cur="$HOME/.config/themes/current" what="Hyprland will not start"
+  # every host has the themes (modules/cli.nix); without a session the loss is fzf's colours
+  grep -q '"desktop"' "$REPO/modules/hosts/$HOST.nix" 2>/dev/null || what="fzf has no options file and exits at once"
+  if [ -f "$cur/palette.lua" ]; then dok "theme: $(basename "$(readlink -f "$cur")")"; else dwarn "themes/current (in ~/.config) does not resolve to a theme ($what)" "dram switch  (modules/cli.nix seeds it with washi; dram theme washi on a desktop)"; fi
+  n="$(find "$HOME/.config" -maxdepth 3 -name '*.bak-*' 2>/dev/null | wc -l)"
+  if [ "$n" -gt 0 ]; then dwarn "$n Home Manager backup file(s) *.bak-* under ~/.config" "find ~/.config -maxdepth 3 -name '*.bak-*'   # review, then -delete"; else dok "no stale *.bak-* files under ~/.config"; fi
+  # the home folders' short lowercase names (modules/desktop.nix xdg.userDirs, handbook 02 §2):
+  # a capitalised one is left from before them, or an app that ignores user-dirs.dirs
+  if grep -q '"desktop"' "$REPO/modules/hosts/$HOST.nix" 2>/dev/null; then
+    local d old=""
+    for d in Desktop Documents Downloads Music Pictures Projects Public Templates Videos ROMs; do [ -e "$HOME/$d" ] && old="$old ~/$d"; done
+    if [ -n "$old" ]; then dwarn "capitalised home folder(s):$old" "move what they hold into the lowercase ones (~/documents, ~/pictures …), then rmdir them (handbook 02 §2)"; else dok "home folders: the lowercase set (~/documents ~/downloads ~/music ~/pictures ~/projects ~/videos)"; fi
+    if grep -q '"creator"' "$REPO/modules/hosts/$HOST.nix" 2>/dev/null; then
+      if [ -O /data/recordings ] && [ "$(readlink "$HOME/videos/recordings" 2>/dev/null)" = /data/recordings ]; then dok "recordings: /data/recordings is yours, ~/videos/recordings -> it"; else dwarn "/data/recordings is not yours, or no ~/videos/recordings link: OBS cannot record there" "sudo bash $REPO/system/creator-setup.sh  (dram apply runs it)"; fi
+    fi
+  fi
+  # Host facts (modules/core.nix -> ~/.config/dram/facts.lua, the dram.* flags of
+  # modules/hosts/<h>.nix) must describe THIS machine: hostName vs /etc/hostname,
+  # gpu vs the PCI vendor of the display controller(s) (install/lib/detect.sh's rule).
+  local facts="$HOME/.config/dram/facts.lua" fv dv
+  if [ -f "$facts" ]; then
+    fv="$(sed -nE 's/^ *\["host"\] = "([^"]*)",?$/\1/p' "$facts")"
+    if [ "$fv" = "$HOST" ]; then dok "facts.lua: host = $HOST"; else dwarn "facts.lua says host '$fv' but /etc/hostname says '$HOST'" "dram.hostName in modules/hosts/$HOST.nix; dram switch"; fi
+    fv="$(sed -nE 's/^ *\["gpu"\] = "([^"]*)",?$/\1/p' "$facts")"
+    dv="$(lspci -d ::03xx -n 2>/dev/null | awk '{print $3}' | sed -E 's/^8086:.*/intel/; s/^10de:.*/nvidia/; s/^1002:.*/amd/' | sort -u | paste -sd,)"
+    if [ "$fv" = none ]; then
+      # no driver of its own: a WSL clone's GPU is Windows' (lspci shows Microsoft's 1414 device)
+      dok "facts.lua: gpu = none (no driver env$([ "$(platform)" = wsl ] && echo '; the GPU belongs to Windows'))"
+    elif [ -z "$dv" ]; then
+      dinfo "lspci shows no display controller; facts.lua gpu '$fv' not checked"
+    elif echo ",$dv," | grep -q ",$fv,"; then
+      dok "facts.lua: gpu = $fv (lspci agrees)"
+    else
+      dwarn "facts.lua says gpu '$fv' but lspci shows '$dv'" "dram.gpu in modules/hosts/$HOST.nix (and packages/gpu-<vendor>.txt); dram switch"
+    fi
+  else dwarn "no ~/.config/dram/facts.lua" "dram switch  (modules/core.nix writes it)"; fi
+
+  sec "backup"
+  local bm="$HOME/.config/borgmatic.d/main.yaml" peer=""
+  if [ -f "$bm" ]; then
+    peer="$(grep -oE 'ssh://[^/]+' "$bm" | head -1 | sed 's|ssh://||; s|.*@||')"
+    if systemctl --user is-active -q borgmatic.timer 2>/dev/null; then dok "borgmatic.timer active"; else dwarn "borgmatic.timer not active" "systemctl --user enable --now borgmatic.timer  (or dram switch)"; fi
+    out="$(journalctl --user -u borgmatic -n1 -q -o cat --no-pager 2>/dev/null | cut -c1-100)"
+    [ -n "$out" ] && [ "$D_BRIEF" -eq 0 ] && echo "      last log: $out"
+    if [ -n "$peer" ] && ping -q -c1 -W2 "$peer" >/dev/null 2>&1; then
+      dok "backup peer $peer reachable"
+      if have borgmatic; then
+        local last
+        last="$(timeout 60 borgmatic info --json 2>/dev/null | python3 -c 'import json,sys
+d=json.load(sys.stdin); a=d[0]["archives"] if d and "archives" in d[0] else []
+print(a[-1]["start"] if a else "")' 2>/dev/null)"
+        last="${last%.*}" # borg prints microseconds (.000000); nothing here needs them
+        if [ -n "$last" ]; then
+          n="$(age_days "$(date -d "$last" +%s)")"
+          if [ "$n" -gt 2 ]; then dwarn "last backup archive is $n days old ($last)" "dram backup run; journalctl --user -u borgmatic"; else dok "last backup archive: $last ($n days old)"; fi
+        else dwarn "no archives in the repo on $peer (or repo not initialised)" "borgmatic repo-create --encryption repokey-blake2; dram backup run"; fi
+      fi
+    else dwarn "backup peer ${peer:-?} unreachable (backups skip quietly while it is off)" "wake $peer; dram backup run"; fi
+  else dinfo "backups are paused until the NAS (decisions/0014): no borgmatic config on this host"; fi
+  local f
+  for f in "$HOME/.ssh/id_ed25519" $([ -f "$bm" ] && echo "$HOME/.config/borgmatic/passphrase"); do
+    if [ -e "$f" ]; then
+      if [ "$(stat -c %a "$f")" = 600 ]; then dok "$(basename "$f") is 0600"; else dwarn "$f is $(stat -c %a "$f"), not 0600" "chmod 600 $f"; fi
+    else dwarn "$f missing" "docs/operations/backups/README.md (passphrase) / ssh-keygen -t ed25519 (key)"; fi
+  done
+
+  sec "secrets"
+  # dram.secrets.enable writes the sops-nix user unit (modules/secrets.nix, docs/security/identity/secrets.md).
+  if [ -f "$HOME/.config/systemd/user/sops-nix.service" ]; then
+    # oneshot without RemainAfterExit: "inactive" after a good run, so judge by Result
+    out="$(systemctl --user show -p Result --value sops-nix.service 2>/dev/null)"
+    if [ "$out" = "success" ]; then dok "sops-nix.service last run succeeded"; else dwarn "sops-nix.service result: ${out:-unknown}" "systemctl --user status sops-nix; journalctl --user -u sops-nix; dram switch"; fi
+    f="$HOME/.config/sops-nix/secrets/borg_passphrase"
+    if [ -e "$f" ]; then
+      if [ "$(stat -Lc %a "$f")" = 400 ]; then dok "borg_passphrase secret present, 0400"; else dwarn "$f is $(stat -Lc %a "$f"), not 0400" "modules/secrets.nix mode; dram switch"; fi
+    else dwarn "secret missing: $f" "systemctl --user restart sops-nix; journalctl --user -u sops-nix  (docs/security/identity/secrets.md)"; fi
+    f="$HOME/.config/sops/age/keys.txt"
+    if [ -e "$f" ]; then
+      if [ "$(stat -c %a "$f")" = 600 ]; then dok "age key is 0600"; else dwarn "$f is $(stat -c %a "$f"), not 0600" "chmod 600 $f"; fi
+    else dwarn "age key missing: $f" "bash ~/git/dotfiles/system/secrets-bootstrap.sh  (docs/security/identity/secrets.md)"; fi
+  else dinfo "sops not enabled (docs/security/identity/secrets.md)"; fi
+
+  # ly and the keyring are the session's: a host without the desktop role logs in on a tty
+  if grep -q '"desktop"' "$REPO/modules/hosts/$HOST.nix" 2>/dev/null; then
+    sec "login"
+    if grep -q pam_gnome_keyring /etc/pam.d/ly 2>/dev/null; then dok "ly unlocks gnome-keyring via PAM"; else dwarn "no pam_gnome_keyring line in /etc/pam.d/ly (Electron apps fall back to a plaintext store)" "docs/toolchain/README.md 'Keyring'; add 'auth optional pam_gnome_keyring.so' + 'session optional pam_gnome_keyring.so auto_start'"; fi
+  fi
+
+  doctor_network
+  [ "$(platform)" = wsl ] && doctor_wsl
+  doctor_yubikey
+  doctor_gaming
+  doctor_emulation
+  doctor_case_display
+  doctor_declared
+  doctor_supply
+  doctor_finish
+}
+
+# --- boot on a machine install/arch-install.sh made (decisions/0011) -----------------
+# systemd-boot + signed UKIs on a root-only ESP at /efi. The firmware variables and the
+# ESP's free space are readable as the user; the files on the ESP, sbctl and snapper need
+# root, so those checks run only when sudo needs no prompt (sudo -v first).
+doctor_boot_sdboot() {
+  sec "boot"
+  local out first sb sm n kp list
+  if have efibootmgr; then
+    out="$(efibootmgr 2>/dev/null)"
+    first="$(awk '/^BootOrder:/{split($2,a,","); print a[1]}' <<<"$out")"
+    # rEFInd fronts the UKIs when system/apply-refind.sh put it there (2026-10-12);
+    # otherwise systemd-boot is first
+    if grep -qiE "^Boot${first}\*? rEFInd" <<<"$out"; then
+      if grep -qiE "^Boot[0-9A-F]{4}\*? Linux Boot Manager" <<<"$out"; then dok "efibootmgr: rEFInd boots first (Boot$first), systemd-boot is there behind it"; else dwarn "efibootmgr: rEFInd boots first but there is no Linux Boot Manager entry to fall back to" "sudo bootctl install  (then sudo bash $REPO/system/secureboot-setup.sh)"; fi
+    elif grep -qiE "^Boot${first}\*? Linux Boot Manager" <<<"$out"; then dok "efibootmgr: systemd-boot boots first (Boot$first)"; else dwarn "efibootmgr: the first boot entry is neither rEFInd nor systemd-boot ($(grep "^Boot${first}" <<<"$out" | cut -c1-60))" "sudo bash $REPO/system/apply-refind.sh  (or: sudo efibootmgr -o <rEFInd>,<Linux Boot Manager>,…; dram boot-to list shows the numbers)"; fi
+  else dwarn "efibootmgr not installed" "dram apply (packages/metal.txt)"; fi
+  sb="$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c 2>/dev/null | awk '{print $NF}')"
+  sm="$(od -An -t u1 /sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c 2>/dev/null | awk '{print $NF}')"
+  if [ "$sb" = 1 ]; then dok "Secure Boot is enforcing"; elif [ "$sm" = 1 ]; then dwarn "Secure Boot: the firmware is in Setup Mode (no keys enrolled)" "sudo bash $REPO/system/secureboot-setup.sh  (handbook 01 §8)"; else dwarn "Secure Boot is off" "turn it on in firmware setup; if it refuses, sudo bash $REPO/system/secureboot-setup.sh"; fi
+  n="$(df --output=avail -m /efi 2>/dev/null | tail -1 | tr -d ' ')"
+  if [ -n "$n" ] && [ "$n" -lt 400 ]; then dwarn "the ESP (/efi) has only ${n}MB free: snapshot boot entries stop being made" "fewer snapshots: sudo snapper -c root delete <n>; the oldest UKIs go with them"; else dok "/efi free: ${n:-?}MB"; fi
+  if ! sudo -n true 2>/dev/null; then
+    dinfo "the ESP, sbctl and snapper checks need root: sudo -v, then dram doctor --boot again"
+    return 0
+  fi
+  for kp in linux linux-lts; do
+    pacman -Q "$kp" >/dev/null 2>&1 || continue
+    if sudo -n test -f "/efi/EFI/Linux/arch-$kp.efi"; then dok "UKI for $kp on the ESP"; else dwarn "no /efi/EFI/Linux/arch-$kp.efi" "sudo bash $REPO/system/uki-presets.sh  (then sudo mkinitcpio -P if it was in place)"; fi
+  done
+  # Windows' boot files (EFI/Microsoft) carry Microsoft's signature, which the firmware's db
+  # trusts; sbctl only knows its own key, so they are not "unsigned" in any sense that matters
+  list="$(sudo -n sbctl verify 2>/dev/null | grep -E '✗|not signed' | grep -v -i '/EFI/Microsoft/' || true)"
+  if [ -n "$list" ]; then dwarn "unsigned on the ESP: $(sed 's/^[^/]*//' <<<"$list" | paste -sd' ' - | cut -c1-120)" "sudo sbctl sign -s <file>; sudo bash $REPO/system/secureboot-setup.sh"; else dok "sbctl verify: everything of ours on the ESP is signed$(sudo -n test -d /efi/EFI/Microsoft && echo ' (Windows: Microsoft-signed)')"; fi
+  # Windows on its own ESP (WIN-ESP; decisions/log.md#d65): its files stay off this
+  # ESP, and rEFInd's Windows tile names the NVRAM entry that starts it (firmware_bootnum)
+  local winpu wbn tile
+  winpu=""
+  [ -b /dev/disk/by-label/WIN-ESP ] && winpu="$(lsblk -dno PARTUUID "$(readlink -f /dev/disk/by-label/WIN-ESP)" 2>/dev/null)"
+  if [ -n "$winpu" ]; then
+    if sudo -n test -d /efi/EFI/Microsoft; then dwarn "Windows' boot files are on Arch's ESP again, though Windows has its own (WIN-ESP): Windows servicing wrote here" "sudo bash $REPO/system/windows-esp-retire.sh  (archives and removes them)"; else dok "Windows boots from its own ESP (WIN-ESP); none of its files on /efi"; fi
+    wbn="$(efibootmgr -v 2>/dev/null | awk -v pu="$winpu" 'tolower($0) ~ tolower(pu) && tolower($0) ~ /bootmgfw\.efi/ { print substr($1, 5, 4); exit }')"
+    tile="$(sudo -n sed -n 's/^[[:space:]]*firmware_bootnum[[:space:]]*\([0-9A-Fa-f]\{4\}\).*/\1/p' /efi/EFI/refind/refind.conf 2>/dev/null | head -n 1)"
+    if [ -z "$wbn" ]; then
+      dwarn "no NVRAM entry starts Windows' own ESP (WIN-ESP)" "boot Windows once from the F11 menu, or: sudo efibootmgr -c -d <disk> -p <part> -L 'Windows Boot Manager' -l '\\EFI\\Microsoft\\Boot\\bootmgfw.efi'"
+    elif [ "${tile^^}" != "${wbn^^}" ]; then
+      dwarn "rEFInd's Windows tile starts Boot${tile:-none}, but Windows' own entry is Boot$wbn (bcdboot recreated it?)" "sudo bash $REPO/system/apply-refind.sh"
+    else dok "rEFInd's Windows tile starts Windows' own entry (Boot$wbn)"; fi
+  fi
+  # the splash (system/plymouth-setup.sh): on the UKIs' command line, verbose in the fallback's
+  if [ -f /etc/kernel/cmdline.fallback ]; then
+    local plain
+    plain="$(tr -s ' \n' ' ' </etc/kernel/cmdline | sed 's/^ //; s/ $//')"
+    for w in quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0; do plain="$(printf '%s' " $plain " | sed "s/ $w / /g; s/^ //; s/ $//")"; done
+    if ! grep -qw splash /etc/kernel/cmdline; then
+      dwarn "no splash on the kernel command line: Plymouth stays hidden" "sudo bash $REPO/system/plymouth-setup.sh"
+    elif [ "$plain" != "$(tr -s ' \n' ' ' </etc/kernel/cmdline.fallback | sed 's/^ //; s/ $//')" ]; then
+      dwarn "/etc/kernel/cmdline.fallback differs from the live command line minus the splash: the fallback UKIs boot with old parameters" "sudo bash $REPO/system/plymouth-setup.sh"
+    else dok "Plymouth splash on the UKIs, the fallback UKIs verbose"; fi
+  else dinfo "no Plymouth splash on this host (sudo bash $REPO/system/plymouth-setup.sh adds it)"; fi
+  n="$(sudo -n find /efi/EFI/Linux -maxdepth 1 -name 'arch-snap-*.efi' 2>/dev/null | grep -c .)"
+  if [ "${n:-0}" -gt 0 ]; then dok "$n snapshot boot entr$([ "$n" = 1 ] && echo y || echo ies) (dram rollback --system lists them)"; else dinfo "no snapshot boot entries yet (the first pacman transaction makes one)"; fi
+}
+
+# --- YubiKeys: what keys/ lists and what this host does with it (decisions/0019) ----
+# sshd's second keys file and git's signing handle on every host; on desktops the
+# pam_u2f line in sudo, login, polkit-1 and this login's line in /etc/dram/u2f_mappings.
+doctor_yubikey() {
+  [ -f "$REPO/modules/hosts/$HOST.nix" ] || return 0
+  sec "yubikeys"
+  local nssh nu2f f svc missing="" stale="" line n
+  nssh="$(grep -c '^sk-' "$REPO/keys/ssh.pub" 2>/dev/null)"
+  nu2f="$(grep -cvE '^[[:space:]]*(#|$)' "$REPO/keys/pam-u2f.txt" 2>/dev/null)"
+  nssh="${nssh:-0}" nu2f="${nu2f:-0}"
+  if [ "$nssh" -eq 0 ] && [ "$nu2f" -eq 0 ]; then
+    dinfo "no YubiKey enrolled yet (keys/ssh.pub, keys/pam-u2f.txt): dram yubikey enroll primary — docs/security/identity/yubikeys.md"
+    return 0
+  fi
+  dinfo "enrolled: $(grep -oE 'yubikey:[a-z0-9-]+' "$REPO/keys/ssh.pub" | cut -d: -f2 | paste -sd' ' -) — $nssh SSH key(s), $nu2f pam-u2f credential(s)"
+  if [ "$nssh" -gt 0 ]; then
+    # on metal harden.sh writes sshd's side; in a WSL clone wsl-setup.sh does, for its
+    # loopback sshd (VSCodium), and Windows' agent holds the key (the bridge, modules/dev.nix)
+    local fixer=system/harden.sh dropin=/etc/ssh/sshd_config.d/10-keys-only.conf
+    [ "$(platform)" = wsl ] && fixer=system/wsl-setup.sh dropin=/etc/ssh/sshd_config.d/10-dram-wsl.conf
+    f="/etc/ssh/authorized_keys.d/$ME"
+    if [ "$(grep '^sk-' "$f" 2>/dev/null)" = "$(grep '^sk-' "$REPO/keys/ssh.pub")" ]; then dok "sshd accepts the YubiKeys' SSH keys ($f)"; else dwarn "$f does not match keys/ssh.pub" "sudo bash $REPO/$fixer  (dram apply runs it$([ "$fixer" = system/harden.sh ] && echo ' after asking'))"; fi
+    grep -qs 'authorized_keys.d/%u' "$dropin" || dwarn "sshd does not read /etc/ssh/authorized_keys.d/%u" "sudo bash $REPO/$fixer"
+    if [ -e "$HOME/.ssh/id_ed25519_sk" ] && [ -e "$HOME/.ssh/id_ed25519_sk.pub" ]; then
+      dok "git signs with $(readlink "$HOME/.ssh/id_ed25519_sk" 2>/dev/null || echo id_ed25519_sk) (a touch per commit)"
+    elif [ "$(platform)" = wsl ] && [ -e "$HOME/.ssh/id_ed25519_sk.pub" ]; then
+      # the bridge needs only the public half: ssh and ssh-keygen -Y sign find the key in the agent
+      dok "git signs with id_ed25519_sk.pub through Windows' agent (a touch in Windows Hello per commit)"
+    elif [ "$(platform)" = wsl ]; then
+      dwarn "no ~/.ssh/id_ed25519_sk.pub: git cannot sign (modules/dev.nix signs with the YubiKey Windows' agent holds)" "grep ' yubikey:primary\$' $REPO/keys/ssh.pub | cut -d' ' -f1,2 > ~/.ssh/id_ed25519_sk.pub  (the key you carry; docs/platforms/wsl/README.md)"
+    else dwarn "no ~/.ssh/id_ed25519_sk: git cannot sign (modules/dev.nix signs with the YubiKey)" "dram yubikey ssh  (a key plugged in; asks for its FIDO2 PIN)"; fi
+  fi
+  grep -q '"desktop"' "$REPO/modules/hosts/$HOST.nix" || return 0
+  line="$(grep -E '^auth[[:space:]].*pam_u2f\.so' "$REPO/system/pam-u2f.conf" | head -1)"
+  for svc in sudo login polkit-1; do
+    if ! grep -qs 'pam_u2f\.so' "/etc/pam.d/$svc"; then missing="$missing $svc"; elif ! grep -qsxF "$line" "/etc/pam.d/$svc"; then stale="$stale $svc"; fi
+  done
+  if [ -n "$missing$stale" ]; then
+    dwarn "pam_u2f line${missing:+ missing in:$missing}${stale:+ differs from system/pam-u2f.conf in:$stale}" "sudo bash $REPO/system/yubikey-setup.sh"
+  else dok "pam_u2f follows the password in sudo, login (ly, hyprlock, console) and polkit-1"; fi
+  if grep -q "^$ME:" /etc/dram/u2f_mappings 2>/dev/null; then
+    n="$(grep "^$ME:" /etc/dram/u2f_mappings | tr ':' '\n' | tail -n +2 | grep -c .)"
+    if [ "$n" = "$nu2f" ]; then dok "second factor ON for $ME ($n key(s))"; else dwarn "second factor on with $n key(s); keys/pam-u2f.txt lists $nu2f" "sudo bash $REPO/system/yubikey-setup.sh"; fi
+    [ "$(stat -c '%U:%G %a' /etc/dram/u2f_mappings 2>/dev/null)" = "root:root 644" ] \
+      || dwarn "/etc/dram/u2f_mappings is $(stat -c '%U:%G %a' /etc/dram/u2f_mappings), not root:root 644 (pam_u2f refuses a map it cannot trust)" "sudo bash $REPO/system/yubikey-setup.sh"
+  elif [ "$nu2f" -gt 0 ]; then
+    dwarn "second factor OFF for $ME on this host" "sudo bash $REPO/system/yubikey-setup.sh  (at the machine, a listed key plugged in)"
+  fi
+  # what would quietly undo it: a global pam_u2f.conf can inject
+  # options into every line; hyprlock without its file falls back to su (password only);
+  # polkit's sandboxed helper reaches the key only through pam-u2f's drop-in
+  [ -e /etc/security/pam_u2f.conf ] && dwarn "/etc/security/pam_u2f.conf exists: its options (alwaysok too) apply to every pam_u2f line" "sudo rm /etc/security/pam_u2f.conf  (dram's options live in system/pam-u2f.conf)"
+  for svc in ly hyprlock; do
+    grep -qsE '^auth[[:space:]]+include[[:space:]]+login' "/etc/pam.d/$svc" || dwarn "/etc/pam.d/$svc does not include login: it skips the key" "pacman -Qkk $svc; dram pacnew"
+  done
+  systemctl cat polkit-agent-helper@.service 2>/dev/null | grep -c 'DeviceAllow=char-hidraw' >/dev/null \
+    || dwarn "polkit's agent helper has no hidraw access: every polkit prompt will refuse the key" "pacman -Qkk pam-u2f (it ships the polkit-agent-helper@.service.d drop-in)"
+  # GnuPG's scdaemon would hold a YubiKey's reader, which age-plugin-yubikey and ykman reach
+  # through pcscd (decisions/log.md#d127; modules/desktop.nix adds the line)
+  if grep -qx 'disable-scdaemon' "$HOME/.gnupg/gpg-agent.conf" 2>/dev/null; then dok "GnuPG leaves the YubiKeys' reader alone (disable-scdaemon)"; else dwarn "GnuPG's scdaemon may hold a YubiKey's reader for itself" "dram switch  (modules/desktop.nix)"; fi
+  # a key plugged in here: 8 PIN tries, and only a right FIDO2 PIN refills them (a TPM PIN
+  # typed at lantern's disk prompt with a key plugged in spends one)
+  if have ykman && have fido2-token && [ "$(fido2-token -L 2>/dev/null | grep -c .)" -eq 1 ]; then
+    n="$(ykman fido info 2>/dev/null | sed -n 's/^PIN:[[:space:]]*\([0-9][0-9]*\) attempt.*/\1/p')"
+    if [ -n "$n" ] && [ "$n" -lt 8 ]; then dwarn "the plugged-in YubiKey has $n of 8 FIDO2 PIN tries left" "ykman fido access verify-pin  (a right PIN refills them)"; elif [ -n "$n" ]; then dok "the plugged-in YubiKey: 8 of 8 FIDO2 PIN tries"; fi
+  fi
+  # lantern's disk: the YubiKey stage only works with fido2-device= and tries=0 on the cmdline
+  if grep -q '^LUKS_UUID=.' /etc/dram/install-facts.env 2>/dev/null; then
+    n="$(grep -c . /etc/dram/luks-fido2 2>/dev/null)"
+    if [ "${n:-0}" -eq 0 ]; then
+      dinfo "the disk has no YubiKey slot yet: sudo bash $REPO/system/fido2-enroll.sh  (one key plugged in)"
+    elif grep -q 'fido2-device=auto' /etc/kernel/cmdline && grep -q 'tries=0' /etc/kernel/cmdline; then
+      dok "the disk opens with TPM2 + PIN or a YubiKey ($n slot(s), /etc/dram/luks-fido2)"
+    else dwarn "YubiKey slots on the disk, but /etc/kernel/cmdline lacks fido2-device=auto or tries=0" "sudo bash $REPO/system/fido2-enroll.sh"; fi
+  fi
+  return 0
+}
+
+# --- network: who manages it (docs/security/network/README.md) -------------------------------------
+# Desktops and laptops: NetworkManager (system/network-setup.sh); headless hosts:
+# systemd-networkd (+ iwd for Wi-Fi). Two managers on one interface fight over it.
+doctor_network() {
+  [ -f "$REPO/modules/hosts/$HOST.nix" ] || return 0
+  sec "network"
+  if [ "$(platform)" = wsl ]; then
+    dskip "WSL: the network, DNS and the firewall are Windows' (mirrored networking); the wsl section checks the clone's side"
+    return 0
+  fi
+  local nm nd
+  nm="$(systemctl is-active NetworkManager 2>/dev/null)"
+  nd="$(systemctl is-active systemd-networkd 2>/dev/null)"
+  if grep -q '"desktop"' "$REPO/modules/hosts/$HOST.nix"; then
+    if [ "$nm" = active ] && [ "$nd" != active ]; then
+      dok "NetworkManager runs the network$(have nmcli && printf ' (%s)' "$(nmcli -t -f DEVICE,STATE device 2>/dev/null | grep ':connected$' | cut -d: -f1 | paste -sd, -)")"
+    elif [ "$nm" = active ]; then
+      dwarn "NetworkManager and systemd-networkd both run" "sudo bash $REPO/system/network-setup.sh  (at the machine)"
+    else dwarn "desktop role, but NetworkManager is not running (systemd-networkd: $nd)" "sudo bash $REPO/system/network-setup.sh  (at the machine; dram apply runs it)"; fi
+  else
+    if [ "$nd" = active ]; then dok "systemd-networkd runs the network (headless host)"; else dinfo "systemd-networkd: $nd"; fi
+  fi
+  return 0
+}
+
+# --- the WSL clone (decisions/0021, docs/platforms/wsl/README.md) -----------------------------------------
+# Only inside WSL: the host file and the running distro agree, systemd runs it, Microsoft's
+# masks hold and nothing metal is on, the user manager lingers, wsl.conf and Windows'
+# .wslconfig are the repo's, the disk keeps room under its cap, ssh and git reach Windows'
+# agent, and the staged bundle is not ahead of the checkout. Windows' side is read through
+# interop by full path (appendWindowsPath=false keeps it off PATH).
+win_exe() { # win_exe <name.exe> [args]: a Windows program by its full path, output without CR/NUL
+  local exe="/mnt/c/Windows/System32/$1"
+  shift
+  [ -x "$exe" ] || return 1
+  WSL_UTF8=1 timeout 20 "$exe" "$@" 2>/dev/null | tr -d '\r\000'
+}
+# wslconfig_rendered <windows-host>: install/windows/wslconfig filled from its "#:" row
+wslconfig_rendered() {
+  local t="$REPO/install/windows/wslconfig" mem swap vhd
+  read -r mem swap vhd < <(awk -v h="$1" '$1 == "#:" && $2 == h { print $3, $4, $5 }' "$t" 2>/dev/null)
+  [ -n "$vhd" ] || return 1
+  sed -e "s/@MEMORY@/$mem/g" -e "s/@SWAP@/$swap/g" -e "s/@VHD@/$vhd/g" "$t"
+}
+doctor_wsl() {
+  sec "wsl"
+  libs_load
+  local distro winhost u bad="" metal="" want prof ver n size sock keys line
+  distro="$(wsl_distro)" winhost="$(host_wsl "$REPO" "$HOST" windowsHost)"
+  # the platform and the name
+  if [ "$(host_form "$REPO" "$HOST")" = wsl ]; then dok "WSL, and modules/hosts/$HOST.nix is a WSL clone (distro $distro on ${winhost:-?})"; else dwarn "this is WSL, but modules/hosts/$HOST.nix is a metal host: dram would install its kernels and session" "[network] hostname=<host>-wsl in /etc/wsl.conf, then from Windows: wsl.exe --terminate <distro> (docs/platforms/wsl/README.md)"; fi
+  if [ "$(uname -n)" = "$HOST" ]; then dok "running as $HOST (/etc/wsl.conf's hostname)"; else dwarn "the distro runs as $(uname -n), /etc/hostname says $HOST: wsl.conf changed since it started" "from Windows: wsl.exe --terminate $distro, then open it again"; fi
+  if grep -qi 'microsoft-standard-wsl' /proc/sys/kernel/osrelease 2>/dev/null; then dok "kernel $(uname -r): Microsoft's, updated with WSL on Windows"; else dinfo "kernel $(uname -r) does not carry WSL 2's string"; fi
+  ver="$(win_exe wsl.exe --version | sed -nE '1s/^[^0-9]*([0-9][0-9.]*).*/\1/p')"
+  if [ -z "$ver" ]; then
+    dskip "wsl.exe --version: Windows' side not readable (interop off?)"
+  elif [ "$(printf '%s\n2.5\n' "$ver" | sort -V | head -1)" = 2.5 ]; then
+    dok "WSL $ver"
+  else dwarn "WSL $ver: older than 2.5, so no wsl --manage --resize for the disk" "on Windows (admin): wsl --update"; fi
+  # systemd and the units
+  if [ "$(ps -o comm= -p 1 2>/dev/null)" = systemd ]; then dok "systemd is PID 1"; else dwarn "PID 1 is $(ps -o comm= -p 1 2>/dev/null), not systemd: no units, timers or user manager" "[boot] systemd=true in /etc/wsl.conf (sudo bash $REPO/system/wsl-setup.sh), then wsl.exe --terminate $distro"; fi
+  for u in systemd-networkd.service systemd-resolved.service NetworkManager.service systemd-tmpfiles-setup.service tmp.mount; do
+    [ "$(systemctl is-enabled "$u" 2>/dev/null)" = masked ] || bad="$bad $u"
+  done
+  for u in nftables.service smartd.service snapper-cleanup.timer snapper-timeline.timer systemd-timesyncd.service; do
+    systemctl is-enabled -q "$u" 2>/dev/null && metal="$metal $u"
+  done
+  if [ -n "$bad" ]; then dwarn "not masked (Microsoft: they break WSL):$bad" "sudo bash $REPO/system/wsl-setup.sh"; else dok "Microsoft's list of units that break WSL is masked"; fi
+  if [ -n "$metal" ]; then dwarn "metal unit(s) enabled in the clone:$metal" "sudo bash $REPO/system/wsl-setup.sh  (it turns them off)"; else dok "no metal unit is enabled"; fi
+  if [ -e "/var/lib/systemd/linger/$ME" ]; then dok "linger on for $ME (the user manager runs without a terminal)"; else dwarn "no linger for $ME: the agent bridge and rootless Podman stop with the last terminal" "sudo bash $REPO/system/wsl-setup.sh  (loginctl enable-linger $ME)"; fi
+  if [ "$(findmnt -no PROPAGATION / 2>/dev/null)" = shared ]; then dok "/ is a shared mount (rootless Podman)"; else dwarn "/ is not a shared mount: rootless Podman warns and some volume mounts fail" "sudo bash $REPO/system/wsl-setup.sh  (dram-wsl-rshared.service)"; fi
+  # the configuration, both sides
+  want="$(sed -e "s/@HOST@/$HOST/g" -e "s/@USER@/$ME/g" -e "s/@DISTRO@/$distro/g" "$REPO/system/wsl/wsl.conf")"
+  if [ "$(cat /etc/wsl.conf 2>/dev/null)" = "$want" ]; then dok "/etc/wsl.conf is the repo's (system/wsl/wsl.conf)"; else dwarn "/etc/wsl.conf differs from system/wsl/wsl.conf" "sudo bash $REPO/system/wsl-setup.sh, then from Windows: wsl.exe --terminate $distro"; fi
+  # from a Windows folder: cmd.exe started in a Linux path warns about UNC paths first
+  prof="$(cd /mnt/c 2>/dev/null && win_exe cmd.exe /c echo %USERPROFILE% | head -1)"
+  [ -n "$prof" ] && prof="$(wslpath -u "$prof" 2>/dev/null)"
+  if [ -z "$prof" ] || [ ! -d "$prof" ]; then
+    dskip ".wslconfig: Windows' profile folder not readable (interop off?)"
+  elif ! want="$(wslconfig_rendered "$winhost")"; then
+    dwarn "install/windows/wslconfig has no row for '${winhost:-?}' (wsl.windowsHost)" "add a '#: $winhost <memory> <swap> <vhd>' row to install/windows/wslconfig"
+  elif [ "$(tr -d '\r' <"$prof/.wslconfig" 2>/dev/null)" = "$want" ]; then
+    dok "$prof/.wslconfig is the repo's (install/windows/wslconfig, $winhost's row)"
+  else dwarn "$prof/.wslconfig differs from install/windows/wslconfig ($winhost's row)" "on Windows: dram-windows/wsl.ps1 -Machine $winhost (it rewrites it; then wsl --shutdown)"; fi
+  case ":$PATH:" in
+    *:/mnt/[a-z]/*) dwarn "PATH holds Windows directories: Windows tools can shadow Linux ones" "[interop] appendWindowsPath=false in /etc/wsl.conf (system/wsl-setup.sh), then wsl.exe --terminate $distro" ;;
+    *) dok "PATH holds no Windows directory" ;;
+  esac
+  # the disk: an ext4 VHDX that grows up to its cap (defaultVhdSize when it was made)
+  n="$(df --output=pcent / 2>/dev/null | tail -1 | tr -dc '0-9')" size="$(df -h --output=size / 2>/dev/null | tail -1 | tr -d ' ')"
+  if [ "${n:-0}" -ge 75 ]; then dwarn "/ is ${n}% full of its ${size} cap" "podman system prune; dram update --clean (old generations); or a bigger cap: wsl --manage $distro --resize <size> (WSL 2.5+)"; else dok "/ is ${n:-?}% full of its ${size:-?} cap"; fi
+  # the GPU only matters to ml: Windows' driver is the clone's (/usr/lib/wsl/lib), never Arch's
+  if grep -q '"ml"' "$REPO/modules/hosts/$HOST.nix" 2>/dev/null; then
+    if pacman -Q nvidia-utils nvidia-open >/dev/null 2>&1; then dwarn "an NVIDIA driver package is installed: in WSL the Windows driver's libcuda is the only one" "sudo pacman -Rns nvidia-utils nvidia-open"; fi
+    if [ -e /usr/lib/wsl/lib/libcuda.so.1 ] && /usr/lib/wsl/lib/nvidia-smi -L >/dev/null 2>&1; then dok "CUDA through Windows' driver: $(/usr/lib/wsl/lib/nvidia-smi -L 2>/dev/null | head -1 | cut -c1-60)"; else dinfo "no GPU through /usr/lib/wsl/lib (no NVIDIA driver on Windows, or [gpu] off)"; fi
+  fi
+  # the keys: Windows' agent through the bridge (modules/dev.nix)
+  if [ "$(host_wsl "$REPO" "$HOST" sshAgent)" = windows ]; then
+    sock="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/wsl2-ssh-agent.sock"
+    if systemctl --user is-active -q wsl2-ssh-agent.service 2>/dev/null; then dok "wsl2-ssh-agent bridges to Windows' agent ($sock)"; else dwarn "wsl2-ssh-agent is not running: ssh and git signing have no agent" "systemctl --user status wsl2-ssh-agent; dram switch"; fi
+    if [ "${SSH_AUTH_SOCK:-}" = "$sock" ]; then dok "SSH_AUTH_SOCK is the bridge"; elif [ -n "${SSH_CONNECTION:-}" ] && [ -n "${SSH_AUTH_SOCK:-}" ]; then dinfo "SSH_AUTH_SOCK is a forwarded agent in this ssh session"; else dwarn "SSH_AUTH_SOCK is '${SSH_AUTH_SOCK:-unset}', not the bridge" "a new login shell (~/.profile sets it), or: export SSH_AUTH_SOCK=$sock"; fi
+    if [ "$(win_exe sc.exe query ssh-agent | grep -c RUNNING)" -gt 0 ]; then dok "Windows' OpenSSH Authentication Agent is running"; else dwarn "Windows' OpenSSH Authentication Agent is not running (or not readable)" "on Windows (admin): Set-Service ssh-agent -StartupType Automatic; Start-Service ssh-agent (dram-windows/wsl.ps1 does it)"; fi
+    keys="$(SSH_AUTH_SOCK="$sock" timeout 15 ssh-add -L 2>/dev/null | awk '{print $1, $2}')"
+    n=0
+    while read -r line; do
+      [ -n "$line" ] && grep -cxF "$line" <<<"$keys" >/dev/null && n=$((n + 1))
+    done < <(grep '^sk-' "$REPO/keys/ssh.pub" 2>/dev/null | awk '{print $1, $2}')
+    if [ "$n" -gt 0 ]; then dok "Windows' agent holds $n of the YubiKeys' SSH keys (keys/ssh.pub)"; else dwarn "Windows' agent holds none of the YubiKeys' SSH keys (keys/ssh.pub)" "on Windows, the key plugged in: ssh-add -K (asks its FIDO2 PIN); docs/platforms/wsl/README.md"; fi
+  fi
+  # the release door: the bundle bin/push-host.sh --wsl stages
+  if [ ! -r "$WSL_BUNDLE" ]; then
+    dinfo "no bundle staged in C:\\ProgramData\\dram (from the Mac: bin/push-host.sh --wsl $HOST <user>@<address>)"
+  elif staged_newer; then
+    dwarn "a newer bundle is staged in C:\\ProgramData\\dram ($(age_days "$(stat -c %Y "$WSL_BUNDLE")") days old)" "dram update  (it receives it first)"
+  else dok "the staged bundle ($(age_days "$(stat -c %Y "$WSL_BUNDLE")") days old) is already in the checkout"; fi
+  return 0
+}
+
+# --- emulation: the free-cores allow-list and the ROM tree (decisions/0016) -------
+# The allow-list is the set of libretro-* names the packages lists declare. Licence
+# strings cannot be trusted (Arch labels two non-commercial cores BSD-3), so
+# any other core warns, and a register `fail` row (snes9x, genesis-plus-gx, duckstation…)
+# warns louder. RetroArch's online updater can drop buildbot cores into the home
+# directory; those are unverified downloads and are named too.
+doctor_emulation() {
+  grep -q '"emulation"' "$REPO/modules/hosts/$HOST.nix" 2>/dev/null || return 0
+  sec "emulation"
+  have pacman || {
+    dskip "no pacman"
+    return 0
+  }
+  local allowed installed extra failed f dir cores n
+  allowed="$(cat "$REPO"/packages/*.txt "$REPO"/packages/roles/*.txt 2>/dev/null | grep -oE '^libretro-[A-Za-z0-9_.+-]+' | sort -u)"
+  installed="$(pacman -Qq 2>/dev/null | grep '^libretro-' | grep -vE '^libretro-(core-info|shaders-.*|overlays|assets.*)$' | sort -u)"
+  extra="$(comm -23 <(printf '%s\n' "$installed") <(printf '%s\n' "$allowed") | grep -v '^$' || true)"
+  if [ -n "$extra" ]; then dwarn "libretro core(s) not on the allow-list (packages/roles/emulation.txt): $(paste -sd' ' <<<"$extra")" "check its licence upstream (not pacman's field), then add it to the role, or sudo pacman -Rns it"; else dok "every installed libretro core is on the allow-list ($(grep -c . <<<"$installed") installed)"; fi
+  failed="$(awk -F'\t' '$2 == "fail" {print $1}' "$REPO/packages/register.tsv" 2>/dev/null | grep -xF -f <(pacman -Qq 2>/dev/null) || true)"
+  if [ -n "$failed" ]; then dwarn "installed, but forbidden by the register (decisions/0013): $(paste -sd' ' <<<"$failed")" "sudo pacman -Rns $(paste -sd' ' <<<"$failed")"; else dok "nothing the register forbids is installed"; fi
+  dir="$HOME/.config/retroarch/cores"
+  cores="$(find "$dir" -maxdepth 1 -name '*_libretro.so' -printf '%f\n' 2>/dev/null | sed 's/_libretro\.so$//' | sort)"
+  if [ -n "$cores" ]; then dwarn "RetroArch downloaded core(s) into $dir (unverified buildbot builds): $(paste -sd' ' <<<"$cores")" "delete them; cores come from pacman (/usr/lib/libretro). In RetroArch: Settings > Directory > Core = /usr/lib/libretro"; else dok "no downloaded cores in the home directory"; fi
+  if [ -d /data/emulation/roms ] && [ "$(readlink "$HOME/roms" 2>/dev/null)" = /data/emulation/roms ]; then
+    n="$(find /data/emulation/roms -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+    dok "/data/emulation: $n system folder(s) under roms/, ~/roms -> it"
+  else dwarn "no /data/emulation/roms, or no ~/roms link" "sudo bash $REPO/system/emulation-setup.sh  (dram apply runs it)"; fi
+  if have flatpak; then
+    f="$(grep -vE '^[[:space:]]*(#|$)' "$REPO/packages/flatpak/emulation.txt" 2>/dev/null | grep -vxF -f <(flatpak list --system --app --columns=application 2>/dev/null) || true)"
+    if [ -n "$f" ]; then dwarn "emulator Flatpak(s) not installed: $(paste -sd' ' <<<"$f")" "sudo bash $REPO/system/flatpak-setup.sh  (dram apply runs it)"; else dok "the emulator Flatpaks are installed"; fi
+  fi
+  return 0
+}
+
+# --- gaming: Gaming Mode's moving parts (decisions/0012, docs/toolchain/profiles/gaming.md) ----
+doctor_gaming() {
+  grep -q '"gaming"' "$REPO/modules/hosts/$HOST.nix" 2>/dev/null || return 0
+  sec "gaming mode"
+  local p missing="" v
+  for p in steam gamescope gamescope-session gamescope-session-steam dram-gaming-mode; do
+    pacman -Q "$p" >/dev/null 2>&1 || missing="$missing $p"
+  done
+  if [ -n "$missing" ]; then dwarn "not installed:$missing" "dram apply  ([dram] names need the repo synced: bin/sync-dram-repo.sh)"; else dok "Steam, gamescope, the session pair and dram-gaming-mode are installed"; fi
+  if [ -x /usr/lib/os-session-select ]; then dok "steamos-session-select reaches our hook (/usr/lib/os-session-select)"; else dwarn "no /usr/lib/os-session-select: Steam's Switch to Desktop just quits Steam" "dram apply (dram-gaming-mode)"; fi
+  if systemctl cat ly@tty2.service 2>/dev/null | grep -c '/usr/lib/dram/ly-prepare' >/dev/null; then dok "ly@tty2 runs ly-prepare before it starts (one-shot autologin on a switch)"; else dwarn "ly@tty2 has no ly-prepare drop-in: switching cannot log you in" "dram apply (dram-gaming-mode); sudo systemctl daemon-reload"; fi
+  if [ -d /sys/module/uinput ]; then dok "uinput loaded (Steam Input)"; else dwarn "uinput is not loaded: Steam Input cannot create virtual pads" "sudo modprobe uinput  (dram-gaming-mode loads it at boot)"; fi
+  if [ -O /data/games ] && [ "$(readlink "$HOME/games" 2>/dev/null)" = /data/games ]; then dok "games folder: /data/games is yours, ~/games -> /data/games"; else dwarn "/data/games is not yours, or no ~/games link: Steam cannot keep games on the data pool" "sudo bash $REPO/system/gaming-setup.sh  (dram apply runs it)"; fi
+  # Steam's own files (docs/toolchain/profiles/gaming.md): the library, and shader pre-caching in the background
+  v="$HOME/.local/share/Steam/config"
+  if [ ! -f "$v/libraryfolders.vdf" ]; then dinfo "Steam has not run yet: its library goes on /data/games (handbook 02 §11)"; elif grep -c '"/data/games/' "$v/libraryfolders.vdf" >/dev/null; then dok "Steam has its library on the data pool ($(grep -o '"/data/games/[^"]*"' "$v/libraryfolders.vdf" | head -1 | tr -d '"'))"; else dwarn "Steam installs games into the home directory only (the system pool)" "Steam > Settings > Storage > Add Drive > /data/games, then Make Default (handbook 02 §11)"; fi
+  if [ -f "$v/config.vdf" ]; then
+    if grep -cE '"EnableShaderBackgroundProcessing"[[:space:]]+"1"' "$v/config.vdf" >/dev/null; then dok "Steam processes shader caches in the background (no wait at launch)"; else dwarn "Steam processes shader caches only when a game starts: every launch waits (hours for CS2) or stutters after Skip" "Steam > Settings > Downloads > Shader Pre-Caching > Allow background processing of Vulkan shaders (docs/toolchain/profiles/gaming.md)"; fi
+  fi
+  if [ -r /sys/module/nvidia_drm/parameters/modeset ]; then
+    v="$(cat /sys/module/nvidia_drm/parameters/modeset)"
+    if [ "$v" = Y ]; then dok "nvidia_drm modeset=Y (gamescope's DRM backend needs it)"; else dwarn "nvidia_drm modeset=$v" "nvidia_drm.modeset=1 on the kernel command line (/etc/kernel/cmdline), then mkinitcpio -P"; fi
+  fi
+  v="$(grep -vE '^[[:space:]]*(#|$)' /etc/dram/gaming-mode 2>/dev/null | awk '{print $1; exit}')"
+  dinfo "default Gaming Mode: ${v:-hyprland}$([ "${v:-}" = gamescope ] && echo ' (gamescope, promoted)' || echo ' (Big Picture in Hyprland; /etc/dram/gaming-mode = gamescope promotes it)')"
+  if [ -e /run/dram/ly-next-session ]; then dinfo "a session switch is pending (/run/dram/ly-next-session)"; fi
+  return 0
+}
+
+# --- the case display: only where the panel is plugged in (docs/platforms/arch/case-display.md) ------
+# The Antec Flux Pro's temperature panel (USB 2022:0522) is dark unless dram-case-display
+# feeds it; udev starts the service when the panel appears, so nothing is "enabled".
+doctor_case_display() {
+  local v found=""
+  for v in /sys/bus/usb/devices/*/idVendor; do
+    [ "$(cat "$v" 2>/dev/null)" = 2022 ] && [ "$(cat "${v%/idVendor}/idProduct" 2>/dev/null)" = 0522 ] && found=1
+  done
+  [ -n "$found" ] || return 0
+  sec "case display"
+  if ! pacman -Q dram-case-display >/dev/null 2>&1; then
+    dwarn "the case's temperature panel is plugged in, but dram-case-display is not installed: the panel stays dark" "dram apply  (packages/host-cabin.txt; [dram] must have it: dram pkgs build dram-case-display && dram pkgs publish)"
+  elif [ "$(systemctl is-active dram-case-display 2>/dev/null)" = active ]; then
+    dok "dram-case-display feeds the case's temperature panel (journalctl -u dram-case-display -b)"
+  else
+    dwarn "dram-case-display is not running: the case's temperature panel stays dark" "sudo udevadm trigger --action=add --attr-match=idVendor=2022 --attr-match=idProduct=0522; journalctl -u dram-case-display -b"
+  fi
+  return 0
+}
+
+# ---------------------------------------------------------------- boot-to ----
+# The bench (decisions/0017): every OS has its own disk and boot partition, so Arch's
+# systemd-boot menu shows only Arch. `dram boot-to fedora` sets the firmware's one-time
+# BootNext to Fedora's entry and reboots; the next boot after that is Arch again.
+# Entries are told apart by label, and "Linux Boot Manager" (systemd-boot, used by both
+# Arch and NixOS) by the boot partition it lives on: not /efi's = NixOS.
+boot_to_usage() {
+  cat <<'U'
+usage: dram boot-to <windows|debian|fedora|nixos|NNNN|list> [--no-reboot]
+  reboot once into another OS on this machine (firmware BootNext; Arch is the default after)
+  list         the firmware's boot entries
+  --no-reboot  only set BootNext
+U
+}
+boot_entries() { # "NNNN<TAB>label<TAB>partuuid" for every firmware entry
+  efibootmgr -v 2>/dev/null | sed -nE 's/^Boot([0-9A-Fa-f]{4})\*? (.*)$/\1\t\2/p' | while IFS=$'\t' read -r n rest; do
+    label="$(printf '%s' "$rest" | sed -E 's/[[:space:]]+(HD|PciRoot|VenHw|BBS|FvVol|MemoryMapped)\(.*$//')"
+    pu="$(printf '%s' "$rest" | sed -nE 's/.*HD\([0-9]+,GPT,([0-9a-fA-F-]+),.*/\1/p' | tr 'A-F' 'a-f')"
+    printf '%s\t%s\t%s\n' "$n" "$label" "$pu"
+  done
+}
+cmd_boot_to() {
+  local target="${1:-}" reboot=1 a own entries n
+  for a in "$@"; do [ "$a" = --no-reboot ] && reboot=0; done
+  case "$target" in "" | -h | --help)
+    boot_to_usage
+    return 0
+    ;;
+  esac
+  have efibootmgr || die "efibootmgr is not installed"
+  own="$(findmnt -no SOURCE /efi 2>/dev/null | xargs -r blkid -s PARTUUID -o value 2>/dev/null | tr 'A-F' 'a-f')"
+  entries="$(boot_entries)"
+  [ -n "$entries" ] || die "no firmware boot entries readable (efibootmgr -v)"
+  if [ "$target" = list ]; then
+    while IFS=$'\t' read -r n label pu; do
+      printf '  %s  %-34s %s\n' "$n" "$label" "$([ -n "$pu" ] && [ "$pu" = "$own" ] && echo '(this Arch)')"
+    done <<<"$entries"
+    return 0
+  fi
+  case "$target" in
+    [0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]) n="$target" ;;
+    windows) n="$(awk -F'\t' 'tolower($2) ~ /windows boot manager/ {print $1; exit}' <<<"$entries")" ;;
+    debian) n="$(awk -F'\t' 'tolower($2) ~ /^debian/ {print $1; exit}' <<<"$entries")" ;;
+    fedora) n="$(awk -F'\t' 'tolower($2) ~ /^fedora/ {print $1; exit}' <<<"$entries")" ;;
+    nixos) n="$(awk -F'\t' -v own="$own" 'tolower($2) ~ /nixos/ || ($2 == "Linux Boot Manager" && $3 != own) {print $1; exit}' <<<"$entries")" ;;
+    *)
+      boot_to_usage >&2
+      return 2
+      ;;
+  esac
+  [ -n "$n" ] || die "no firmware entry for $target — dram boot-to list (install it, or its installer did not register one)"
+  say "next boot only: $target (Boot$n); after that this Arch again"
+  sudo efibootmgr --quiet --bootnext "$n" || die "efibootmgr --bootnext $n failed"
+  if [ "$reboot" -eq 1 ]; then sudo systemctl reboot; else ok "BootNext set — reboot when ready"; fi
+}
+
+# ------------------------------------------------------------------ misc ----
+# dram-theme lives next to this script (both are repo files); resolve it there so
+# `dram theme` works before the first switch put ~/.local/bin on PATH
+cmd_theme() { exec "$(dirname "$(readlink -f "$0")")/dram-theme" "$@"; }
+
+no_args() { # no_args <command> "$@": the subcommand takes no arguments; exit 2 on any
+  local c="$1"
+  shift
+  [ $# -eq 0 ] && return 0
+  echo "usage: dram $c   (takes no arguments; dram $c --help)" >&2
+  return 2
+}
+
+cmd_check() {
+  case "${1:-}" in -h | --help)
+    echo "usage: dram check   (bin/check.sh, then nix flake check where nix exists)"
+    return 0
+    ;;
+  esac
+  no_args check "$@" || return 2
+  local rc=0
+  if [ -x "$REPO/bin/check.sh" ]; then
+    bash "$REPO/bin/check.sh" || rc=1
+  else
+    warn "$REPO/bin/check.sh not found"
+  fi
+  if have nix; then
+    say "nix flake check (instantiates every host)"
+    (cd "$REPO" && run nix "${NIXF[@]}" flake check) || rc=1
+  fi
+  return "$rc"
+}
+
+cmd_pacnew() {
+  case "${1:-}" in -h | --help)
+    echo "usage: dram pacnew   (pacdiff -s with vim -d; merges every *.pacnew)"
+    return 0
+    ;;
+  esac
+  no_args pacnew "$@" || return 2
+  have pacdiff || die "pacdiff missing — sudo pacman -S pacman-contrib"
+  # -s: pacdiff sudo's itself for the merge/rm, so vim runs as root only on the file
+  DIFFPROG="${DIFFPROG:-vim -d}" exec pacdiff -s
+}
+
+rollback_usage() {
+  cat <<'EOF'
+usage: dram rollback [N | --list | --system [N]]
+  (no args)  the previous build: check out its commit, activate its Home Manager
+             generation, print the `sudo pacman -U` lines for packages that
+             differ (printed, never run); asks first
+  N          N Home Manager generations back (asks first); the checkout stays
+  --list     the recorded builds, newest first (= dram builds)
+  --system   the system snapshots (snapper "pre" before every pacman change) and
+             which have a boot entry; --system N makes snapshot N the new root
+             (asks first; the current root is kept as @.broken-<stamp>; reboot
+             to finish). decisions/0011
+EOF
+}
+list_builds() {
+  local d id cur
+  cur="$(release_get BUILD_ID)"
+  [ -n "$(builds_newest_first)" ] || {
+    echo "    no builds recorded yet (dram update records one before it changes anything)"
+    return 0
+  }
+  printf '    %-30s %-14s %-9s %-5s %s\n' record version commit gen recorded
+  for d in $(builds_newest_first); do
+    id="${d%.*}" # <BUILD_ID>.<epoch> -> BUILD_ID (older records have no suffix)
+    printf '    %-30s %-14s %-9s %-5s %s%s\n' "$d" "$(release_get VERSION_ID "$BUILDS/$d/release")" \
+      "$(short_sha "$(cat "$BUILDS/$d/commit" 2>/dev/null)" 2>/dev/null || cut -c1-7 "$BUILDS/$d/commit")" \
+      "$(cut -d' ' -f1 "$BUILDS/$d/hm-generation" 2>/dev/null)" "$(date -r "$BUILDS/$d" +%Y-%m-%dT%H:%M)" \
+      "$([ "$id" = "$cur" ] && echo '  (= the running build)')"
+  done
+}
+previous_build() { # the newest record that differs from what runs now: commit, generation (by store path) or packages
+  # Generation ids are compared by PATH: re-activating an old generation mints a
+  # new id for the same store path (nix-env --set), so ids never match after a rollback.
+  local d cur_path
+  cur_path="$(gen_path)"
+  for d in $(builds_newest_first); do
+    [ "$(cat "$BUILDS/$d/commit" 2>/dev/null)" = "$(release_get COMMIT)" ] \
+      && [ "$(cut -d' ' -f2 "$BUILDS/$d/hm-generation" 2>/dev/null)" = "$cur_path" ] \
+      && cmp -s "$BUILDS/$d/pkgs.txt" <(pacman -Q 2>/dev/null) && continue
+    echo "$d"
+    return 0
+  done
+  return 1
+}
+print_pkg_diff() { # print_pkg_diff <pkgs.txt of the target build>: the pacman -U lines, never run
+  local f="$1" name ver cur file n=0
+  while read -r name ver cur; do
+    n=$((n + 1))
+    if [ "$cur" = - ]; then
+      echo "    $name $ver is no longer installed:  sudo pacman -S $name   (or -U from the cache)"
+      continue
+    fi
+    file=""
+    for file in /var/cache/pacman/pkg/"$name-$ver"-*.pkg.tar.*; do
+      case "$file" in *.sig) file="" ;; *) [ -f "$file" ] && break || file="" ;; esac
+    done
+    if [ -n "$file" ]; then echo "    sudo pacman -U $file   # $name $cur -> $ver"; else echo "    $name $cur -> $ver   (not in /var/cache/pacman/pkg: paccache trimmed it; downgrade from the ALA)"; fi
+  done < <(awk 'NR == FNR { want[$1] = $2; next } { have[$1] = $2 } END { for (p in want) if (!(p in have)) print p, want[p], "-"; else if (have[p] != want[p]) print p, want[p], have[p] }' "$f" <(pacman -Q 2>/dev/null) | sort)
+  [ "$n" -eq 0 ] && ok "packages: identical to the previous build"
+  while read -r name ver; do
+    echo "    $name $ver was not installed in the previous build:  sudo pacman -Rns $name"
+  done < <(awk 'NR == FNR { want[$1] = 1; next } !($1 in want) { print }' "$f" <(pacman -Q 2>/dev/null) | sort)
+  return 0
+}
+rollback_build() {
+  local id d commit gen path when
+  [ -f "$RELEASE" ] || die "no $RELEASE — the running build is unknown; dram switch writes it, dram update records builds"
+  id="$(previous_build)" || die "no previous build differs from the running one ($(release_get BUILD_ID)); dram rollback --list"
+  d="$BUILDS/$id"
+  commit="$(cat "$d/commit")" gen="$(cut -d' ' -f1 "$d/hm-generation")" path="$(cut -d' ' -f2 "$d/hm-generation")"
+  when="$(date -r "$d" +%Y-%m-%d\ %H:%M)"
+  say "Previous build: $id ($(release_get VERSION_ID "$d/release"), recorded $when)"
+  echo "    commit      $(short_sha "$commit") $(g log -1 --format=%s "$commit" 2>/dev/null | cut -c1-60)  (now: $(head_name))"
+  echo "    generation  $gen $path  (now: $(release_get HM_GENERATION))"
+  [ -n "$commit" ] && [ -n "$gen" ] || die "$d is incomplete"
+  g cat-file -e "$commit^{commit}" 2>/dev/null || die "commit $commit is not in $REPO any more"
+  if [ "$gen" != "$(release_get HM_GENERATION)" ] && [ ! -x "$path/activate" ]; then
+    die "generation $gen is gone ($path/activate missing — dram update --clean expired it); check out $commit and dram switch instead"
+  fi
+  ask "Roll back to it? (the checkout moves, the generation is activated; pacman lines are printed, not run)" || {
+    echo "    aborted"
+    return 1
+  }
+  say "Recording the running build first (dram rollback again = forward)"
+  ok "builds/$(record_build)"
+  if [ "$commit" != "$(head_sha)" ]; then
+    say "Checkout"
+    if [ "$(g rev-parse -q --verify master 2>/dev/null)" = "$commit" ]; then checkout_target master; else checkout_target "$commit"; fi
+    ok "checkout at $(head_name)"
+  fi
+  say "Home Manager generation $gen"
+  if [ "$path" = "$(gen_path)" ]; then
+    ok "already active (same store path)"
+  else
+    HOME_MANAGER_BACKUP_EXT="bak-$(date +%Y%m%d-%H%M)" run "$path/activate" || die "activation failed — the current generation is still active"
+    ok "generation $gen active"
+  fi
+  write_release
+  say "Packages that differ from the previous build (printed, not run — the cache keeps 2 versions)"
+  print_pkg_diff "$d/pkgs.txt"
+  badge_refresh
+  echo
+  ok "back on $(release_get VERSION_ID) build $(release_get BUILD_ID). Forward again: dram rollback (to the build just recorded) or dram update"
+}
+cmd_rollback() {
+  local n="${1:-}" line path when
+  case "$n" in
+    -h | --help)
+      rollback_usage
+      return 0
+      ;;
+    --system)
+      local helper=/usr/local/lib/dram/dram-snapshot
+      [ -x "$helper" ] || die "no $helper — this host has no snapshots yet (sudo bash $REPO/system/snapshots-setup.sh)"
+      if [ -z "${2:-}" ]; then
+        sudo "$helper" list
+        return
+      fi
+      [[ "$2" =~ ^[0-9]+$ ]] || {
+        rollback_usage >&2
+        return 2
+      }
+      sudo "$helper" rollback "$2" --dry-run || return 1
+      ask "Make snapshot $2 the new root (reboot to finish)?" || {
+        warn "nothing changed"
+        return 0
+      }
+      sudo "$helper" rollback "$2"
+      return
+      ;;
+    --list)
+      list_builds
+      return 0
+      ;;
+    "")
+      rollback_build
+      return
+      ;;
+  esac
+  [[ "$n" =~ ^[0-9]+$ ]] || {
+    rollback_usage >&2
+    return 2
+  }
+  have home-manager || die "home-manager not on PATH"
+  # `home-manager generations` lists newest first: "<date> <time> : id <n> -> <path>"
+  line="$(home-manager generations 2>/dev/null | sed -n "$((n + 1))p")"
+  [ -n "$line" ] || die "no generation $n back (home-manager generations)"
+  # the active line ends in " (current)", so take the field after "->", not the last word
+  path="$(echo "$line" | awk '{ for (i = 1; i <= NF; i++) if ($i == "->") print $(i + 1) }')"
+  [ -n "$path" ] || die "could not parse: $line"
+  when="$(echo "$line" | awk '{print $1" "$2}')"
+  [ -x "$path/activate" ] || die "$path/activate missing (garbage-collected?)"
+  say "Rolling back $n generation(s) to $when"
+  echo "    $line"
+  ask "Activate it?" || {
+    echo "    aborted"
+    return 1
+  }
+  HOME_MANAGER_BACKUP_EXT="bak-$(date +%Y%m%d-%H%M)" run "$path/activate" || return 1
+  # the checkout did not move: keep COMMIT/BUILD_ID, record only the generation that now runs
+  if [ -f "$RELEASE" ]; then
+    sed -i -e "s/^HM_GENERATION=.*/HM_GENERATION=$(hm_gen_id)/" -e "s/^SWITCHED=.*/SWITCHED=$(date -Iseconds)/" "$RELEASE"
+  else
+    write_release
+  fi
+  ok "generation from $when is active. Forward again: dram switch"
+}
+
+backup_usage() {
+  cat <<'EOF'
+usage: dram backup [run|list|check|restore <path>]
+  run              borgmatic now (default; the 03:00 timer does the same)
+  list [args]      borgmatic list
+  check            borgmatic check
+  restore <path>   extract <path> from the latest archive into /tmp/dram-restore/
+EOF
+}
+cmd_backup() {
+  case "${1:-run}" in
+    run | list | check | restore) ;;
+    -h | --help)
+      backup_usage
+      return 0
+      ;;
+    *)
+      backup_usage >&2
+      return 2
+      ;;
+  esac
+  case "${2:-}" in -h | --help)
+    backup_usage
+    return 0
+    ;;
+  esac
+  if [ "${1:-run}" = restore ] && [ -z "${2:-}" ]; then
+    backup_usage >&2
+    return 2
+  fi
+  have borgmatic || die "borgmatic missing — it is in packages/base.txt; dram update"
+  if [ ! -f "$HOME/.config/borgmatic.d/main.yaml" ] && [ "${1:-run}" != restore ]; then
+    die "backups are paused on this host until the NAS (decisions/0014): no borgmatic config. A host opts in with dram.backup.enable = true + backupPeer in its host file"
+  fi
+  case "${1:-run}" in
+    run) exec borgmatic --verbosity 1 ;;
+    list)
+      shift
+      exec borgmatic list "$@"
+      ;;
+    check) exec borgmatic check --verbosity 1 ;;
+    restore)
+      local p="$2" dest=/tmp/dram-restore
+      p="${p/#\~/$HOME}"
+      case "$p" in /*) ;; *) p="$PWD/$p" ;; esac # a deleted file given relative to $PWD must still resolve
+      p="$(realpath -sm "$p")"                   # normalise .. without following symlinks (HM/sops links are not in the archive)
+      p="${p#/}"                                 # borg stores paths without the leading slash
+      say "Extracting $p from the latest archive into $dest"
+      mkdir -p "$dest"
+      run borgmatic extract --archive latest --path "$p" --destination "$dest" || die "extract failed (borgmatic list to see archives/paths)"
+      ok "restored to $dest/$p — compare, then copy it back yourself"
+      ;;
+    *)
+      backup_usage >&2
+      return 2
+      ;;
+  esac
+}
+
+# --------------------------------------------------------------- apply ----
+# `dram apply` converges the SYSTEM layer to what the repo declares for this host
+# (decisions/0008): the packages of base + hardware + roles (install/lib/roles.sh)
+# + the [dram] install set, the units in system/units.tsv, the role hooks in
+# system/apply-hooks.tsv. It never upgrades (`dram update` does) and refuses to
+# install on a system whose sync databases are newer than its last full upgrade
+# (that would be a partial upgrade). `dram doctor` reports the same drift.
+apply_usage() {
+  cat <<'U'
+usage: dram apply [--dry-run] [--prune] [--yes] [--rollout]
+  converge this host to its roles (decisions/0008): install the declared packages
+  (pacman -S --needed, never -Syu), enable the declared units (system/units.tsv), run
+  the role hooks (system/apply-hooks.tsv), report explicit packages no role declares
+  --dry-run   print the plan and run every hook with --dry-run; change nothing
+  --prune     also remove undeclared explicit packages: they are marked as
+              dependencies, then the ones nothing needs are removed (asks you to
+              type the hostname; protected names never)
+  --yes       install and run the 'auto' hooks without asking (never implies
+              --prune and never runs an 'ask' hook)
+  --rollout   register verdicts swap/pending in the declared set are errors
+env: DRAM_CPU=amd|intel DRAM_GPUS="nvidia intel" DRAM_FORM=laptop|desktop|wsl override
+     the hardware detection (install/lib/detect.sh) when it is wrong or for a test; wsl is
+     a WSL clone's plan: base + roles minus packages/wsl-skip.tsv, the wsl units and hooks
+U
+}
+
+# tsv_rows <file>: the non-comment, non-empty lines of a repo TSV
+tsv_rows() { grep -vE '^[[:space:]]*(#|$)' "$REPO/$1" 2>/dev/null; }
+
+# apply_roles: base + the platform's pseudo-role (metal or wsl) + this host's roles, one per line
+apply_roles() {
+  echo base
+  platform
+  roles_of "$REPO/modules/hosts/$HOST.nix"
+}
+
+# role_match <spec> <roles>: a system/*.tsv role column against apply_roles' output: a role
+# or pseudo-role, "!role" (every host WITHOUT it), or several joined by "," that must all
+# hold ("metal,!desktop": a metal host without the desktop role)
+role_match() {
+  local term rest="$1,"
+  while [ -n "$rest" ]; do
+    term="${rest%%,*}" rest="${rest#*,}"
+    case "$term" in
+      "") ;;
+      !*) grep -qx -- "${term#!}" <<<"$2" && return 1 ;;
+      *) grep -qx -- "$term" <<<"$2" || return 1 ;;
+    esac
+  done
+  return 0
+}
+
+# apply_declared: every package name this host should have, sorted, one per line
+apply_declared() {
+  local cpu form gpus f wsl=0
+  cpu="${DRAM_CPU:-$(detect_cpu)}"
+  form="${DRAM_FORM:-$(detect_form_factor)}"
+  gpus="${DRAM_GPUS-$(detect_gpus)}"
+  # a WSL clone reads no metal or hardware list (install/lib/roles.sh), and leaves out what
+  # packages/wsl-skip.tsv names though a role declares it (decisions/0021)
+  if [ "$(platform)" = wsl ]; then
+    wsl=1 form=wsl gpus=""
+  fi
+  {
+    # shellcheck disable=SC2086 # gpus is a space-separated vendor list
+    for f in $(host_package_files "$REPO" "$HOST" "$cpu" "$form" $gpus); do
+      grep -hvE '^[[:space:]]*(#|$)' "$f" 2>/dev/null
+    done
+    # the builder role is dram-builder-setup.sh's at install time, but it is declared
+    role_files "$REPO" "$HOST" | grep '/builder\.txt$' | xargs -r grep -hvE '^[[:space:]]*(#|$)'
+    # every host gets the [dram] every-host set (pkgs/manifest.txt minus BUILD-ONLY minus
+    # the names a packages list claims: those came in above, with their role)
+    bash "$REPO/bin/pkgs.sh" list --install 2>/dev/null
+  } | awk '{print $1}' | sort -u | {
+    # pre-Turing NVIDIA: install/bootstrap.sh swaps in nvidia-dkms the same way
+    if [[ " $gpus " == *" nvidia "* ]] && [ -z "${DRAM_GPUS:-}" ] && [ "$(detect_nvidia_open_ok)" != yes ]; then
+      sed 's/^nvidia-open$/nvidia-dkms/'
+    else cat; fi
+  } | sort -u | {
+    if [ "$wsl" -eq 1 ]; then grep -vxF -f <(wsl_skip_names "$REPO") || true; else cat; fi
+  }
+}
+
+# apply_protected: undeclared names that are never pruned (boot, kernel, toolchain)
+apply_protected() {
+  grep -E '^(base|base-devel|linux(-lts|-zen|-hardened)?(-headers)?|linux-firmware.*|(amd|intel)-ucode|grub|refind|efibootmgr|sbctl|mkinitcpio|systemd.*|sudo|pacman|glibc|mesa|nvidia.*|lib32-nvidia.*|dkms|nix|git|openssh)$'
+}
+
+# apply_missing <declared>: declared names pacman has no installed provider for
+apply_missing() {
+  [ -n "$1" ] || return 0
+  # pacman -T: deptest against the local db, provides included; prints the unsatisfied
+  # shellcheck disable=SC2086
+  pacman -T $1 2>/dev/null || true
+}
+
+# apply_undeclared <declared>: explicit packages no list declares (protected included)
+apply_undeclared() {
+  pacman -Qqe 2>/dev/null | sort -u | comm -23 - <(printf '%s\n' "$1" | sort -u)
+}
+
+# apply_register <declared>: "verdict name" for every declared name that is not a pass
+apply_register() {
+  local reg="$REPO/packages/register.tsv"
+  [ -f "$reg" ] || return 0
+  awk -F'\t' 'NR==FNR { want[$1]=1; next } /^[[:space:]]*#/ || NF < 2 { next }
+    ($1 in want) && $2 != "pass" && $2 != "pass-flag" && $2 != "waiver" { print $2, $1 }' \
+    <(printf '%s\n' "$1") "$reg" | sort
+}
+
+# apply_units_todo: declared units (by role) that are not enabled
+apply_units_todo() {
+  local roles unit role
+  roles="$(apply_roles)"
+  while IFS=$'\t' read -r unit role _; do
+    # "!role": every host WITHOUT that role; "metal,!desktop": headless metal hosts (networkd)
+    role_match "$role" "$roles" || continue
+    systemctl is-enabled --quiet "$unit" 2>/dev/null || echo "$unit"
+  done < <(tsv_rows system/units.tsv)
+}
+
+# apply_files_drift: "target<TAB>hook" for tracked /etc files that differ from their source
+apply_files_drift() {
+  local roles src dst role hook
+  roles="$(apply_roles)"
+  while IFS=$'\t' read -r src dst role hook; do
+    role_match "$role" "$roles" || continue
+    [ "$role" = creator ] && ! pacman -Q v4l2loopback-dkms >/dev/null 2>&1 && continue
+    cmp -s "$REPO/$src" "$dst" 2>/dev/null || printf '%s\t%s\n' "$dst" "$hook"
+  done < <(tsv_rows system/files.tsv)
+}
+
+# apply_partial_upgrade: exit 0 (and say why) when the sync dbs are newer than the
+# last full system upgrade — installing anything now would be a partial upgrade
+apply_partial_upgrade() {
+  local last db_t last_t
+  last="$(grep -a 'starting full system upgrade' /var/log/pacman.log 2>/dev/null | tail -1 | sed -E 's/^\[([^]]+)\].*/\1/')"
+  db_t="$(stat -c %Y /var/lib/pacman/sync/*.db 2>/dev/null | sort -n | tail -1)"
+  [ -n "$db_t" ] || return 1
+  if [ -z "$last" ]; then
+    echo "no full system upgrade in /var/log/pacman.log"
+    return 0
+  fi
+  last_t="$(date -d "$last" +%s 2>/dev/null)" || return 1
+  if [ "$db_t" -gt $((last_t + 120)) ]; then
+    echo "the sync databases ($(date -d "@$db_t" '+%F %R')) are newer than the last full upgrade ($last)"
+    return 0
+  fi
+  return 1
+}
+
+apply_load_libs() {
+  [ -f "$REPO/modules/hosts/$HOST.nix" ] || die "no modules/hosts/$HOST.nix — this host has no roles yet (decisions/0009)"
+  libs_load
+}
+
+# apply_hooks <pre|post> <dry> <yes> -> exit 1 when a hook that ran failed
+apply_hooks() {
+  local phase="$1" dry="$2" yes="$3" role script mode when note rc=0 roles
+  roles="$(apply_roles)"
+  # the rows come in on fd 3: stdin stays the terminal, so `ask` can ask and a hook
+  # (secureboot-setup.sh's typed confirmation) reads the keyboard, not the next row
+  while IFS=$'\t' read -r role script mode when note <&3; do
+    [ "$when" = "$phase" ] || continue
+    role_match "$role" "$roles" || continue
+    if [ "$dry" -eq 1 ]; then
+      say "hook ($mode, $when): $script --dry-run — $note"
+      bash "$REPO/$script" --dry-run || warn "$script --dry-run reported problems"
+      continue
+    fi
+    say "hook ($when): $script — $note"
+    if [ "$mode" = ask ]; then
+      ask "Run it ($mode: $note)?" || {
+        warn "skipped $script (run it yourself: sudo bash $REPO/$script)"
+        continue
+      }
+    elif [ "$yes" -ne 1 ] && ! ask "Run it?"; then
+      warn "skipped $script"
+      continue
+    fi
+    run sudo bash "$REPO/$script" || {
+      warn "$script reported problems"
+      rc=1
+    }
+  done 3< <(tsv_rows system/apply-hooks.tsv)
+  return "$rc"
+}
+
+# apply_unsynced_repos: configured repos whose sync database is missing (pacman -S
+# refuses every install then, official packages included)
+apply_unsynced_repos() {
+  local r
+  for r in $(pacman-conf --repo-list 2>/dev/null); do
+    [ -f "/var/lib/pacman/sync/$r.db" ] || echo "$r"
+  done
+}
+
+cmd_apply() {
+  local dry=0 prune=0 yes=0 rollout=0 a
+  for a in "$@"; do
+    case "$a" in
+      --dry-run | -n) dry=1 ;;
+      --prune) prune=1 ;;
+      --yes | -y) yes=1 ;;
+      --rollout) rollout=1 ;;
+      -h | --help)
+        apply_usage
+        return 0
+        ;;
+      *)
+        echo "usage: dram apply [--dry-run] [--prune] [--yes] [--rollout]" >&2
+        return 2
+        ;;
+    esac
+  done
+  have pacman || die "dram apply converges an Arch host; pacman is not here"
+  [ "$prune" -eq 1 ] && [ "$dry" -eq 0 ] && [ ! -t 0 ] && die "--prune needs a terminal (you type the hostname to confirm)"
+  apply_load_libs
+  platform_init
+  platform_guard
+  local declared missing undeclared protected prunable reg units files why rc=0
+  say "Plan for $HOST — roles: $(roles_of "$REPO/modules/hosts/$HOST.nix" | paste -sd' ') (base implicit; platform $(platform))"
+  declared="$(apply_declared)"
+  missing="$(apply_missing "$declared")"
+  undeclared="$(apply_undeclared "$declared")"
+  protected="$(printf '%s\n' "$undeclared" | apply_protected || true)"
+  prunable="$(printf '%s\n' "$undeclared" | grep -vxF -f <(printf '%s\n' "$protected") | grep -v '^$' || true)"
+  reg="$(apply_register "$declared")"
+  units="$(apply_units_todo)"
+  files="$(apply_files_drift)"
+  ok "$(printf '%s\n' "$declared" | grep -c .) declared package names"
+
+  # the register: a forbidden name stops everything; swap/pending are reported
+  if grep -q '^fail ' <<<"$reg"; then
+    warn "declared but FORBIDDEN by packages/register.tsv (decisions/0013):"
+    grep '^fail ' <<<"$reg" | sed 's/^fail /      /'
+    die "remove them from the role files first"
+  fi
+  if [ -n "$reg" ]; then
+    warn "declared names not yet cleared by the register (swap = decided to go, pending = awaiting a ruling):"
+    sed 's/^/      /' <<<"$reg"
+    [ "$rollout" -eq 1 ] && die "--rollout: clear these first (packages/register.tsv)"
+  fi
+
+  if [ -n "$missing" ]; then
+    warn "$(grep -c . <<<"$missing") package(s) to install:"
+    dlist "$missing" 40
+  else ok "every declared package is installed"; fi
+  if [ -n "$prunable" ]; then
+    warn "$(grep -c . <<<"$prunable") explicit package(s) no role declares$([ "$prune" -eq 1 ] && echo ' — will be pruned' || echo ' (dram apply --prune to remove, or declare them)'):"
+    dlist "$prunable" 40
+  else ok "no undeclared explicit packages"; fi
+  [ -n "$protected" ] && printf '      \033[2mprotected, never pruned: %s\033[0m\n' "$(paste -sd' ' <<<"$protected")"
+  if [ -n "$units" ]; then
+    warn "unit(s) to enable: $(paste -sd' ' <<<"$units")"
+  else ok "every declared unit is enabled"; fi
+  if [ -n "$files" ]; then
+    warn "tracked /etc file(s) that differ from the repo (their hook rewrites them):"
+    sed 's/\t/   <- /; s/^/      /' <<<"$files"
+  fi
+
+  # partial-upgrade guard: only matters when something would be installed
+  if [ -n "$missing" ] && why="$(apply_partial_upgrade)"; then
+    warn "$why"
+    [ "$dry" -eq 1 ] || die "installing now would be a partial upgrade — run dram update first, then dram apply"
+  fi
+
+  if [ "$dry" -eq 1 ]; then
+    apply_hooks pre 1 0
+    apply_hooks post 1 0
+    say "Dry run: nothing was changed"
+    return 0
+  fi
+
+  sudo_keepalive
+  apply_hooks pre 0 "$yes" || rc=1
+  local unsynced
+  unsynced="$(apply_unsynced_repos)"
+  if [ -n "$missing" ] && [ -n "$unsynced" ]; then
+    die "repo(s) without a sync database: $(paste -sd' ' <<<"$unsynced") (new in pacman.conf?) — run dram update (it syncs with -Syu), then dram apply again"
+  fi
+  if [ -n "$missing" ]; then
+    say "Installing $(grep -c . <<<"$missing") package(s)"
+    if [ "$yes" -eq 1 ] || ask "Install them now (pacman -S --needed)?"; then
+      local -a pflags=(--needed)
+      [ "$yes" -eq 1 ] && pflags+=(--noconfirm)
+      # two transactions: official repos first, then [dram] — a [dram] problem (repo not
+      # synced yet on a new host) must not hold back the official set
+      local ours official dramset
+      ours="$(bash "$REPO/bin/pkgs.sh" list --repo 2>/dev/null)"
+      official="$(grep -vxF -f <(printf '%s\n' "$ours") <<<"$missing" || true)"
+      dramset="$(grep -xF -f <(printf '%s\n' "$ours") <<<"$missing" || true)"
+      if [ -n "$official" ]; then
+        # shellcheck disable=SC2086 # newline-separated name list
+        run sudo pacman -S "${pflags[@]}" -- $official || {
+          warn "pacman -S failed (official repos)"
+          rc=1
+        }
+      fi
+      if [ -n "$dramset" ]; then
+        # shellcheck disable=SC2086
+        run sudo pacman -S "${pflags[@]}" -- $dramset || {
+          warn "pacman -S failed for [dram] packages — is [dram] synced? (system/pacman-dram-repo.sh, docs/toolchain/packaging/README.md)"
+          rc=1
+        }
+      fi
+    else warn "skipped the install"; fi
+  fi
+  if [ -n "$units" ]; then
+    say "Enabling units"
+    while read -r a; do
+      [ -n "$a" ] || continue
+      case "$a" in
+        *.timer) run sudo systemctl enable --now "$a" || rc=1 ;;
+        *) run sudo systemctl enable "$a" || rc=1 ;;
+      esac
+    done <<<"$units"
+  fi
+  apply_hooks post 0 "$yes" || rc=1
+  if [ "$prune" -eq 1 ] && [ -n "$prunable" ]; then
+    say "Prune: $(grep -c . <<<"$prunable") undeclared explicit package(s)"
+    local typed
+    read -rp "    type the hostname ($HOST) to mark them as dependencies and remove what nothing needs: " typed
+    if [ "$typed" = "$HOST" ]; then
+      # shellcheck disable=SC2086
+      run sudo pacman -D --asdeps -- $prunable || rc=1
+      local orphans
+      orphans="$(pacman -Qqdt 2>/dev/null | grep -xF -f <(printf '%s\n' "$prunable") || true)"
+      if [ -n "$orphans" ]; then
+        # shellcheck disable=SC2086
+        # the typed hostname was the confirmation
+        run sudo pacman -Rns --noconfirm -- $orphans || rc=1
+      fi
+      local kept
+      # what is still installed: -Rns also took prunable names that only the removed needed
+      # shellcheck disable=SC2086
+      kept="$(pacman -Qq $prunable 2>/dev/null || true)"
+      [ -n "$kept" ] && warn "still needed by other packages, kept as dependencies: $(paste -sd' ' <<<"$kept")"
+    else warn "hostname not typed — nothing pruned"; fi
+  fi
+  mkdir -p "$STATE"
+  printf 'when=%s\nhead=%s\nrc=%s\n' "$(date -Is)" "$(short_sha)" "$rc" >"$STATE/apply-last"
+  [ "$rc" -eq 0 ] && ok "apply done — dram doctor shows what is left" || warn "apply finished with problems (above)"
+  return "$rc"
+}
+
+# doctor's view of the same plan: drift between this host and its roles
+doctor_declared() {
+  sec "declared state (dram apply; decisions/0008)"
+  if ! have pacman || [ ! -f "$REPO/modules/hosts/$HOST.nix" ]; then
+    dskip "no pacman, or no modules/hosts/$HOST.nix with roles"
+    return 0
+  fi
+  apply_load_libs
+  local declared missing undeclared prunable reg units files dst hook
+  declared="$(apply_declared)"
+  missing="$(apply_missing "$declared")"
+  undeclared="$(apply_undeclared "$declared")"
+  prunable="$(printf '%s\n' "$undeclared" | grep -vxF -f <(printf '%s\n' "$undeclared" | apply_protected || true) | grep -v '^$' || true)"
+  reg="$(apply_register "$declared")"
+  units="$(apply_units_todo)"
+  files="$(apply_files_drift)"
+  if [ -n "$missing" ]; then
+    dwarn "$(grep -c . <<<"$missing") declared package(s) not installed" "dram apply"
+    dlist "$missing"
+  else dok "every declared package is installed"; fi
+  if [ -n "$prunable" ]; then
+    dwarn "$(grep -c . <<<"$prunable") explicit package(s) no role declares" "declare each in a packages/roles/ file (+ packages/register.tsv), or dram apply --prune"
+    dlist "$prunable"
+  else dok "no undeclared explicit packages"; fi
+  if [ -n "$units" ]; then
+    dwarn "declared unit(s) not enabled: $(paste -sd' ' <<<"$units")" "dram apply"
+  else dok "every declared unit is enabled (system/units.tsv)"; fi
+  if [ -n "$files" ]; then
+    while IFS=$'\t' read -r dst hook; do
+      dwarn "$dst differs from the repo" "sudo bash $REPO/$hook (or dram apply)"
+    done <<<"$files"
+  else dok "tracked /etc files match the repo (system/files.tsv)"; fi
+  if grep -q '^fail ' <<<"$reg"; then
+    dwarn "declared but forbidden by packages/register.tsv: $(grep '^fail ' <<<"$reg" | cut -d' ' -f2 | paste -sd' ')" "remove them from the role files (decisions/0013)"
+  fi
+  local open
+  open="$(grep -vc '^fail ' <<<"$reg" || true)"
+  [ -n "$reg" ] && [ "${open:-0}" -gt 0 ] && dinfo "$open declared name(s) are swap/pending in packages/register.tsv"
+  return 0
+}
+
+# Local counterpart of bin/harvest.sh (which only runs over ssh from the Mac):
+# writes the same hosts/<host>/ files from THIS machine.
+cmd_harvest() {
+  case "${1:-}" in -h | --help)
+    echo "usage: dram harvest   (writes hosts/$HOST/: packages, units, /etc copies, hardware.txt)"
+    return 0
+    ;;
+  esac
+  no_args harvest "$@" || return 2
+  local D="$REPO/hosts/$HOST" f
+  platform_init
+  say "Harvesting $HOST into hosts/$HOST/"
+  mkdir -p "$D"/{packages,etc,systemd}
+  # replace the three subtrees so files the host no longer produces do not linger
+  rm -rf "${D:?}"/{packages,etc,systemd}
+  mkdir -p "$D"/{packages,etc,systemd}
+  pacman -Qqe >"$D/packages/explicit.txt"
+  pacman -Qqm >"$D/packages/aur.txt" || true # exit 1 = zero foreign packages, not an error
+  pacman -Q >"$D/packages/versions.lock"
+  # list-unit-files --state=enabled omits template INSTANCES (ly@tty2 shows as
+  # `indirect`); the enablement symlinks in *.wants/ carry them (same as bin/harvest.sh)
+  {
+    systemctl list-unit-files --state=enabled --no-legend --no-pager | awk '{print $1}'
+    find /etc/systemd/system \( -path '*.wants/*@*' -o -path '*.requires/*@*' \) -print 2>/dev/null | sed 's|.*/||'
+  } | sort -u >"$D/systemd/enabled-system.txt"
+  {
+    systemctl --user list-unit-files --state=enabled --no-legend --no-pager | awk '{print $1}'
+    find "$HOME/.config/systemd/user" \( -path '*.wants/*@*' -o -path '*.requires/*@*' \) -print 2>/dev/null | sed 's|.*/||'
+  } | sort -u >"$D/systemd/enabled-user.txt"
+  systemctl get-default >"$D/systemd/default-target.txt"
+  for f in /etc/fstab /etc/mkinitcpio.conf /etc/default/grub /etc/locale.gen \
+    /etc/locale.conf /etc/vconsole.conf /etc/hostname /etc/pacman.conf /etc/wsl.conf; do
+    [ -f "$f" ] && cp "$f" "$D/etc/$(basename "$f" | sed 's|^grub$|default-grub|')"
+  done
+  ls /etc/pacman.d/hooks/ >"$D/etc/pacman-hooks.txt" 2>/dev/null || true
+  {
+    echo "hostname:   $HOST"
+    echo "cpu:        $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2- | xargs)"
+    echo "gpu:        $(lspci 2>/dev/null | grep -iE 'vga|3d' | cut -d: -f3- | xargs)"
+    echo "kernel:     $(uname -r)"
+    echo "boot mode:  $([ -d /sys/firmware/efi ] && echo UEFI || echo BIOS)"
+    # systemd-boot hosts (installed since 2026-10) say so in the install facts; the ESP is /efi there
+    if [ "$(platform)" = wsl ]; then
+      echo "bootloader: none (WSL 2: Windows boots the VM with Microsoft's kernel)"
+    elif grep -qs '^BOOTLOADER=systemd-boot' /etc/dram/install-facts.env; then
+      echo "bootloader: systemd-boot $(pacman -Q systemd 2>/dev/null | awk '{print $2}') (UKIs, $(pacman -Q sbctl 2>/dev/null | paste -sd' '))"
+    else
+      echo "bootloader: $(pacman -Q refind grub 2>/dev/null | paste -sd' ')"
+    fi
+    echo "esp:        $(findmnt -no SOURCE,TARGET,FSTYPE /efi 2>/dev/null || findmnt -no SOURCE,TARGET,FSTYPE /boot 2>/dev/null)"
+    echo "session:    ${XDG_SESSION_TYPE:-unknown}"
+    echo "nix:        $(nix --version 2>/dev/null || /nix/var/nix/profiles/default/bin/nix --version 2>/dev/null || "$HOME/.nix-profile/bin/nix" --version 2>/dev/null || echo 'not installed')"
+    local form=desktop b
+    for b in /sys/class/power_supply/BAT*; do [ -e "$b" ] && form=laptop && break; done
+    # bin/check.sh reads `form: wsl` as a WSL clone: no metal or hardware list (decisions/0021)
+    [ "$(platform)" = wsl ] && form=wsl
+    echo "form:       $form"
+    echo
+    lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT,UUID
+  } >"$D/hardware.txt"
+  ok "wrote hosts/$HOST/ (explicit=$(wc -l <"$D/packages/explicit.txt") aur=$(wc -l <"$D/packages/aur.txt"))"
+  git -C "$REPO" status --short -- "hosts/$HOST" | sed 's/^/    /'
+  echo "    commit when it looks right: git -C $REPO commit -m 'hosts/$HOST: harvest' hosts/$HOST"
+}
+
+cmd_builds() { # = dram rollback --list
+  case "${1:-}" in -h | --help)
+    echo "usage: dram builds   (the recorded builds, newest first; = dram rollback --list)"
+    return 0
+    ;;
+  esac
+  no_args builds "$@" || return 2
+  cmd_rollback --list
+}
+
+cmd_help() { sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; }
+
+cmd="${1:-help}"
+[ $# -gt 0 ] && shift
+# the one-time rice -> dram rename runs before ANY command touches state (version,
+# channel, pkgs and the bar's badge read the dram paths directly)
+case "$cmd" in help | -h | --help) ;; *) migrate_rice_dirs ;; esac
+case "$cmd" in
+  switch) cmd_switch "$@" ;;
+  update) cmd_update "$@" ;;
+  receive) cmd_receive "$@" ;;
+  version) cmd_version "$@" ;;
+  channel) cmd_channel "$@" ;;
+  changelog) cmd_changelog "$@" ;;
+  builds) cmd_builds "$@" ;;
+  theme) cmd_theme "$@" ;;
+  check) cmd_check "$@" ;;
+  doctor) cmd_doctor "$@" ;;
+  pacnew) cmd_pacnew "$@" ;;
+  rollback) cmd_rollback "$@" ;;
+  backup) cmd_backup "$@" ;;
+  harvest) cmd_harvest "$@" ;;
+  boot-to) cmd_boot_to "$@" ;;
+  apply) cmd_apply "$@" ;;
+  pkgs) exec "${REPO:-$HOME/git/dotfiles}/bin/pkgs.sh" "$@" ;;
+  yubikey) exec "${REPO:-$HOME/git/dotfiles}/bin/yubikey.sh" "$@" ;;
+  help | -h | --help) cmd_help ;;
+  *)
+    warn "unknown command: $cmd"
+    cmd_help
+    exit 2
+    ;;
+esac
