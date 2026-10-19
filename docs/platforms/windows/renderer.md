@@ -43,7 +43,7 @@ The settings that exist because a PC dual-boots with Arch (the UTC clock, Fast S
 |---|---|---|---|
 | every PC | base | privacy policies, the firewall, sshd, PowerShell 7, Windows Terminal, WireGuard, Proton Pass, the YubiKey tools, WSL | Arch's base userland |
 | desktop | desktop | the Letterpress look, LibreWolf, Thunderbird with Proton Mail Bridge, Spotify, LocalSend, PowerToys, Notepad++, VLC, nomacs, SumatraPDF, Qalculate, WinDirStat | none |
-| gaming | gaming, creator | Steam, Battle.net, the Epic and Ubisoft launchers, the EA app, Vortex, PrismLauncher, the Jagex Launcher, Marvel Rivals; OBS with its virtual camera and background removal | none |
+| gaming | gaming, creator | Steam, Battle.net, the Epic and Ubisoft launchers, the EA app, Vortex, PrismLauncher, the Jagex Launcher, WowUp; OBS with its virtual camera and background removal | none |
 | work | office, college | LibreOffice, Zettlr, PDF Arranger, QPDF, calibre; KiCad, Octave, Typst, draw.io, Xournal++, Anki, Arduino CLI, PuTTY, Rufus | Taskwarrior, zk, hledger, TeX Live, the HDL toolchains |
 | coding | dev | VSCodium with Open Remote - SSH | Arch's dev list: Podman, rustup, Go, Node LTS, npm, pnpm, uv, clang |
 | homelab | sysadmin | Wireshark without Npcap, WireGuard, PuTTY, Rufus | nmap, tcpdump, mtr, iperf3, kubectl, helm, k9s, kind, talosctl |
@@ -100,7 +100,7 @@ A machine document's units all run elevated and none writes HKCU; a user documen
   "scripts":   [ { "file": "look.ps1", "phase": "30", "args": [], "dryRun": "-DryRun", "when": "always" } ],
   "files":     [ { "path": "fonts/MonaspaceXenon-Regular.otf", "sha256": "...", "source": "pin:install/windows/fonts.pin#monaspace" },
                  { "path": "build/10-machine.winget", "sha256": "...", "source": "render:windows/build/cabin-win/10-machine.winget" } ],
-  "byHand":    [ { "name": "manual:marvel-rivals", "role": "gaming", "how": "..." } ] }
+  "byHand":    [ { "name": "manual:nvidia-app", "role": "host-cabin-win", "how": "..." } ] }
 ```
 
 `files[].path` is relative to `C:\ProgramData\dram`, and `source` is `repo:<path>`, `render:<path>` or `pin:<pin file>#<line>`.

@@ -55,7 +55,7 @@ A name the register lists that nothing declares is a warning: drop the row, or m
 ## Waivers
 
 The register is the waiver register: each waived name has a row with its re-check date, and the checker fails an expired one.
-On 2026-10-19 the Arch side carries 13 waivers and the Windows side 9.
+On 2026-10-19 the Arch side carries 13 waivers and the Windows side 8.
 
 | Waived | Rule failed | Scope | Signed | Re-check |
 |---|---|---|---|---|
@@ -63,7 +63,6 @@ On 2026-10-19 the Arch side carries 13 waivers and the Windows side 9.
 | playerctl | Community: no release since 2021 | desktop | 2026-10-11 | 2027-04-11 |
 | unzip, only as winetricks' dependency | Community and license | the Wine role | 2026-10-12 | 2027-10-12 |
 | Steam, the Jagex Launcher, Spotify and the NVIDIA App on Windows | FOSS | cabin-win | 2026-10-12 ([D102](../../../decisions/log.md#d102)) | 2027-10-10 |
-| Marvel Rivals | Origin and FOSS | cabin-win only, through Steam | 2026-10-12 ([D138](../../../decisions/log.md#d138)) | 2027-10-12 |
 | the EA app, Battle.net, Hytale's launcher | FOSS | cabin-win | 2026-10-12 ([D97](../../../decisions/log.md#d97) to [D99](../../../decisions/log.md#d99)) | 2027-10-12 |
 | TeamSpeak | FOSS | the chat role, every build | 2026-10-12 ([D46](../../../decisions/log.md#d46)) | 2027-10-12 |
 

@@ -204,7 +204,6 @@
     {"path":"vscodium/settings.json.default","sha256":"279a4bd7f759918d289a1b1920b730fe796d11c03a54396c234501b5eb6032de","source":"repo:dotfiles/.config/VSCodium/User/settings.json.default"}
   ],
   "byHand": [
-    {"how":"through Steam (waived: decisions/log.md#d138)","name":"manual:marvel-rivals","role":"gaming"},
     {"how":"by hand from nvidia.com (not in winget); the driver itself comes from Windows Update (decisions/log.md#d102)","name":"manual:nvidia-app","role":"host-cabin-win"}
   ],
   "unmanaged": []

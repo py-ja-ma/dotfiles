@@ -19,9 +19,6 @@ manual:battle.net
 manual:ubisoft-connect
 # not in winget: the signed installer from jagex.com opens on the desktop for its clicks
 manual:jagex-launcher
-# Marvel Rivals, through Steam: NetEase Games (China) and its own anti-cheat, waived
-# (2026-10-12, decisions/log.md#d138)
-manual:marvel-rivals
 # OSRS, mods
 winget:RuneLite.RuneLite
 winget:NexusMods.Vortex

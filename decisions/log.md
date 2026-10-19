@@ -2,11 +2,11 @@
 
 [Office of Records](../docs/records/README.md) › [Decisions](README.md) › Log
 
-Every numbered decision behind this repo, D1 to D150, one section each.
+Every numbered decision behind this repo, D1 to D151, one section each.
 A number is permanent: it is never reused or renumbered.
 A superseded decision keeps its section and links the one that replaced it.
 Cite a decision as `D65` in code, comments and commit subjects, and in a page as a relative link to its section, `[D65](decisions/log.md#d65)` from the repository root.
-D1 to D43 came from rebuilding the Arch hosts on 2026-10-10 and 2026-10-11, D44 to D144 from bringing Windows under this repo on 2026-10-12 and 2026-10-13, D145 to D148 record choices of the same days that had no number, D149 and D150 the games and the add-on client that left cabin-win on 2026-10-19.
+D1 to D43 came from rebuilding the Arch hosts on 2026-10-10 and 2026-10-11, D44 to D144 from bringing Windows under this repo on 2026-10-12 and 2026-10-13, D145 to D148 record choices of the same days that had no number, D149 to D151 the games and the add-on client that left cabin-win on 2026-10-19.
 The architecture decision records beside this page explain the larger choices, and [the index](README.md) lists them with every open decision.
 Per-package verdicts and the dates of their waivers live in `packages/register.tsv`.
 
@@ -967,3 +967,10 @@ World of Warcraft add-ons come through WowUp (GPL-3.0, WowUp LLC, Missouri; `win
 The WowUp.CF build, which carries Overwolf's ad kit for CurseForge's catalogue, is not installed; an add-on published only on CurseForge is added by its GitHub release, or by hand into `Interface\AddOns`, where WowUp lists it as unmanaged.
 
 Decided 2026-10-19 · Security › Software supply · `packages/winget/gaming.txt`, `packages/register.tsv` (`winget:WowUp.Wowup`, `manual:curseforge`)
+
+### D151
+
+Marvel Rivals is removed from cabin-win, as League was ([D149](#d149)): the games kept are the ones that are good for the mind and for playing with others online, and no game with a kernel anti-cheat from a waived origin stays; the waiver [D138](#d138) lapses, and `manual:marvel-rivals` is a `fail` row.
+cabin-win's gaming role now installs nothing by hand but the launchers' own installers; the Windows side carries eight waivers.
+
+Decided 2026-10-19 · Security › Software supply · `packages/register.tsv` (`manual:marvel-rivals`), `packages/winget/gaming.txt`
