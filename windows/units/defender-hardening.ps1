@@ -32,9 +32,13 @@ $rules = [ordered]@{
   '01443614-cd74-433a-b99e-2ecdc07bfc25' = 2   # executables that fail prevalence, age or trusted-list criteria
 }
 
+# an empty list comes back as one null element in Windows PowerShell 5.1
+function Items($x) { @($x | Where-Object { $_ }) }
+function Exclusions($p) { @((Items $p.ExclusionPath) + (Items $p.ExclusionProcess) + (Items $p.ExclusionExtension)) }
+
 function Get-DramUnit {
   $p = Get-MpPreference
-  @{ Result = ('cloud {0}/{1}s, network protection {2}, exclusions {3}, asr rules {4}' -f $p.CloudBlockLevel, $p.CloudExtendedTimeout, $p.EnableNetworkProtection, @($p.ExclusionPath).Count + @($p.ExclusionProcess).Count + @($p.ExclusionExtension).Count, @($p.AttackSurfaceReductionRules_Ids).Count) }
+  @{ Result = ('cloud {0}/{1}s, network protection {2}, exclusions {3}, asr rules {4}' -f $p.CloudBlockLevel, $p.CloudExtendedTimeout, $p.EnableNetworkProtection, (Exclusions $p).Count, (Items $p.AttackSurfaceReductionRules_Ids).Count) }
 }
 
 function Test-DramUnit {
@@ -43,10 +47,10 @@ function Test-DramUnit {
   if ($p.MAPSReporting -ne 2 -or $p.SubmitSamplesConsent -ne 1) { return $false }   # Advanced, SendSafeSamples
   if ($p.CloudBlockLevel -ne 2 -or $p.CloudExtendedTimeout -ne 50) { return $false }   # 2 = High
   if ($p.EnableNetworkProtection -ne 1) { return $false }
-  if (@($p.ExclusionPath).Count + @($p.ExclusionProcess).Count + @($p.ExclusionExtension).Count -gt 0) { return $false }
+  if ((Exclusions $p).Count -gt 0) { return $false }
   if ($p.ScanAvgCPULoadFactor -ne 20 -or -not $p.ScanOnlyIfIdleEnabled) { return $false }
   if ($p.EnableControlledFolderAccess -ne 0) { return $false }
-  $ids = @($p.AttackSurfaceReductionRules_Ids); $acts = @($p.AttackSurfaceReductionRules_Actions)
+  $ids = Items $p.AttackSurfaceReductionRules_Ids; $acts = @($p.AttackSurfaceReductionRules_Actions)
   foreach ($g in $rules.Keys) {
     $i = [array]::IndexOf(($ids | ForEach-Object { $_.ToLower() }), $g)
     if ($i -lt 0 -or [int]$acts[$i] -ne $rules[$g]) { return $false }
@@ -58,9 +62,9 @@ function Set-DramUnit {
   $ErrorActionPreference = 'Continue'
   $p = Get-MpPreference
   Set-MpPreference -CloudBlockLevel High -CloudExtendedTimeout 50 -EnableNetworkProtection Enabled -ScanAvgCPULoadFactor 20 -ScanOnlyIfIdleEnabled $true -EnableControlledFolderAccess Disabled
-  foreach ($x in @($p.ExclusionPath)) { Remove-MpPreference -ExclusionPath $x }
-  foreach ($x in @($p.ExclusionProcess)) { Remove-MpPreference -ExclusionProcess $x }
-  foreach ($x in @($p.ExclusionExtension)) { Remove-MpPreference -ExclusionExtension $x }
+  foreach ($x in Items $p.ExclusionPath) { Remove-MpPreference -ExclusionPath $x }
+  foreach ($x in Items $p.ExclusionProcess) { Remove-MpPreference -ExclusionProcess $x }
+  foreach ($x in Items $p.ExclusionExtension) { Remove-MpPreference -ExclusionExtension $x }
   foreach ($g in $rules.Keys) { Add-MpPreference -AttackSurfaceReductionRules_Ids $g -AttackSurfaceReductionRules_Actions $rules[$g] }
   # the two settings Tamper Protection guards: set only when they are not already there
   if ($p.MAPSReporting -ne 2) { Set-MpPreference -MAPSReporting Advanced }
