@@ -45,7 +45,7 @@ Every entry in the Run keys and the Startup folders, every packaged app's startu
 | `RtkAudUService` | Realtek audio: jack detection and its console |
 | PowerToys' logon task | its shortcuts and FancyZones need it running |
 | `Zebar` | the masthead across the top of each monitor |
-| services: the NVIDIA driver's, Realtek's, AMD's chipset drivers, `sshd`, Riot Vanguard's `vgc` | the drivers; how the Mac converges the PC; League won't start without Vanguard |
+| services: the NVIDIA driver's, Realtek's, AMD's chipset drivers, `sshd` | the drivers; how the Mac converges the PC |
 | tasks: Edge's and the NVIDIA App's updaters, `dram-*` | updaters, and this repo's own jobs |
 
 Run keys and Startup folders use the switch Task Manager's Startup tab uses, so nothing is deleted, and an app that writes its entry back stays off.
@@ -98,5 +98,4 @@ To keep an app, add it to `$AllowStart` or `$AllowServices` in `autostart.ps1`, 
 ## Limits
 
 - Never WinUtil, Chris Titus Tech's tool, on a PC this repo manages: its reset deletes every policy the build sets, the firmware block included, and its services tweak once set Vanguard's `vgc` to Manual. Its useful items are in the build.
-- Riot Vanguard's kernel driver loads at boot whatever the lists say; only its tray icon is off.
 - A Windows feature update can bring an app or a default back; the next converge removes it again and says so.

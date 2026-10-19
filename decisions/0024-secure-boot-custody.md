@@ -60,4 +60,5 @@ Nothing checks this yet: the scripts it needs, a KEK and a dbx writer on Arch, a
 ## History
 
 - 2026-10-12: proposed; the baseline read from Windows, with dbx already written by Windows' servicing.
+- 2026-10-19: League and Vanguard left cabin-win ([D149](log.md#d149)); the game test after each step, Vanguard's hold on the key choice and its case for Memory Integrity ([D74](log.md#d74)) no longer apply, and the open decisions are to be revisited without them.
 - Open: every decision here but the deferred BlackLotus step waits on my answers ([D70](log.md#d70), [D71](log.md#d71), [D72](log.md#d72), [D74](log.md#d74), [D75](log.md#d75), [D90](log.md#d90), [D117](log.md#d117)).

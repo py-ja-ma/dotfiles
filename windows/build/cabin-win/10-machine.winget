@@ -36,7 +36,7 @@ properties:
     - resource: "PSDscResources/Registry"
       id: "bsod-details"
       directives:
-        description: "a stop screen shows its four parameters beside the stop code (something to search on when PawnIO, Vanguard or the NVIDIA driver fail)"
+        description: "a stop screen shows its four parameters beside the stop code (something to search on when PawnIO or the NVIDIA driver fails)"
         allowPrerelease: true
         securityContext: "elevated"
       settings:

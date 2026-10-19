@@ -44,6 +44,6 @@
     {"path":"units/fonts-machine.ps1","sha256":"","source":"repo:windows/units/fonts-machine.ps1"}
   ],
   "byHand": [
-    {"how":"the Riot Client, by hand from riotgames.com; League and Vanguard come with it (waived, decisions/log.md#d92)","name":"manual:riot-client","role":"gaming"}
+    {"how":"through Steam (waived: decisions/log.md#d138)","name":"manual:marvel-rivals","role":"gaming"}
   ]
 }

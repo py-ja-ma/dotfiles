@@ -22,7 +22,7 @@
   "files": [
     {"path":"account-picture.ps1","sha256":"558fbec82abe1077d578f101169b1bb0aaf67e61e440aa8ee53cd5b17be23a2d","source":"repo:install/windows/dram-windows/account-picture.ps1"},
     {"path":"apply-live.ps1","sha256":"a43716e1a89e7a4e8be1fd1c709fbefa39d8fc465b0e05d8a6dea3ecd9ca2351","source":"repo:install/windows/dram-windows/apply-live.ps1"},
-    {"path":"autostart.ps1","sha256":"330f9128f62c20c15572980f8de899f8338fac2a8baee008d8b9b813ca3c6d27","source":"repo:install/windows/dram-windows/autostart.ps1"},
+    {"path":"autostart.ps1","sha256":"c6987d74438839fd31638f5a5bb0110b1eff514988762b16990f996cc2f97345","source":"repo:install/windows/dram-windows/autostart.ps1"},
     {"path":"avatar/pj-1080.png","sha256":"bb57ec3a8b7e0723381b994ec04cc7998c1c6e27ed863eb38f9bf87ce8df5e6d","source":"repo:dotfiles/.local/share/dram/avatar/pj-1080.png"},
     {"path":"avatar/pj-192.png","sha256":"dfee156a56321f565a961d948bc172ef7b3f31c2011eec001e60e274b0549eb7","source":"repo:dotfiles/.local/share/dram/avatar/pj-192.png"},
     {"path":"avatar/pj-208.png","sha256":"9045c9ce047f3c6d148ca37080ab5435a33386ba52293ce12e91faa3f742fde5","source":"repo:dotfiles/.local/share/dram/avatar/pj-208.png"},
@@ -36,7 +36,7 @@
     {"path":"avatar/pj-64.png","sha256":"23cc72c064efb1240941d080f25c67d7228505b482a2f0fcd71b54b2244bf222","source":"repo:dotfiles/.local/share/dram/avatar/pj-64.png"},
     {"path":"avatar/pj-96.png","sha256":"df836f2e1f3197318e76b2805693ca142da8849eb8ecdd3eae6caf27fc9b4601","source":"repo:dotfiles/.local/share/dram/avatar/pj-96.png"},
     {"path":"boot-guard.ps1","sha256":"f32188d416ca15e72a01e2c79d2e2907e08cf3c4cebdccf73d49212268bfdbe4","source":"repo:install/windows/dram-windows/boot-guard.ps1"},
-    {"path":"build/10-machine.winget","sha256":"c34158d83ea1b73b33b1b21e570ff755c7e9e6c950ec0e5ee5dd220e170d0686","source":"render:windows/build/cabin-win/10-machine.winget"},
+    {"path":"build/10-machine.winget","sha256":"d0bac96ec299517c0905368962c2a57d1f9fe1de0337adb50a9ce1e6ec55c89e","source":"render:windows/build/cabin-win/10-machine.winget"},
     {"path":"build/20-user.winget","sha256":"ec11f013e9cc593f7792ae3eb1898677296bcae53d441984dc503f666b9aeeef","source":"render:windows/build/cabin-win/20-user.winget"},
     {"path":"build/30-machine.winget","sha256":"2e4d10f6f73ca316c27b1267b3520689ef509b8c3e151fd380987b759efcb3c6","source":"render:windows/build/cabin-win/30-machine.winget"},
     {"path":"build/30-user.winget","sha256":"0662a07b97918002c5308616ddf60cfb0086d7c3292796451574018dddb0ce0c","source":"render:windows/build/cabin-win/30-user.winget"},
@@ -168,7 +168,7 @@
     {"path":"letterpress/zebar/settings.json","sha256":"a5331c4f02d9cca06398ab4701ce8d9a5745c25521d77310b5a43ebdc43f87c6","source":"repo:install/windows/letterpress/zebar/settings.json"},
     {"path":"librewolf/librewolf.overrides.cfg","sha256":"826e9f9e4c21f1443086cabf706d80d444b83660beaccef97511b96e26eb3e91","source":"repo:dotfiles/.librewolf/librewolf.overrides.cfg"},
     {"path":"librewolf/userChrome.css","sha256":"39d9100c5c71b55a05abd200bb335e62cd9f9cb676df864ab42f11eb78c507db","source":"repo:dotfiles/.librewolf/chrome/userChrome.css"},
-    {"path":"look.ps1","sha256":"d7c9e8303ce35f3c60e235ad5ea85542762194147b98e647b209fdcdc7367e24","source":"repo:install/windows/dram-windows/look.ps1"},
+    {"path":"look.ps1","sha256":"043f167b1410c6c92f627918c1aab73cf51689a4c0714966fce1637f3358146b","source":"repo:install/windows/dram-windows/look.ps1"},
     {"path":"starship.toml","sha256":"c1b842075b054f440b2b5d38eccc48b77d6f97fdae89ba6a0c6351bd01da120c","source":"repo:dotfiles/.config/starship.toml"},
     {"path":"thunderbird/user.js.default","sha256":"52d0d6fdaf0093959296feb1f058c02e477d9652893d08a015d3e2753142526e","source":"repo:dotfiles/.thunderbird-chrome/user.js.default"},
     {"path":"thunderbird/userChrome.css","sha256":"c4199c63032619a6ebbd178bdb73667c6cc8aaa26dffda1c2f0250302807eec2","source":"repo:dotfiles/.thunderbird-chrome/userChrome.css"},
@@ -204,9 +204,8 @@
     {"path":"vscodium/settings.json.default","sha256":"279a4bd7f759918d289a1b1920b730fe796d11c03a54396c234501b5eb6032de","source":"repo:dotfiles/.config/VSCodium/User/settings.json.default"}
   ],
   "byHand": [
-    {"how":"the Riot Client, by hand from riotgames.com; League and Vanguard come with it (waived: decisions/log.md#d92)","name":"manual:riot-client","role":"gaming"},
-    {"how":"through Steam (waived as League is: decisions/log.md#d138)","name":"manual:marvel-rivals","role":"gaming"},
+    {"how":"through Steam (waived: decisions/log.md#d138)","name":"manual:marvel-rivals","role":"gaming"},
     {"how":"by hand from nvidia.com (not in winget); the driver itself comes from Windows Update (decisions/log.md#d102)","name":"manual:nvidia-app","role":"host-cabin-win"}
   ],
-  "unmanaged": ["winget:Blitz.Blitz"]
+  "unmanaged": []
 }

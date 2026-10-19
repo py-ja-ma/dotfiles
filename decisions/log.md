@@ -2,11 +2,11 @@
 
 [Office of Records](../docs/records/README.md) › [Decisions](README.md) › Log
 
-Every numbered decision behind this repo, D1 to D148, one section each.
+Every numbered decision behind this repo, D1 to D149, one section each.
 A number is permanent: it is never reused or renumbered.
 A superseded decision keeps its section and links the one that replaced it.
 Cite a decision as `D65` in code, comments and commit subjects, and in a page as a relative link to its section, `[D65](decisions/log.md#d65)` from the repository root.
-D1 to D43 came from rebuilding the Arch hosts on 2026-10-10 and 2026-10-11, D44 to D144 from bringing Windows under this repo on 2026-10-12 and 2026-10-13, and D145 to D148 record choices of the same days that had no number.
+D1 to D43 came from rebuilding the Arch hosts on 2026-10-10 and 2026-10-11, D44 to D144 from bringing Windows under this repo on 2026-10-12 and 2026-10-13, D145 to D148 record choices of the same days that had no number, and D149 the games that left cabin-win on 2026-10-19.
 The architecture decision records beside this page explain the larger choices, and [the index](README.md) lists them with every open decision.
 Per-package verdicts and the dates of their waivers live in `packages/register.tsv`.
 
@@ -953,3 +953,10 @@ Decided 2026-10-11 · Security › Identity · `pkgs/dram.asc`, `keys/ssh.pub`
 Windows 11 and the closed software tested inside it carry a FOSS waiver on cabin's Windows disk and on thermos, re-checked 2027-10-11: some of what I use does not run on Linux.
 
 Decided 2026-10-11 · Security › Software supply · [ADR 0013](0013-software-rules-and-waivers.md)
+
+### D149
+
+League of Legends, with the Riot Client and Vanguard, and Blitz are removed from cabin-win, which keeps the games that are good for the mind and for playing with others online; the waiver [D92](#d92) lapses, and `manual:riot-client` is a `fail` row.
+With Vanguard's kernel driver gone, the game test after each Secure Boot step ([ADR 0024](0024-secure-boot-custody.md)) and the Vanguard case for Memory Integrity ([D74](#d74)) are to be revisited; `windows.unmanaged` ([D144](#d144)) stays, with no name under it on cabin-win.
+
+Decided 2026-10-19 · Security › Software supply · `packages/register.tsv` (`manual:riot-client`), `packages/winget/gaming.txt`, `windows/hosts/cabin-win.nix`

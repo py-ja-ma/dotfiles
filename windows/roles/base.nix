@@ -77,7 +77,7 @@
         name = "Flags"; type = "String"; data = "506";
       };
       bsod-details = {
-        description = "a stop screen shows its four parameters beside the stop code (something to search on when PawnIO, Vanguard or the NVIDIA driver fail)";
+        description = "a stop screen shows its four parameters beside the stop code (something to search on when PawnIO or the NVIDIA driver fails)";
         key = ''HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl'';
         name = "DisplayParameters"; type = "Dword"; data = "1";
       };

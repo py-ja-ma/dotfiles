@@ -86,7 +86,7 @@ Power off, then:
 
 BitLocker comes last, turned on by hand with its recovery key in Proton Pass, after the boot hardening ([decision log](../../../decisions/log.md#d75)).
 If Setup put its boot files on another disk's ESP anyway, `own-esp.ps1` moves them to Windows' own disk without a reinstall ([Boot guard](boot-guard.md)).
-The next feature version is a repo change, as an Arch release is: move `TargetReleaseVersionInfo` in the unit `windows-update-feature-pin`, render, converge, let Windows Update install it, then start League before keeping it.
+The next feature version is a repo change, as an Arch release is: move `TargetReleaseVersionInfo` in the unit `windows-update-feature-pin`, render, converge, let Windows Update install it, then start a game before keeping it.
 
 ## thermos
 

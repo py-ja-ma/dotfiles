@@ -51,3 +51,4 @@ The deny list and the policies are registry units that `dram doctor` tests in th
 
 - 2026-10-12: accepted ([D51](log.md#d51), [D59](log.md#d59)); WinUtil, Windhawk and AutoHotkey ruled out the same day ([D133](log.md#d133), [D134](log.md#d134), [D136](log.md#d136)).
 - 2026-10-12: the WCH ban built ([D142](log.md#d142)); four unused Store apps removed ([D139](log.md#d139)).
+- 2026-10-19: League and Vanguard removed from cabin-win ([D149](log.md#d149)); Vanguard's `vgc` service leaves `autostart.ps1`'s allowed services.

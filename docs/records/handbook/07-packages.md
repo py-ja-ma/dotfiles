@@ -369,7 +369,7 @@ way `packages/host-cabin.txt` works on Arch. One name per line, own-line comment
 only, each name in one list and prefixed: `winget:<id>` (a winget package,
 `winget:Valve.Steam`), `msstore:<id>` (a Microsoft Store product: Spotify is
 `msstore:9NCBCSZSJRSB`) or `manual:<name>` (installed by a Script unit or by hand:
-`manual:jagex-launcher`, `manual:riot-client`). The flake renders these lists
+`manual:jagex-launcher`, `manual:marvel-rivals`). The flake renders these lists
 (decisions/0020, docs/platforms/windows/README.md): a Windows host installs every name of the
 lists its roles name, unless its host file holds it back (`windows/hosts/<host>.nix`),
 through its committed build (`windows/build/<host>/`) and

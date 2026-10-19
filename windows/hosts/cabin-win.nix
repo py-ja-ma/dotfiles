@@ -28,8 +28,7 @@
       "winget:SumatraPDF.SumatraPDF"
       "winget:Qalculate.Qalculate"
     ];
-    # installed by hand and kept out of the build (decisions/log.md#d144): dram harvest skips them
-    unmanaged = [ "winget:Blitz.Blitz" ];
+    # nothing installed by hand and kept out of the build (windows.unmanaged, decisions/log.md#d144)
   };
 
   windows.role.host-cabin-win = {
@@ -140,7 +139,7 @@
         elevated = true;
       };
       # --- Windows Update beside Arch (2026-10-12): the feature version stays until the repo
-      # moves it, as Arch moves by release (each move tested with League); monthly security and
+      # moves it, as Arch moves by release (each move tested with a game); monthly security and
       # Secure Boot servicing keep coming; a restart waits for pj, and one Windows makes with
       # nobody signed in boots rEFInd's default, Arch, so the update finishes at the next Windows
       # start. Drivers keep coming from Windows Update (the NVIDIA driver); firmware does not

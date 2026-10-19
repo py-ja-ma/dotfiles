@@ -19,11 +19,8 @@ manual:battle.net
 manual:ubisoft-connect
 # not in winget: the signed installer from jagex.com opens on the desktop for its clicks
 manual:jagex-launcher
-# League: the Riot Client, installed by hand; Vanguard comes with it (waived,
-# decisions/log.md#d92)
-manual:riot-client
-# Marvel Rivals, through Steam: NetEase Games (China) and its own anti-cheat, waived as League
-# is (2026-10-12, decisions/log.md#d138)
+# Marvel Rivals, through Steam: NetEase Games (China) and its own anti-cheat, waived
+# (2026-10-12, decisions/log.md#d138)
 manual:marvel-rivals
 # OSRS, mods
 winget:RuneLite.RuneLite

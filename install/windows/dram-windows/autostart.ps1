@@ -30,15 +30,13 @@ $AllowStart = @(
   'Zebar'             # the masthead across the top of each monitor (the desktop role's zebar-autostart)
 )
 # not Steam: switched off in Task Manager on 2026-10-12 (on Arch it starts silently for
-# shader pre-caching; on Windows it starts when a game does). Riot Vanguard's kernel driver
-# loads at boot whatever this says (League needs it); only its tray icon is off.
+# shader pre-caching; on Windows it starts when a game does).
 # services other than Microsoft's that stay on Automatic (names, regex)
 $AllowServices = @(
   'NVDisplay\.ContainerLocalSystem', 'NvContainerLocalSystem',   # the NVIDIA driver and its app
   'RtkAudioUniversalService',                                     # Realtek audio
   'AMD.*', 'amd.*',                                               # chipset drivers
-  'sshd',                                                         # how the Mac converges this machine
-  'vgc'                                                           # Riot Vanguard: League will not start without it
+  'sshd'                                                          # how the Mac converges this machine
 )
 # third-party tasks that keep their triggers: updaters, not apps
 $AllowTasks = @('MicrosoftEdgeUpdateTask.*', 'NVIDIA App SelfUpdate.*', 'dram-.*')   # dram-*: this repo's own jobs (dram-case-display: the case's panel, resident)

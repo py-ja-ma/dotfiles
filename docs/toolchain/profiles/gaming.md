@@ -184,12 +184,12 @@ cabin-win takes the gaming role from `packages/winget/gaming.txt`, and nothing s
 | Battle.net | the `battle-net` unit, because winget's package needs an install location | waived ([D98](../../../decisions/log.md#d98)) |
 | Ubisoft Connect | the `ubisoft-connect` unit, Ubisoft's own signed installer | accepted with a flag ([D96](../../../decisions/log.md#d96)) |
 | Jagex Launcher | the `jagex-launcher` unit opens its signed installer on the desktop | waived ([D102](../../../decisions/log.md#d102)) |
-| Riot Client, with League and Vanguard | by hand | waived, cabin-win only ([D92](../../../decisions/log.md#d92)) |
-| Marvel Rivals | through Steam | waived as League is ([D138](../../../decisions/log.md#d138)) |
+| Marvel Rivals | through Steam | waived, cabin-win only ([D138](../../../decisions/log.md#d138)) |
 | RuneLite | winget | accepted with an Origin flag ([D103](../../../decisions/log.md#d103)) |
 | Vortex | winget | pass |
 | PrismLauncher | winget; it fetches the Java each Minecraft version needs | pass |
 
+League of Legends, with the Riot Client and Vanguard, and Blitz left cabin-win on 2026-10-19 ([D149](../../../decisions/log.md#d149)).
 Emulation stays on Arch ([D62](../../../decisions/log.md#d62)).
 
 ## Opt-in, not installed

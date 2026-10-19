@@ -130,7 +130,7 @@ The last line counts them: `== look: <n> themed, <n> would change, <n> ok, <n> d
 | Proton Pass, Proton Mail Bridge, Transmission | follow Windows' dark mode | no file to write |
 | the work apps: LibreOffice, Zettlr, KiCad, Octave, draw.io, Xournal++, Anki, PDF Arranger, PuTTY, Rufus | not themed on 2026-10-12; an app among them that follows Windows' dark mode does so by itself | nothing yet |
 | WireGuard, OpenVPN GUI | cannot: they stay light | no hook for a theme |
-| Steam, Spotify, Battle.net, EA app, Epic Games, Ubisoft Connect, Hytale, Riot Client, Jagex Launcher, NVIDIA App | left alone | each has its own dark interface, and skins and patchers stay out |
+| Steam, Spotify, Battle.net, EA app, Epic Games, Ubisoft Connect, Hytale, Jagex Launcher, NVIDIA App | left alone | each has its own dark interface, and skins and patchers stay out |
 
 Two outputs serve apps that no list installs.
 qBittorrent gave way to Transmission ([Transmission in its place](../../../decisions/log.md#d104)), and `look.ps1` keeps its qBittorrent step for a host that keeps the app, without running it.

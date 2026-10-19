@@ -839,7 +839,7 @@ foreach ($step in 'Set-Terminal', 'Set-PowerShell', 'Set-VSCodium', 'Set-LibreWo
 foreach ($a in 'proton pass', 'proton mail bridge', 'transmission') { Say 'follows' $a 'Windows dark mode' }
 Say 'follows' 'windows shell' 'the desktop role: dark, the accent on title bars, the art, the Adwaita pointer, no sounds, a clear sign-in, a quiet Start and Explorer; apply-live.ps1: the taskbar auto-hidden'
 foreach ($a in 'wireguard', 'openvpn gui') { Say 'cannot' $a 'no theming hook (it stays light)' }
-foreach ($a in 'steam', 'spotify', 'battle.net', 'ea app', 'epic games', 'ubisoft connect', 'hytale', 'riot client', 'jagex launcher', 'nvidia app') {
+foreach ($a in 'steam', 'spotify', 'battle.net', 'ea app', 'epic games', 'ubisoft connect', 'hytale', 'jagex launcher', 'nvidia app') {
   Say 'cannot' $a 'its own dark UI; no skins or patchers'
 }
 $c = $script:Count

@@ -54,7 +54,7 @@ A line is one prefixed name:
 |---|---|---|
 | `winget:<id>` | a winget package | `winget:Valve.Steam` |
 | `msstore:<id>` | a Microsoft Store product | `msstore:9NCBCSZSJRSB` (Spotify) |
-| `manual:<name>` | installed by a Script unit, or by hand as `windows/packages.nix` says | `manual:riot-client` |
+| `manual:<name>` | installed by a Script unit, or by hand as `windows/packages.nix` says | `manual:marvel-rivals` |
 
 Each name is in one list only, with comments on lines of their own.
 The renderer installs every name of the lists a host's roles name, unless the host file holds it back ([renderer](../docs/platforms/windows/renderer.md)).

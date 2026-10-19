@@ -55,8 +55,7 @@
     "winget:RuneLite.RuneLite" = { id = "runelite"; description = "RuneLite"; };
     "winget:NexusMods.Vortex" = { id = "vortex"; description = "Vortex (mod manager)"; };
     "winget:PrismLauncher.PrismLauncher" = { id = "prismlauncher"; description = "Prism Launcher (Minecraft; a per-user installer, as Anki's is)"; };
-    "manual:riot-client".byHand = "the Riot Client, by hand from riotgames.com; League and Vanguard come with it (waived: decisions/log.md#d92)";
-    "manual:marvel-rivals".byHand = "through Steam (waived as League is: decisions/log.md#d138)";
+    "manual:marvel-rivals".byHand = "through Steam (waived: decisions/log.md#d138)";
 
     # --- office and college: the work and finance profiles' GUI half
     # (docs/platforms/windows/renderer.md), each the project Arch installs (its register row the Arch row's twin); winget

@@ -90,8 +90,8 @@ These hold for cabin's MSI board ([D73](../../../decisions/log.md#d73)):
 - The BIOS comes by M-Flash only: LVFS has nothing for this board, and Windows Update's Firmware class is denied.
 - **Never** "Load Defaults" or a Secure Boot mode change on a whim: the factory keys let Windows write the KEK again and stop Arch booting.
 - After any BIOS update or CMOS clear, boot Arch first, restore the preset, run `secureboot-setup.sh` again, then `secureboot-test.sh`.
-- The AMD fTPM stays on: Riot's anti-cheat accepts only an fTPM for restricted accounts.
-- IOMMU, SVM and NX on, for Memory Integrity and Vanguard's on-demand mode: decided, not yet set.
+- The AMD fTPM stays on: BitLocker's TPM protector ([D75](../../../decisions/log.md#d75)) needs it.
+- IOMMU, SVM and NX on, for Memory Integrity: decided, not yet set; Vanguard's on-demand mode no longer asks for it ([D149](../../../decisions/log.md#d149)).
 
 ## When it breaks
 
