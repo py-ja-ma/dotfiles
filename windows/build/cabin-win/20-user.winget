@@ -94,6 +94,17 @@ properties:
         ValueData: "C:\\ProgramData\\dram\\starship.toml"
         Force: true
     - resource: "PSDscResources/Registry"
+      id: "storage-sense-weekly"
+      directives:
+        description: "Storage Sense runs weekly (temporary files and the recycle bin), not only when the disk is nearly full"
+        allowPrerelease: true
+      settings:
+        Key: "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\StorageSense\\Parameters\\StoragePolicy"
+        ValueName: "2048"
+        ValueType: "Dword"
+        ValueData: "7"
+        Force: true
+    - resource: "PSDscResources/Registry"
       id: "terminal-default-console"
       directives:
         description: "Windows Terminal hosts every console app (the console half)"

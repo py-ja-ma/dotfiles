@@ -24,6 +24,7 @@ cabin is a desktop at home, and its disks stay unencrypted ([D3](../../decisions
 ## Rules
 
 - sshd accepts keys only, and nftables admits SSH from the LAN only (`system/harden.sh`). `dram doctor --supply` warns when either drifts.
+- On Windows, Defender is the only antivirus, hardened by the `defender-hardening` unit, the firewall is Private-only for sshd, and Memory Integrity, the driver blocklist and protected LSA are declared ([debloat](../platforms/windows/debloat.md), [D152](../../decisions/log.md#d152)).
 - Every installed package has a verdict in `packages/register.tsv` ([0013](../../decisions/0013-software-rules-and-waivers.md)). `bin/check.sh` §15 fails on a name without one, an expired waiver or a forbidden name.
 - Secure Boot keeps Microsoft's keys next to mine: cabin's GPU option ROM and Windows' boot manager are signed by Microsoft ([0011](../../decisions/0011-disk-boot-secure-boot-snapshots.md)).
 - Both YubiKeys are enrolled for every job, so losing one is a revocation and not a lockout ([0019](../../decisions/0019-yubikeys.md)). `bin/check.sh` §18 checks the public halves in `keys/` and `.sops.yaml`.

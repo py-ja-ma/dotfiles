@@ -2,11 +2,11 @@
 
 [Office of Records](../docs/records/README.md) › [Decisions](README.md) › Log
 
-Every numbered decision behind this repo, D1 to D151, one section each.
+Every numbered decision behind this repo, D1 to D152, one section each.
 A number is permanent: it is never reused or renumbered.
 A superseded decision keeps its section and links the one that replaced it.
 Cite a decision as `D65` in code, comments and commit subjects, and in a page as a relative link to its section, `[D65](decisions/log.md#d65)` from the repository root.
-D1 to D43 came from rebuilding the Arch hosts on 2026-10-10 and 2026-10-11, D44 to D144 from bringing Windows under this repo on 2026-10-12 and 2026-10-13, D145 to D148 record choices of the same days that had no number, D149 to D151 the games and the add-on client that left cabin-win on 2026-10-19.
+D1 to D43 came from rebuilding the Arch hosts on 2026-10-10 and 2026-10-11, D44 to D144 from bringing Windows under this repo on 2026-10-12 and 2026-10-13, D145 to D148 record choices of the same days that had no number, D149 to D151 the games and the add-on client that left cabin-win on 2026-10-19, and D152 its Defender and firewall.
 The architecture decision records beside this page explain the larger choices, and [the index](README.md) lists them with every open decision.
 Per-package verdicts and the dates of their waivers live in `packages/register.tsv`.
 
@@ -974,3 +974,11 @@ Marvel Rivals is removed from cabin-win, as League was ([D149](#d149)): the game
 cabin-win's gaming role now installs nothing by hand but the launchers' own installers; the Windows side carries eight waivers.
 
 Decided 2026-10-19 · Security › Software supply · `packages/register.tsv` (`manual:marvel-rivals`), `packages/winget/gaming.txt`
+
+### D152
+
+Windows keeps Defender as its only antivirus, with the free protections Windows ships but leaves off: the cloud block level High with the longer cloud check, Network Protection, no exclusions, scans only when idle, and the attack surface reduction rules, twelve in Block, four heuristics in Warn until a month of their events stays clean, and the prevalence rule in Audit, since it would stop this repo's own fresh binaries; Controlled Folder Access stays off, because games save under Documents.
+Memory Integrity, the vulnerable-driver blocklist and protected LSA are declared so they stay; the firewall keeps the Ethernet connection Private, reaches sshd through its own Private-only rule, drops the rules of uninstalled apps and logs what it blocks; NetBIOS over TCP/IP is off as LLMNR is; pj's account requires a password.
+No open-source scanner on Windows has on-access protection (ClamAV scans on demand only), and the labs place Defender with the paid suites, so a second antivirus would add nothing; Smart App Control stays off, as it would block unsigned tools and this repo's own builds.
+
+Decided 2026-10-19 · Platforms › Windows · `windows/roles/base.nix`, `windows/units/defender-hardening.ps1`, `windows/units/firewall-lan.ps1`, `windows/units/netbios-off.ps1`, `windows/units/account-password-required.ps1`

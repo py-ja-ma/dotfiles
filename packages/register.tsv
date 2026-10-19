@@ -480,7 +480,6 @@ winget:Microsoft.PowerToys	pass	-	MIT; Microsoft (US); PowerRename replaced Adva
 winget:Mozilla.Thunderbird	pass	-	= thunderbird (Arch)
 winget:Mumble.Mumble.Client	pass	-	D45, D122: BSD-3-Clause; davidebeatrici (Italy); the chat role, every build
 winget:namazso.PawnIO	pass-flag	-	ruled 2026-10-12 (D124): accepted with the flag: the kernel driver LibreHardwareMonitor needs for the CPU temperature; FOSS unclear (GPL-2.0-or-later source, a signed build without a license file); Origin unclear (maintainer: "Europe"); Community 1 to 2 of 4
-winget:NexusMods.Vortex	pass	-	D122: GPL-3.0; Black Tree Gaming (Exeter) under a Danish owner; leads in Germany, Moldova and the UK
 winget:nomacs.nomacs	pass	-	GPL-3.0; publisher TU Wien; replaced JPEGView (D61)
 winget:Notepad++.Notepad++	pass	-	GPL-3.0; Don Ho (Paris); the 2025 update hijack was fixed in 8.8.9 and 8.9.2
 winget:Nvidia.GeForceNow	fail	-	dropped 2026-10-12 (D100): FOSS: proprietary, and no need: the 3080 Ti plays locally; debloat.ps1 removes it; re-adding needs a new decision

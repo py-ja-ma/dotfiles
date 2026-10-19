@@ -68,14 +68,16 @@ The base role sets Microsoft's own switches, each documented to work on Pro:
 | delivery | updates and Store apps from Microsoft alone, never from or for other PCs |
 | device metadata | no companion apps fetched for new hardware, the way MSI's and Lenovo's helpers arrive; drivers still come from Windows Update |
 | Edge | stays; only its preload, nags and data sharing go |
-| network | LLMNR off, as on Arch |
-| Defender | blocks potentially unwanted apps |
+| network | LLMNR and NetBIOS over TCP/IP off, as on Arch; the Ethernet connection is Private, sshd is reached through its own Private-only rule, the firewall logs what it blocks, and rules left by uninstalled apps go (`firewall-lan`) |
+| Defender | blocks potentially unwanted apps; cloud block level High, Network Protection, no exclusions, scans only when the PC is idle, and the attack surface reduction rules: twelve in Block, four heuristics in Warn, the prevalence rule in Audit (`defender-hardening`, [D152](../../../decisions/log.md#d152)) |
+| the kernel | Memory Integrity, the vulnerable-driver blocklist and protected LSA, declared so they stay |
+| the account | pj's account requires a password |
 | PowerShell 7 | no telemetry |
 
 The desktop role adds the quiet: no event sounds (`sounds-off`), and Start and Explorer without suggestions or news (`explorer-quiet`).
 
 Nothing is uninstalled for these, and Windows AI goes by policy instead of by removing its packages: Click to Do lives in the CoreAI package, and removing that has left Explorer on its old ribbon.
-No service is touched except the AI Fabric's, and Defender keeps its cloud protection as shipped.
+No service is touched except the AI Fabric's. Defender stays the only antivirus: no open-source scanner on Windows has on-access protection, and the labs place Defender with the paid suites, so the free hardening above is the whole of it ([D152](../../../decisions/log.md#d152)). Controlled Folder Access stays off: games save under Documents.
 
 ## Use it
 

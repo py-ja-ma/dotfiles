@@ -114,7 +114,7 @@ How the panel and the frame work: [pkgs/dram-case-display/README.md](../../../pk
 
 ## Status
 
-As of 2026-10-13: cabin-win runs release v2026.10.27 and `dram doctor` finds no drift.
+As of 2026-10-19: cabin-win runs release v2026.10.29; League, Blitz, Marvel Rivals, CurseForge, Overwolf, the native Discord client and Vortex left it, WowUp manages the WoW add-ons, and Defender, the firewall and the kernel guards are declared ([D149](../../../decisions/log.md#d149) to [D152](../../../decisions/log.md#d152)).
 Open:
 
 - thermos' reset from this repo;

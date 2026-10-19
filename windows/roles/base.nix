@@ -70,6 +70,30 @@
         key = ''HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender'';
         name = "PUAProtection"; type = "Dword"; data = "1";
       };
+      # --- the kernel's own guards, declared so they stay (decisions/log.md#d152): Memory
+      # Integrity keeps unsigned or known-bad drivers out of the kernel (a restart turns it on),
+      # the vulnerable-driver blocklist names the known-bad ones, and LSA runs protected, so
+      # nothing reads the sign-in secrets out of it (2: no firmware lock, Arch owns the firmware) ---
+      memory-integrity = {
+        description = "Memory Integrity (hypervisor-protected code integrity): only signed, allowed drivers run in the kernel";
+        key = ''HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity'';
+        name = "Enabled"; type = "Dword"; data = "1";
+      };
+      vulnerable-driver-blocklist = {
+        description = "Microsoft's blocklist of vulnerable drivers stays on";
+        key = ''HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CI\Config'';
+        name = "VulnerableDriverBlocklistEnable"; type = "Dword"; data = "1";
+      };
+      lsa-protected = {
+        description = "LSA runs as a protected process (no firmware lock), so its sign-in secrets cannot be read out of it";
+        key = ''HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa'';
+        name = "RunAsPPL"; type = "Dword"; data = "2";
+      };
+      storage-sense-weekly = {
+        description = "Storage Sense runs weekly (temporary files and the recycle bin), not only when the disk is nearly full";
+        key = ''HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy'';
+        name = "2048"; type = "Dword"; data = "7";
+      };
       # --- small comforts: no prompt mid-game, a stop screen that says more ---
       no-sticky-keys-prompt = {
         description = "five Shift presses no longer ask about Sticky Keys (a string, as Windows stores it; from the next sign-in)";
@@ -135,6 +159,24 @@
       };
       windows-ai-fabric-manual = {
         description = "the Windows AI Fabric service starts only when something asks for it (Manual), on builds that have it";
+        elevated = true;
+      };
+      # --- Defender, the firewall and the network beside Arch's harden.sh (decisions/log.md#d152):
+      # the free protections Windows ships but leaves off, nothing bought, no second antivirus ---
+      defender-hardening = {
+        description = "Defender's cloud block level High, Network Protection, no exclusions, scans only when idle, and the attack surface reduction rules: twelve in Block, four heuristics in Warn, the prevalence rule in Audit";
+        elevated = true;
+      };
+      firewall-lan = {
+        description = "the Ethernet connection is Private, sshd is reached only through its own Private rule, rules of uninstalled apps are gone, and every profile logs what it blocks";
+        elevated = true;
+      };
+      netbios-off = {
+        description = "NetBIOS over TCP/IP off on every interface, as LLMNR is";
+        elevated = true;
+      };
+      account-password-required = {
+        description = "pj's account requires a password (the OEM image's flag that lets a blank one through is cleared)";
         elevated = true;
       };
       # --- Edge stays: only its preload, nags and

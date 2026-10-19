@@ -185,11 +185,10 @@ cabin-win takes the gaming role from `packages/winget/gaming.txt`, and nothing s
 | Ubisoft Connect | the `ubisoft-connect` unit, Ubisoft's own signed installer | accepted with a flag ([D96](../../../decisions/log.md#d96)) |
 | Jagex Launcher | the `jagex-launcher` unit opens its signed installer on the desktop | waived ([D102](../../../decisions/log.md#d102)) |
 | RuneLite | winget | accepted with an Origin flag ([D103](../../../decisions/log.md#d103)) |
-| Vortex | winget | pass |
 | PrismLauncher | winget; it fetches the Java each Minecraft version needs | pass |
 | WowUp | winget; World of Warcraft add-ons from Wago Addons, WoWInterface, GitHub and tukui.org | pass ([D150](../../../decisions/log.md#d150)) |
 
-League of Legends, with the Riot Client and Vanguard, and Blitz left cabin-win on 2026-10-19 ([D149](../../../decisions/log.md#d149)); CurseForge and Overwolf left the same day ([D150](../../../decisions/log.md#d150)), and so did Marvel Rivals ([D151](../../../decisions/log.md#d151)).
+League of Legends, with the Riot Client and Vanguard, and Blitz left cabin-win on 2026-10-19 ([D149](../../../decisions/log.md#d149)); CurseForge and Overwolf left the same day ([D150](../../../decisions/log.md#d150)), and so did Marvel Rivals ([D151](../../../decisions/log.md#d151)) and Vortex, unused.
 Emulation stays on Arch ([D62](../../../decisions/log.md#d62)).
 
 ## Opt-in, not installed

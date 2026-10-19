@@ -9,6 +9,16 @@ properties:
   configurationVersion: "0.2.0"
   resources:
     # --- base (windows/roles/base.nix, packages/winget/base.txt) ---
+    - resource: "PSDscResources/Script"
+      id: "account-password-required"
+      directives:
+        description: "pj's account requires a password (the OEM image's flag that lets a blank one through is cleared)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\account-password-required.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\account-password-required.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\account-password-required.ps1'))) -Mode Set"
     - resource: "PSDscResources/Registry"
       id: "activity-history-off"
       directives:
@@ -57,6 +67,16 @@ properties:
         ValueType: "Dword"
         ValueData: "1"
         Force: true
+    - resource: "PSDscResources/Script"
+      id: "defender-hardening"
+      directives:
+        description: "Defender's cloud block level High, Network Protection, no exclusions, scans only when idle, and the attack surface reduction rules: twelve in Block, four heuristics in Warn, the prevalence rule in Audit"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\defender-hardening.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\defender-hardening.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\defender-hardening.ps1'))) -Mode Set"
     - resource: "PSDscResources/Registry"
       id: "defender-pua-block"
       directives:
@@ -91,6 +111,16 @@ properties:
         GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\edge-policies.ps1'))) -Mode Get"
         TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\edge-policies.ps1'))) -Mode Test"
         SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\edge-policies.ps1'))) -Mode Set"
+    - resource: "PSDscResources/Script"
+      id: "firewall-lan"
+      directives:
+        description: "the Ethernet connection is Private, sshd is reached only through its own Private rule, rules of uninstalled apps are gone, and every profile logs what it blocks"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\firewall-lan.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\firewall-lan.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\firewall-lan.ps1'))) -Mode Set"
     - resource: "PSDscResources/Registry"
       id: "llmnr-off"
       directives:
@@ -103,6 +133,40 @@ properties:
         ValueType: "Dword"
         ValueData: "0"
         Force: true
+    - resource: "PSDscResources/Registry"
+      id: "lsa-protected"
+      directives:
+        description: "LSA runs as a protected process (no firmware lock), so its sign-in secrets cannot be read out of it"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Lsa"
+        ValueName: "RunAsPPL"
+        ValueType: "Dword"
+        ValueData: "2"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "memory-integrity"
+      directives:
+        description: "Memory Integrity (hypervisor-protected code integrity): only signed, allowed drivers run in the kernel"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity"
+        ValueName: "Enabled"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Script"
+      id: "netbios-off"
+      directives:
+        description: "NetBIOS over TCP/IP off on every interface, as LLMNR is"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        GetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\netbios-off.ps1'))) -Mode Get"
+        TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\netbios-off.ps1'))) -Mode Test"
+        SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\netbios-off.ps1'))) -Mode Set"
     - resource: "PSDscResources/Registry"
       id: "no-device-metadata"
       directives:
@@ -136,6 +200,18 @@ properties:
       settings:
         Key: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection"
         ValueName: "AllowTelemetry"
+        ValueType: "Dword"
+        ValueData: "1"
+        Force: true
+    - resource: "PSDscResources/Registry"
+      id: "vulnerable-driver-blocklist"
+      directives:
+        description: "Microsoft's blocklist of vulnerable drivers stays on"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        Key: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\CI\\Config"
+        ValueName: "VulnerableDriverBlocklistEnable"
         ValueType: "Dword"
         ValueData: "1"
         Force: true

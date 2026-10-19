@@ -269,15 +269,6 @@ properties:
         TestScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\ubisoft-connect.ps1'))) -Mode Test"
         SetScript: "& ([scriptblock]::Create([IO.File]::ReadAllText('C:\\ProgramData\\dram\\units\\ubisoft-connect.ps1'))) -Mode Set"
     - resource: "Microsoft.WinGet.DSC/WinGetPackage"
-      id: "vortex"
-      directives:
-        description: "Vortex (mod manager)"
-        allowPrerelease: true
-        securityContext: "elevated"
-      settings:
-        id: "NexusMods.Vortex"
-        source: "winget"
-    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
       id: "wowup"
       directives:
         description: "WowUp (World of Warcraft add-ons from Wago Addons, WoWInterface, GitHub and tukui.org; a per-user installer)"
