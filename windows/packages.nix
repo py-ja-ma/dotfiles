@@ -55,6 +55,7 @@
     "winget:RuneLite.RuneLite" = { id = "runelite"; description = "RuneLite"; };
     "winget:NexusMods.Vortex" = { id = "vortex"; description = "Vortex (mod manager)"; };
     "winget:PrismLauncher.PrismLauncher" = { id = "prismlauncher"; description = "Prism Launcher (Minecraft; a per-user installer, as Anki's is)"; };
+    "winget:WowUp.Wowup" = { id = "wowup"; description = "WowUp (World of Warcraft add-ons from Wago Addons, WoWInterface, GitHub and tukui.org; a per-user installer)"; };
     "manual:marvel-rivals".byHand = "through Steam (waived: decisions/log.md#d138)";
 
     # --- office and college: the work and finance profiles' GUI half

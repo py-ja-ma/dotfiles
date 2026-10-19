@@ -2,11 +2,11 @@
 
 [Office of Records](../docs/records/README.md) › [Decisions](README.md) › Log
 
-Every numbered decision behind this repo, D1 to D149, one section each.
+Every numbered decision behind this repo, D1 to D150, one section each.
 A number is permanent: it is never reused or renumbered.
 A superseded decision keeps its section and links the one that replaced it.
 Cite a decision as `D65` in code, comments and commit subjects, and in a page as a relative link to its section, `[D65](decisions/log.md#d65)` from the repository root.
-D1 to D43 came from rebuilding the Arch hosts on 2026-10-10 and 2026-10-11, D44 to D144 from bringing Windows under this repo on 2026-10-12 and 2026-10-13, D145 to D148 record choices of the same days that had no number, and D149 the games that left cabin-win on 2026-10-19.
+D1 to D43 came from rebuilding the Arch hosts on 2026-10-10 and 2026-10-11, D44 to D144 from bringing Windows under this repo on 2026-10-12 and 2026-10-13, D145 to D148 record choices of the same days that had no number, D149 and D150 the games and the add-on client that left cabin-win on 2026-10-19.
 The architecture decision records beside this page explain the larger choices, and [the index](README.md) lists them with every open decision.
 Per-package verdicts and the dates of their waivers live in `packages/register.tsv`.
 
@@ -960,3 +960,10 @@ League of Legends, with the Riot Client and Vanguard, and Blitz are removed from
 With Vanguard's kernel driver gone, the game test after each Secure Boot step ([ADR 0024](0024-secure-boot-custody.md)) and the Vanguard case for Memory Integrity ([D74](#d74)) are to be revisited; `windows.unmanaged` ([D144](#d144)) stays, with no name under it on cabin-win.
 
 Decided 2026-10-19 · Security › Software supply · `packages/register.tsv` (`manual:riot-client`), `packages/winget/gaming.txt`, `windows/hosts/cabin-win.nix`
+
+### D150
+
+World of Warcraft add-ons come through WowUp (GPL-3.0, WowUp LLC, Missouri; `winget:WowUp.Wowup`), from Wago Addons, WoWInterface, GitHub and tukui.org, with its telemetry switch off; CurseForge's client and Overwolf are removed from cabin-win and `manual:curseforge` is a `fail` row.
+The WowUp.CF build, which carries Overwolf's ad kit for CurseForge's catalogue, is not installed; an add-on published only on CurseForge is added by its GitHub release, or by hand into `Interface\AddOns`, where WowUp lists it as unmanaged.
+
+Decided 2026-10-19 · Security › Software supply · `packages/winget/gaming.txt`, `packages/register.tsv` (`winget:WowUp.Wowup`, `manual:curseforge`)

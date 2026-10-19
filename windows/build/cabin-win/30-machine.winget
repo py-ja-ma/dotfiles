@@ -277,6 +277,15 @@ properties:
       settings:
         id: "NexusMods.Vortex"
         source: "winget"
+    - resource: "Microsoft.WinGet.DSC/WinGetPackage"
+      id: "wowup"
+      directives:
+        description: "WowUp (World of Warcraft add-ons from Wago Addons, WoWInterface, GitHub and tukui.org; a per-user installer)"
+        allowPrerelease: true
+        securityContext: "elevated"
+      settings:
+        id: "WowUp.Wowup"
+        source: "winget"
     # --- creator (windows/roles/creator.nix, packages/winget/creator.txt) ---
     - resource: "PSDscResources/Script"
       id: "obs-background-removal"

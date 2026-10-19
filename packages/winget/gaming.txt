@@ -27,3 +27,6 @@ winget:RuneLite.RuneLite
 winget:NexusMods.Vortex
 # Minecraft: Prism Launcher fetches the Java each version needs
 winget:PrismLauncher.PrismLauncher
+# World of Warcraft add-ons: WowUp (GPL-3.0, WowUp LLC) from Wago Addons, WoWInterface, GitHub
+# and tukui.org; CurseForge and Overwolf never (decisions/log.md#d150)
+winget:WowUp.Wowup

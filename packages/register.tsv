@@ -447,7 +447,7 @@ manual:battle.net	waiver	2027-10-12	waiver signed 2026-10-12 (D98): FOSS: propri
 manual:evga-precision-x1	fail	-	removed from Windows 2026-10-12: FOSS: proprietary; a kernel driver at every boot that may block Memory Integrity; debloat.ps1 removes it and its driver; re-adding needs a new decision
 manual:jagex-launcher	waiver	2027-10-10	= jagex-launcher (Arch): extended to Windows 2026-10-12 (D102); the signed installer from jagex.com (cabin.winget's jagex-launcher unit)
 manual:librehardwaremonitor-lib	pass	-	D123: MPL-2.0; the LibreHardwareMonitor project; 0.9.6's library from the release zip, pinned by SHA-256, read by case-display.ps1
-manual:marvel-rivals	waiver	2027-10-12	waiver signed 2026-10-12 (D138, as League's D92): Origin: NetEase Games (China; the game is developed in Guangzhou) and FOSS; the game and its own anti-cheat ("NetEase Game Security", its Steam page); cabin-win only, through Steam
+manual:marvel-rivals	waiver	2027-10-12	waiver signed 2026-10-12 (D138, in the form League's D92 took; D92 lapsed with D149): Origin: NetEase Games (China; the game is developed in Guangzhou) and FOSS; the game and its own anti-cheat ("NetEase Game Security", its Steam page); cabin-win only, through Steam
 manual:nixos-wsl	fail	-	ruled 2026-10-12 (D139): struck; the Arch clone (decisions/0021) covers WSL; Apache-2.0, nix-community; Origin flag: K900, the second human committer of the last 12 months, lists Moscow (nzbr, Dortmund, leads); an option for the later one-flake work (decisions/0018), never installed
 manual:nvidia-app	waiver	2027-10-10	= nvidia-utils (Arch): the NVIDIA App, by hand; extended to Windows 2026-10-12 (D102); the driver comes from Windows Update
 manual:obs-backgroundremoval	pass	-	D93, D122: GPL-3.0; royshil (US), umireon (Tokyo) 184 of 222 commits; 1.4.1 pinned by SHA-256 (winget's 1.1.13 is stale)
@@ -489,6 +489,7 @@ winget:OpenVPNTechnologies.OpenVPN	pass	-	GPL-2.0; OpenVPN Inc.'s community clie
 winget:OpenVPNTechnologies.OpenVPNConnect	fail	-	swapped out on Windows 2026-10-12 (D61): FOSS: proprietary; OpenVPNTechnologies.OpenVPN (the community client) instead; re-adding needs a new decision
 winget:PDFArranger.PDFArranger	pass-flag	-	= pdfarranger (Arch)
 winget:PrismLauncher.PrismLauncher	pass	-	= prismlauncher (Arch)
+winget:WowUp.Wowup	pass	-	ruled 2026-10-19 (D150): GPL-3.0; WowUp LLC (Missouri, US), lead jliddev; add-ons from Wago Addons, WoWInterface, GitHub and tukui.org; telemetry is a switch, off here; the WowUp.CF build (Overwolf's ad kit for CurseForge) is not it
 winget:Proton.ProtonMailBridge	pass	-	= protonmail-bridge (Arch)
 winget:Proton.ProtonPass	pass	-	= proton-pass-bin (Arch)
 winget:Proton.ProtonPass.CLI	pass	-	= proton-pass-cli (Arch)
@@ -538,6 +539,7 @@ manual:delta-force	fail	-	Origin: TiMi Studio Group, a Tencent subsidiary (Shenz
 manual:explorerblurmica	fail	-	Origin: Maplespe's, as winget:Maplespe.DWMBlurGlass (Bilibili, winmoes.com with a Henan ICP filing); glass in Explorer, against the house look; not in winget
 manual:iunity	fail	-	FOSS: Antec's proprietary iUnity (a driver, a firmware updater, a service; Origin passes: Taipei) -> case-display.ps1 (D123); debloat.ps1 removes it
 manual:jwno	fail	-	Origin: its author (agent-kilo) lists Guangzhou; MIT; not in winget; GlazeWM is the tiling candidate
+manual:curseforge	fail	-	D150 (2026-10-19): CurseForge's client is Overwolf's (closed, ad-funded, an injecting overlay); WoW add-ons come through WowUp instead
 manual:millennium	fail	-	security and terms: inline hooks in steam.exe and libcef next to EAC and Vanguard (its maintainer: EAC watches the Steam client for hooks); the Steam Subscriber Agreement section 4.B; Steam stays unthemed
 manual:npcap	fail	-	FOSS: its own EULA, which the nmap waiver does not cover; not installed (2026-10-12, D110): capture with etwdump, pktmon, sshdump, or on Arch
 manual:scoop	fail	-	Origin: lead committers based in China (D61); winget is the engine
