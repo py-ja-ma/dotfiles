@@ -102,7 +102,7 @@
     "windows/units/case-display-task.ps1": "b03a912674751d57cbf2841ad56c13459bde51ec9334cebfe0b1726bfac46a67",
     "windows/units/conhost-letterpress.ps1": "067977536bd5b92a83ba5b93d50e9b1e35973ff85696c10918a80c4a4a271924",
     "windows/units/cursors-machine.ps1": "4f3ad3fa75f5ed85651298ddfbd89eb76295e9555a199d90698b65be239c9411",
-    "windows/units/defender-hardening.ps1": "7e8b6c43fd0863bf930d2c600928f1479f44d1256e3a0e15bd007f4ff199dc98",
+    "windows/units/defender-hardening.ps1": "5b5c24657595cfcbc751360fd8823a9129f65fa4a86d389ca3d4ee63e25f21c5",
     "windows/units/dns-quad9-doh.ps1": "9f08c91e812e59b7b244a21240c9173e0a0e1479446aad1b1f09eba6d72fd23e",
     "windows/units/edge-policies.ps1": "04199b7f12a90a1efb1f691584f7fccc6cdfda4c785ad82d1f5e51cd3e041910",
     "windows/units/explorer-quiet.ps1": "77fa210f92225cedb49063099e8ea8d6261de2e5732a0eec0f674c54d6e4b920",

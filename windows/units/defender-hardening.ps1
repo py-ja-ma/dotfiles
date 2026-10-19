@@ -35,7 +35,7 @@ $rules = [ordered]@{
 # an empty list comes back as one null element in Windows PowerShell 5.1, and a function that
 # returns an empty array hands its caller nothing, so every call site wraps the result in @()
 function Items($x) { @($x | Where-Object { $_ }) }
-function Exclusions($p) { @((Items $p.ExclusionPath) + (Items $p.ExclusionProcess) + (Items $p.ExclusionExtension)) }
+function Exclusions($p) { @(@(Items $p.ExclusionPath) + @(Items $p.ExclusionProcess) + @(Items $p.ExclusionExtension)) }
 
 function Get-DramUnit {
   $p = Get-MpPreference
