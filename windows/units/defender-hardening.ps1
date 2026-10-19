@@ -41,7 +41,7 @@ function Test-DramUnit {
   $ErrorActionPreference = 'Continue'
   $p = Get-MpPreference
   if ($p.MAPSReporting -ne 2 -or $p.SubmitSamplesConsent -ne 1) { return $false }   # Advanced, SendSafeSamples
-  if ($p.CloudBlockLevel -ne 4 -or $p.CloudExtendedTimeout -ne 50) { return $false }   # High
+  if ($p.CloudBlockLevel -ne 2 -or $p.CloudExtendedTimeout -ne 50) { return $false }   # 2 = High
   if ($p.EnableNetworkProtection -ne 1) { return $false }
   if (@($p.ExclusionPath).Count + @($p.ExclusionProcess).Count + @($p.ExclusionExtension).Count -gt 0) { return $false }
   if ($p.ScanAvgCPULoadFactor -ne 20 -or -not $p.ScanOnlyIfIdleEnabled) { return $false }
